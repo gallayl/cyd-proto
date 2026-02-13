@@ -8,6 +8,6 @@
 
 CustomCommand *calibrateCustomCommand = new CustomCommand("calibrate", [](String command)
                                                           {    
-    touch_calibrate_LolyanGFX();
+    calibrateScreen();
     LoggerInstance->Info("Calibrated touch screen");
     return String("{\"event\":\"calibrate\", \"status\":\"success\"}"); });

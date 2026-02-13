@@ -11,24 +11,31 @@
 #include "./clearScreenCustomCommand.h"
 #include "./helloCustomCommand.h"
 #include "./calibrateCustomCommand.h"
+#include "./rotateScreenCommand.h"
+#include "./Calibration.h"
+
+LGFX tft;
 
 Feature *UiFeature = new Feature("UI", []()
                                  {    
-   // Initialise the TFT screen
-  tft.init();
+    tft.init();
 
-  // Set the rotation before we calibrate
-  // ### lgfx change the rotation from (old) 2 to (new) 0
-  tft.setRotation(0);  // In my case '2' is better as the terminals are at the top
+    tft.fillScreen(TFT_BLACK);
 
-  // Clear the screen
-  tft.fillScreen(TFT_BLACK);
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    tft.setTextSize(1);
+    tft.setCursor(0, 0);
+    tft.println("UI Feature Initialized");
+
+    readCalibrationData();
 
 
     // register our custom commands
     CommandInterpreterInstance->RegisterCommand(*clearScreenCustomCommand);
     CommandInterpreterInstance->RegisterCommand(*helloDemoCustomCommand);
     CommandInterpreterInstance->RegisterCommand(*calibrateCustomCommand);
+    CommandInterpreterInstance->RegisterCommand(*rotateScreenCustomCommand);
+
 
     LoggerInstance->Info("UI feature initialized");
 
