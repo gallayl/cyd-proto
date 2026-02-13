@@ -1,15 +1,16 @@
 #pragma once
 
 #include <stdlib.h>
-#include <TFT_eSPI.h>
+#include <LovyanGFX.hpp>
+#include "./LovyanGFX_ILI9341_Settings.h"
 #include "../../../CommandInterpreter/CustomCommand.h"
 #include "../../../CommandInterpreter/CommandParser.h"
 #include "../Logging.h"
 
 // the TFT object is defined in UiFeature.h
-extern TFT_eSPI tft;
+extern LGFX tft;
 
-CustomCommand *clearScreenCustomCommand = new CustomCommand("info", [](String command)
+CustomCommand *clearScreenCustomCommand = new CustomCommand("clear", [](String command)
                                                             {
                                                                 String colorParam = CommandParser::GetCommandParameter(command, 1);
                                                                 uint16_t color = TFT_BLACK;

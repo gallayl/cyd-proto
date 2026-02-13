@@ -1,4 +1,3 @@
-#include "./cydConfig.h"
 #include <Wire.h>
 #include "./CommandInterpreter/CommandInterpreter.h"
 #include "./services/WebServer.h"

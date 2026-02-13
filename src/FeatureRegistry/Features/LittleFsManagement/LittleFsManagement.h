@@ -5,7 +5,6 @@
 #include "./showFileListCustomCommand.h"
 #include "./formatCustomCommand.h"
 #include "LittleFS.h"
-#include "TFT_eSPI.h"
 
 Feature *LittleFsFeature = new Feature("LittleFsFeatures", []()
                                        {
