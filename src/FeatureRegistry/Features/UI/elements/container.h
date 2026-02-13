@@ -79,7 +79,6 @@ namespace UI
             if (mounted)
             {
                 child->mount();
-                child->draw();
             }
             children.push_back(std::move(child));
         }
@@ -125,19 +124,27 @@ namespace UI
             return out;
         }
 
+        // drawing -------------------------------------------------------------
+        void draw() override
+        {
+            if (!mounted)
+                return;
+            for (auto &childPtr : children)
+            {
+                if (childPtr->isMounted())
+                    childPtr->draw();
+            }
+        }
+
         // mounting/unmounting -------------------------------------------------
         void mount() override
         {
             if (mounted)
                 return;
             Element::mount();
-            // draw ourselves and all children so the screen is up to date
-            draw();
             for (auto &childPtr : children)
             {
-                Element *child = childPtr.get();
-                child->mount();
-                child->draw();
+                childPtr->mount();
             }
         }
 
