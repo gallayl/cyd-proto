@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Arduino.h>
+
 #define COMMAND_DELIMITER " "
 
 class CommandParser

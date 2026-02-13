@@ -1,0 +1,61 @@
+#include "SystemFeatures.h"
+
+// define commands
+CustomCommand *resetCommand = new CustomCommand("restart", [](String command)
+                                                {
+    ESP.restart();
+    return String("{\"event\": \"restart\"}"); });
+
+CustomCommand *getRegisteredFeatures = new CustomCommand("getRegisteredFeatures", [](String command)
+                                                         {
+    char output[1024];
+    serializeJson(registeredFeatures, output);
+    return String(output);
+});
+
+// handlers
+ArRequestHandlerFunction getFeaturesAction = [](AsyncWebServerRequest *request)
+{
+    char output[1024];
+    serializeJson(registeredFeatures, output);
+    request->send(200, MIME_json, output);
+};
+
+ArRequestHandlerFunction reset = [](AsyncWebServerRequest *request)
+{
+    ESP.restart();
+    request->send(200, MIME_json, "{\"event\": \"restart\"}");
+};
+
+ArRequestHandlerFunction getInfoAction = [](AsyncWebServerRequest *request)
+{
+    AsyncJsonResponse *resp = new AsyncJsonResponse();
+    JsonDocument info = getInfo();
+    resp->setCode(200);
+    resp->getRoot().set(info);
+    resp->setLength();
+    request->send(resp);
+};
+
+// feature object
+Feature *SystemFeatures = new Feature("SystemFeatures", []()
+                                      {
+    CommandInterpreterInstance->RegisterCommand(*wifiCommand);
+    CommandInterpreterInstance->RegisterCommand(*resetCommand);
+    CommandInterpreterInstance->RegisterCommand(*getRegisteredFeatures);
+    CommandInterpreterInstance->RegisterCommand(*infoCustomCommand);
+
+    server.on("/features", HTTP_GET, getFeaturesAction);
+    server.on("/restart", HTTP_POST, reset);
+    server.on("/info", HTTP_GET, getInfoAction);
+
+    // Init and register low level features and commands
+    initRgbLed();
+    initLightSensor();
+    CommandInterpreterInstance->RegisterCommand(*rgbLedCustomCommand);
+    CommandInterpreterInstance->RegisterCommand(*getLightSensorValueCommand);
+    CommandInterpreterInstance->RegisterCommand(*getHallSensorValueCommand);
+
+    return FeatureState::RUNNING;
+}, []() {
+});

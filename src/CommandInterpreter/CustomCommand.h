@@ -1,5 +1,10 @@
 #pragma once
 
+#include <Arduino.h>
+
+// forward declare parser used in some callbacks
+class CommandParser;
+
 typedef String (*CommandCallbackFunction)(String command);
 
 class CustomCommand

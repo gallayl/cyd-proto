@@ -5,11 +5,16 @@
 #include "./Time.h"
 #include "../../CommandInterpreter/CustomCommand.h"
 #include "../../CommandInterpreter/CommandInterpreter.h"
-#include "../../services/WebServer.h"
+
+// forward declaration of global logger so circular includes don't break
+class Logger;
+extern Logger *LoggerInstance;
+
+// forward declare server type and variable; actual definition lives in WebServer.h
+class AsyncWebServer;
+extern AsyncWebServer server;
 
 typedef void (*LogListener)(String, String);
-
-extern AsyncWebServer server;
 
 #define LOG_LISTENERS_COUNT 10
 
@@ -82,29 +87,11 @@ private:
     }
 };
 
-Logger *LoggerInstance = new Logger();
+extern Logger *LoggerInstance;
 
 #define LOG_BUFFER_LENGTH 1024
 
-CustomCommand *showLogCustomCommand = new CustomCommand("showLog", [](String command)
-                                                        {
-    char buffer[LOG_BUFFER_LENGTH];
-    JsonDocument response = LoggerInstance->getEntries();
-    serializeJson(response, buffer);
-    return String(buffer); });
+extern CustomCommand *showLogCustomCommand;
+extern ArRequestHandlerFunction showLogRequestHandler;
 
-ArRequestHandlerFunction showLogRequestHandler = [](AsyncWebServerRequest *request)
-{
-    AsyncJsonResponse *resp = new AsyncJsonResponse();
-    JsonDocument entries = LoggerInstance->getEntries();
-    resp->setCode(200);
-    resp->getRoot().set(entries);
-    resp->setLength();
-    request->send(resp);
-};
-
-Feature *LoggingFeature = new Feature("Logging", []()
-                                      {
-    CommandInterpreterInstance->RegisterCommand(*showLogCustomCommand);
-    server.on("/log", HTTP_GET, showLogRequestHandler);
-    return FeatureState::RUNNING; }, []() {});
+extern Feature *LoggingFeature;

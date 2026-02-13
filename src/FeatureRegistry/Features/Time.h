@@ -9,32 +9,10 @@
 #define MY_TZ "CET-1CEST,M3.5.0,M10.5.0/3"
 
 
-time_t getEpochTime()
-{
-  time_t now;  
-  time(&now);
-  return now;
-}
+// time helpers (implemented in Time.cpp)
+time_t getEpochTime();
+String getUtcTime();
 
-String getUtcTime()
-{
-  time_t rawtime;
-  struct tm * timeinfo;
-  char buffer [80];
+// Feature object is instantiated in Time.cpp
+extern Feature *TimeFeature;
 
-  time (&rawtime);
-  timeinfo = localtime (&rawtime);
-
-  strftime (buffer,80,"%FT%TZ",timeinfo);
-  return String(buffer);
-}
-
-
-Feature *TimeFeature = new Feature("Time", []() {
-    /* ESP32 version of configTime uses GMT and daylight offsets.  */
-    configTime(0, 0, MY_NTP_SERVER);
-    /* set the TZ environment variable so localtime() works with our string */
-    setenv("TZ", MY_TZ, 1);
-    tzset();
-    return FeatureState::RUNNING;
-}, [](){});

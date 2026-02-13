@@ -6,6 +6,9 @@
 #include "../config.h"
 #include "../FeatureRegistry/Features/Logging.h"
 
+// ensure logger declaration available (guard against include order)
+extern Logger *LoggerInstance;
+
 String getSignalStrength(int32_t rssi)
 {
     if (rssi > -30)

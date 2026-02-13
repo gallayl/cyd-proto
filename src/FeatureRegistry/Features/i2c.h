@@ -9,7 +9,8 @@
 #include "../../CommandInterpreter/CommandInterpreter.h"
 #include "../../services/WebServer.h"
 
-String scanDevices()
+// helper functions are local to translation unit
+static String scanDevices()
 {
     JsonDocument doc = JsonDocument().as<JsonArray>();
 
@@ -33,13 +34,14 @@ String scanDevices()
     return String(buffer);
 }
 
-String readDevice(uint16_t address, uint16_t size)
+static String readDevice(uint16_t address, uint16_t size)
 {
-    Wire.requestFrom(address, size);
+    // use size_t overload explicitly to avoid ambiguity
+    Wire.requestFrom((uint8_t)address, (size_t)size);
     return String(Wire.read());
 }
 
-void writeDevice(uint16_t address, String data)
+static void writeDevice(uint16_t address, String data)
 {
     Wire.beginTransmission(address);
 
@@ -63,40 +65,6 @@ void writeDevice(uint16_t address, String data)
     Wire.endTransmission();
 }
 
-CustomCommand *i2cCommand = new CustomCommand("i2c", [](String command)
-                                              {
-    String sub = CommandParser::GetCommandParameter(command, 1);
-    if (sub == "scan")
-    {
-        return scanDevices();
-    }
-    else if (sub == "read")
-    {
-        uint16_t address = CommandParser::GetCommandParameter(command, 2).toInt();
-        uint16_t size = CommandParser::GetCommandParameter(command, 3).toInt();
-        return readDevice(address, size);
-    }
-    else if (sub == "write")
-    {
-        uint16_t address = strtol(CommandParser::GetCommandParameter(command, 2).c_str(), 0, 16);
-        command.replace("i2c write ", "");
-        writeDevice(address, command);
-        return String("Writed.");
-    }
-
-    String fallback = "The awailable I2C Commands are: scan, read, write";
-    return fallback; });
-
-Feature *i2cFeature = new Feature("i2c", []()
-                                  {
-
-
-    Wire.begin();
-
-    CommandInterpreterInstance->RegisterCommand(*i2cCommand);
-
-    server.on("/i2c", HTTP_GET, [](AsyncWebServerRequest *request) {
-        request->send(200, MIME_json, scanDevices());
-    });
-
-    return FeatureState::RUNNING; }, []() {});
+// command and feature objects are defined in cpp
+extern CustomCommand *i2cCommand;
+extern Feature *i2cFeature;

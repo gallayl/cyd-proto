@@ -7,24 +7,17 @@
 #include "../Logging.h"
 
 #include "./screenCustomCommand.h"
+#include "./uiPageCustomCommand.h"
 #include "./Calibration.h"
 
-Feature *UiFeature = new Feature("UI", []()
-                                 {    
-    tft.fillScreen(TFT_BLACK);
+// 2. LVGL Buffer and Flush
+// definitions moved to .cpp to avoid multiple instances
+extern const int screenWidth;
+extern const int screenHeight;
+extern uint16_t drawBuffer[];
 
-    tft.setTextColor(TFT_WHITE, TFT_BLACK);
-    tft.setTextSize(1);
-    tft.setCursor(0, 0);
-    tft.println("UI Feature Initialized");
+// forward declaration of feature object
+extern Feature *UiFeature;
 
-    readCalibrationData();
-
-
-    // register our consolidated "screen" namespace command
-    CommandInterpreterInstance->RegisterCommand(*screenCustomCommand);
-
-
-    LoggerInstance->Info("UI feature initialized");
-
-    return FeatureState::RUNNING; }, []() {});
+// helper if explicit initialization is needed
+void uiFeatureInit();
