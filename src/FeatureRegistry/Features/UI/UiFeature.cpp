@@ -1,7 +1,7 @@
 #include "UiFeature.h"
 #include "../Logging.h"
 #include "screens.h"            // page definitions and touch helpers
-#include "ActionQueue.h"         // deferred callbacks from widgets
+#include "ActionQueue.h"        // deferred callbacks from widgets
 #include "../../../hw/RgbLed.h" // initialize LED hardware
 
 // physical display dimensions (ILI9341 rotated portrait)

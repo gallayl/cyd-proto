@@ -2,7 +2,8 @@
 
 #include <functional>
 
-namespace UI {
+namespace UI
+{
     // queue a callback to be executed later on the main UI loop.
     // this is used by interactive widgets so they can request screen
     // changes (or other side‑effects) without mutating the UI hierarchy

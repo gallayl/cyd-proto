@@ -2,7 +2,7 @@
 
 #include <LovyanGFX.hpp>
 #include "label.h"
-#include "../ActionQueue.h"  // for UI::queueAction
+#include "../ActionQueue.h" // for UI::queueAction
 
 // display object from hardware layer
 extern LGFX tft;
