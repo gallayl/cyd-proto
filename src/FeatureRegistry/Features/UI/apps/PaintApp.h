@@ -7,6 +7,7 @@
 #include "../Theme.h"
 #include <memory>
 #include <vector>
+#include <cstring>
 
 namespace UI
 {
@@ -32,13 +33,7 @@ namespace UI
             palW = cw;
             palH = paletteH;
 
-            // paint sprite (8-bit color, same as screen canvas)
-            sprite.setColorDepth(8);
-            if (!sprite.createSprite(cvW, cvH))
-                return;
-            sprite.fillSprite(TFT_WHITE);
-
-            // toolbar buttons
+            // toolbar buttons (always created regardless of sprite success)
             int btnW = cw / 5;
             struct ToolDef
             {
@@ -85,11 +80,18 @@ namespace UI
                                  { onContentTouch(px, py); });
             cont.setTouchEndHandler([this](int px, int py)
                                     { onContentTouchEnd(px, py); });
+
+            // create the paint sprite last (may fail on low memory)
+            sprite.setColorDepth(8);
+            spriteOk = sprite.createSprite(cvW, cvH) != nullptr;
+            if (spriteOk)
+                sprite.fillSprite(TFT_WHITE);
         }
 
         void teardown() override
         {
-            sprite.deleteSprite();
+            if (spriteOk)
+                sprite.deleteSprite();
         }
 
     private:
@@ -112,6 +114,7 @@ namespace UI
         uint16_t color{TFT_BLACK};
         Button *tbtn[5]{};
         LGFX_Sprite sprite;
+        bool spriteOk{false};
 
         // touch tracking (all in local canvas coords)
         bool touching{false};
@@ -151,13 +154,41 @@ namespace UI
             {
                 if (!mounted || !app)
                     return;
-                // blit paint sprite onto the screen canvas
-                app->sprite.pushSprite(&canvas(), x, y);
 
-                // shape preview while dragging
-                if (app->touching)
+                auto &c = canvas();
+
+                if (app->spriteOk)
                 {
-                    auto &c = canvas();
+                    // blit paint sprite onto screen canvas via raw memcpy
+                    // (both are 8-bit depth so raw bytes are compatible)
+                    uint8_t *src = (uint8_t *)app->sprite.getBuffer();
+                    uint8_t *dst = (uint8_t *)c.getBuffer();
+                    if (src && dst)
+                    {
+                        int dstStride = Theme::ScreenWidth;
+                        int srcStride = app->cvW;
+                        for (int row = 0; row < height; row++)
+                        {
+                            memcpy(
+                                dst + (y + row) * dstStride + x,
+                                src + row * srcStride,
+                                srcStride);
+                        }
+                    }
+                }
+                else
+                {
+                    // fallback: white area with error text
+                    c.fillRect(x, y, width, height, TFT_WHITE);
+                    c.setTextColor(TFT_RED, TFT_WHITE);
+                    c.setTextSize(1);
+                    c.setCursor(x + 4, y + 4);
+                    c.print("No memory");
+                }
+
+                // shape preview while dragging (drawn on screen canvas, not sprite)
+                if (app->touching && app->spriteOk)
+                {
                     int sx = app->tStartX + x;
                     int sy = app->tStartY + y;
                     int ex = app->tLastX + x;
@@ -209,7 +240,6 @@ namespace UI
 
                     if (cols[i] == app->color)
                     {
-                        // selected: double border (white outer, black inner)
                         c.drawRect(sx, y, w, height, TFT_WHITE);
                         c.drawRect(sx + 1, y + 1, w - 2, height - 2, TFT_BLACK);
                     }
@@ -241,6 +271,8 @@ namespace UI
 
         void drawThickLine(int x0, int y0, int x1, int y1, uint16_t col, int r)
         {
+            if (!spriteOk)
+                return;
             int dx = abs(x1 - x0);
             int dy = abs(y1 - y0);
             int steps = (dx > dy) ? dx : dy;
@@ -265,6 +297,9 @@ namespace UI
             if (px >= cvX && px < cvX + cvW &&
                 py >= cvY && py < cvY + cvH)
             {
+                if (!spriteOk)
+                    return;
+
                 int lx = px - cvX;
                 int ly = py - cvY;
 
@@ -354,6 +389,8 @@ namespace UI
 
         void doFloodFill(int fx, int fy)
         {
+            if (!spriteOk)
+                return;
             if (fx < 0 || fx >= cvW || fy < 0 || fy >= cvH)
                 return;
 
