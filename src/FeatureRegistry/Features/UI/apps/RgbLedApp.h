@@ -109,7 +109,7 @@ namespace UI
             plusBtn->setBackgroundColor(Theme::ButtonFace);
             plusBtn->setTextColor(Theme::TextColor, Theme::ButtonFace);
             plusBtn->setCallback([this, &val, valPtr]()
-                                {
+                                 {
                 if (val <= 230) val += 25; else val = 255;
                 valPtr->setText(String(val));
                 applyColor(); });
