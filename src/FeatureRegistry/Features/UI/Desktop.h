@@ -12,6 +12,7 @@
 #include "apps/FileManagerApp.h"
 #include "apps/DisplaySettingsApp.h"
 #include "apps/FeaturesApp.h"
+#include "apps/PaintApp.h"
 #include <ESP.h>
 
 namespace UI
@@ -39,6 +40,8 @@ namespace UI
                         { return new LogViewerApp(); });
             registerApp("File Manager", []() -> App *
                         { return new FileManagerApp(); });
+            registerApp("Paint", []() -> App *
+                        { return new PaintApp(); });
 
             // build hierarchical menu
             auto openApp = [this](const char *name)
@@ -54,6 +57,7 @@ namespace UI
                 MenuItem::Submenu("Programs", {
                                                   MenuItem::Leaf("RGB LED", openApp("RGB LED")),
                                                   MenuItem::Leaf("Sensors", openApp("Sensors")),
+                                                  MenuItem::Leaf("Paint", openApp("Paint")),
                                               }),
                 MenuItem::Submenu("Settings", {
                                                   MenuItem::Leaf("WiFi", openApp("WiFi")),
