@@ -4,6 +4,8 @@
 #include "./wifiCommand.h"
 #include "./infoCustomCommand.h"
 #include "./rgbLedCommand.h"
+#include "./getLightSensorValueCommand.h"
+#include "./getHallSensorValueCommand.h"
 #include "../../CommandInterpreter/CommandInterpreter.h"
 #include "../../CommandInterpreter/CustomCommand.h"
 #include "../FeatureRegistry.h"
@@ -45,15 +47,27 @@ ArRequestHandlerFunction getInfoAction = [](AsyncWebServerRequest *request)
 
 Feature *SystemFeatures = new Feature("SystemFeatures", []()
                                       {
+
+
+
     CommandInterpreterInstance->RegisterCommand(*wifiCommand);
     CommandInterpreterInstance->RegisterCommand(*resetCommand);
     CommandInterpreterInstance->RegisterCommand(*getRegisteredFeatures);
     CommandInterpreterInstance->RegisterCommand(*infoCustomCommand);
-    CommandInterpreterInstance->RegisterCommand(*rgbLedCustomCommand);
+    
 
     server.on("/features", HTTP_GET, getFeaturesAction);
     server.on("/restart", HTTP_POST, reset);
     server.on("/info", HTTP_GET, getInfoAction);
+
+    // Init and register low level features and commands
+    initRgbLed();
+    initLightSensor();
+    CommandInterpreterInstance->RegisterCommand(*rgbLedCustomCommand);
+    CommandInterpreterInstance->RegisterCommand(*getLightSensorValueCommand);
+    CommandInterpreterInstance->RegisterCommand(*getHallSensorValueCommand);                                        
+
+
     return FeatureState::RUNNING; }, []() {
 
                                       });
