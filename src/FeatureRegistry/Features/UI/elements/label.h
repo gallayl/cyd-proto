@@ -49,7 +49,8 @@ namespace UI
             // top-left if measuring APIs aren't available.
             int16_t tx = x;
             int16_t ty = y;
-            if (width > 0 && height > 0) {
+            if (width > 0 && height > 0)
+            {
                 // textWidth/fontHeight automatically respect the current
                 // text size/font, so we don't pass our stored textSize.
                 int16_t tw = tft.textWidth(text);

@@ -1,7 +1,8 @@
 #include "UiFeature.h"
 #include "../Logging.h"
-#include "screens.h"  // page definitions and touch helpers
-#include "../../../hw/RgbLed.h"  // initialize LED hardware
+#include "screens.h"            // page definitions and touch helpers
+#include "ActionQueue.h"         // deferred callbacks from widgets
+#include "../../../hw/RgbLed.h" // initialize LED hardware
 
 // physical display dimensions (ILI9341 rotated portrait)
 const int screenWidth = 240;
@@ -33,8 +34,7 @@ Feature *UiFeature = new Feature("UI", []()
 
     LoggerInstance->Info("UI feature initialized");
 
-    return FeatureState::RUNNING;
-}, []()
+    return FeatureState::RUNNING; }, []()
                                  {
                                      // poll touch and forward to current screen
                                      static bool prevTouched = false;
@@ -44,14 +44,14 @@ Feature *UiFeature = new Feature("UI", []()
                                      if (touched) {
                                          uiHandleTouch(tx, ty);
                                      } else if (prevTouched) {
-                                         uiHandleTouchEnd(prevX, prevY);
-                                     }
+                                         uiHandleTouchEnd(prevX, prevY);                                         // execute any actions widgets queued during
+                                         // touch processing (screen changes, etc.)
+                                         UI::executeQueuedActions();                                     }
                                      prevTouched = touched;
                                      if (touched) {
                                          prevX = tx;
                                          prevY = ty;
-                                     }
-                                 });
+                                     } });
 
 // optional explicit init, currently no-op but kept for API
 void uiFeatureInit()

@@ -2,6 +2,7 @@
 
 #include <LovyanGFX.hpp>
 #include "label.h"
+#include "../ActionQueue.h"  // for UI::queueAction
 
 // display object from hardware layer
 extern LGFX tft;
@@ -30,17 +31,20 @@ namespace UI
         void setCallback(Callback cb) { onClick = std::move(cb); }
         void setLabel(const String &txt) { label.setText(txt); }
 
-        void setBackgroundColor(uint16_t c) {
+        void setBackgroundColor(uint16_t c)
+        {
             bgColor = c;
             // update label background too so text doesn't vanish
             label.setTextColor(labelFg, bgColor);
         }
         // set label colour; background defaults to the button's fill
-        void setTextColor(uint16_t fg) {
+        void setTextColor(uint16_t fg)
+        {
             labelFg = fg;
             label.setTextColor(fg, bgColor);
         }
-        void setTextColor(uint16_t fg, uint16_t bg) {
+        void setTextColor(uint16_t fg, uint16_t bg)
+        {
             labelFg = fg;
             label.setTextColor(fg, bg);
         }
@@ -53,7 +57,7 @@ namespace UI
 
             // colours for the 3‑D look; swap when pressed
             uint16_t light = pressed ? borderDarkColor : borderLightColor;
-            uint16_t dark  = pressed ? borderLightColor : borderDarkColor;
+            uint16_t dark = pressed ? borderLightColor : borderDarkColor;
 
             // fill body
             tft.fillRect(x, y, width, height, bgColor);
@@ -66,9 +70,12 @@ namespace UI
             tft.drawFastVLine(x + width - 1, y, height, dark);
 
             // shift label if pressed for a simple animation
-            if (pressed) {
+            if (pressed)
+            {
                 label.setBounds(x + 1, y + 1, width - 1, height - 1);
-            } else {
+            }
+            else
+            {
                 label.setBounds(x, y, width, height);
             }
             label.draw();
@@ -87,7 +94,13 @@ namespace UI
         {
             if (pressed && contains(px, py) && onClick)
             {
-                onClick();
+                // schedule the callback to run *after* the current
+                // event dispatch has finished. executing a click
+                // handler immediately is dangerous because the handler
+                // may destroy the container that is currently being
+                // iterated, leading to use‑after‑free (see crash
+                // reported in issue).
+                UI::queueAction(onClick);
             }
             pressed = false;
             draw();
@@ -108,7 +121,7 @@ namespace UI
         Callback onClick;
         bool pressed{false};
         uint16_t bgColor{TFT_LIGHTGREY};
-        uint16_t labelFg{TFT_WHITE};      // track current label foreground colour
+        uint16_t labelFg{TFT_WHITE}; // track current label foreground colour
 
         // two colours used for the 3‑D effect; highlight is drawn on the
         // top/left edges and shadow on bottom/right. these may be swapped
@@ -120,14 +133,16 @@ namespace UI
         // change the two-tone border colours; useful if the default
         // black/white pair doesn't contrast well on a particular
         // background.
-        void setBorderColors(uint16_t light, uint16_t dark) {
+        void setBorderColors(uint16_t light, uint16_t dark)
+        {
             borderLightColor = light;
             borderDarkColor = dark;
         }
 
         // override setBounds so that the contained label moves with the
         // button without requiring callers to set its bounds manually.
-        void setBounds(int ix, int iy, int iw, int ih) {
+        void setBounds(int ix, int iy, int iw, int ih)
+        {
             Element::setBounds(ix, iy, iw, ih);
             label.setBounds(ix, iy, iw, ih);
         }
