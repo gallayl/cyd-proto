@@ -5,12 +5,12 @@
 // forward declare parser used in some callbacks
 class CommandParser;
 
-typedef String (*CommandCallbackFunction)(String command);
+typedef String (*CommandCallbackFunction)(const String &command);
 
 class CustomCommand
 {
 public:
-    CustomCommand(const String &name = "commandName", CommandCallbackFunction callback = [](String command)
+    CustomCommand(const String &name = "commandName", CommandCallbackFunction callback = [](const String &command)
                                                       { return String("Unknown command."); }) : _commandName(name), _onExecute(callback) {};
 
     String Execute(const String &command)

@@ -3,17 +3,17 @@
 // instantiate globals
 Logger *LoggerInstance = new Logger();
 
-CustomCommand *showLogCustomCommand = new CustomCommand("showLog", [](String command)
+CustomCommand *showLogCustomCommand = new CustomCommand("showLog", [](const String &command)
                                                         {
-    JsonDocument response = LoggerInstance->getEntries();
+    const JsonDocument &entries = LoggerInstance->getEntries();
     String output;
-    serializeJson(response, output);
+    serializeJson(entries, output);
     return output; });
 
 ArRequestHandlerFunction showLogRequestHandler = [](AsyncWebServerRequest *request)
 {
     AsyncJsonResponse *resp = new AsyncJsonResponse();
-    JsonDocument entries = LoggerInstance->getEntries();
+    const JsonDocument &entries = LoggerInstance->getEntries();
     resp->setCode(200);
     resp->getRoot().set(entries);
     resp->setLength();
@@ -22,6 +22,6 @@ ArRequestHandlerFunction showLogRequestHandler = [](AsyncWebServerRequest *reque
 
 Feature *LoggingFeature = new Feature("Logging", []()
                                       {
-    CommandInterpreterInstance->RegisterCommand(*showLogCustomCommand);
+    CommandInterpreterInstance->RegisterCommand(showLogCustomCommand);
     server.on("/log", HTTP_GET, showLogRequestHandler);
     return FeatureState::RUNNING; }, []() {});

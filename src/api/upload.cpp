@@ -2,22 +2,15 @@
 #include <LittleFS.h>
 #include "../mime.h" // for MIME_plainText/MIME_json
 
-ArRequestHandlerFunction onPostUploadFiles = ([](AsyncWebServerRequest *request)
-                                              {
-    request->send(200, MIME_plainText, "OK"); });
+ArRequestHandlerFunction onPostUploadFiles = ([](AsyncWebServerRequest *request) {});
 
 ArUploadHandlerFunction uploadFiles = ([](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
                                        {
-        fs::File file = LittleFS.open("/" + filename, "a");
-
-        if (index == 0 && file.position() > 0)
-        {
-            file.seek(0, fs::SeekSet);
-        }
+        fs::File file = LittleFS.open("/" + filename, index == 0 ? "w" : "a");
 
         if (!file)
         {
-            LoggerInstance->Error("Failed to open file for writing");
+            LoggerInstance->Error(F("Failed to open file for writing"));
             request->send(500, MIME_json, "{\"error\":\"Failed to open file for writing\"}");
             return;
         }
@@ -26,6 +19,6 @@ ArUploadHandlerFunction uploadFiles = ([](AsyncWebServerRequest *request, String
 
     if (final)
     {
-        LoggerInstance->Info("Upload finished");
+        LoggerInstance->Info(F("Upload finished"));
         request->send(200, MIME_json, "{\"status\":\"ok\"}");
     }; });

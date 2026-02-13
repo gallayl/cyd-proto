@@ -6,9 +6,6 @@
 // physical display dimensions (ILI9341 rotated portrait)
 const int screenWidth = 240;
 const int screenHeight = 320;
-// small scratch buffer; adjust size if you later integrate LVGL or similar
-uint16_t drawBuffer[screenWidth * 10];
-
 // definition of the feature object
 Feature *UiFeature = new Feature("UI", []()
                                  {
@@ -22,13 +19,13 @@ Feature *UiFeature = new Feature("UI", []()
     readCalibrationData();
 
     // register our consolidated "screen" namespace command
-    CommandInterpreterInstance->RegisterCommand(*screenCustomCommand);
-    CommandInterpreterInstance->RegisterCommand(*pageCustomCommand);
+    CommandInterpreterInstance->RegisterCommand(screenCustomCommand);
+    CommandInterpreterInstance->RegisterCommand(pageCustomCommand);
 
     // start on the welcome page by default
     showWelcomeScreen();
 
-    LoggerInstance->Info("UI feature initialized");
+    LoggerInstance->Info(F("UI feature initialized"));
 
     return FeatureState::RUNNING; }, []()
                                  {

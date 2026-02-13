@@ -1,7 +1,7 @@
 #include "wifiCommand.h"
 #include "../../../config.h"
 
-CustomCommand *wifiCommand = new CustomCommand("wifi", [](String command)
+CustomCommand *wifiCommand = new CustomCommand("wifi", [](const String &command)
                                                {
     String operation = CommandParser::GetCommandParameter(command, 1);
     if (!operation.compareTo("connect"))

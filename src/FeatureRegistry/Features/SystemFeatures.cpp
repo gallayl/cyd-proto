@@ -1,13 +1,13 @@
 #include "SystemFeatures.h"
 
 // define commands
-CustomCommand *resetCommand = new CustomCommand("restart", [](String command)
+CustomCommand *resetCommand = new CustomCommand("restart", [](const String &command)
                                                 {
     delay(100);
     ESP.restart();
     return String("{\"event\": \"restart\"}"); });
 
-CustomCommand *getRegisteredFeatures = new CustomCommand("getRegisteredFeatures", [](String command)
+CustomCommand *getRegisteredFeatures = new CustomCommand("getRegisteredFeatures", [](const String &command)
                                                          {
     String output;
     serializeJson(registeredFeatures, output);
@@ -41,10 +41,10 @@ ArRequestHandlerFunction getInfoAction = [](AsyncWebServerRequest *request)
 // feature object
 Feature *SystemFeatures = new Feature("SystemFeatures", []()
                                       {
-    CommandInterpreterInstance->RegisterCommand(*wifiCommand);
-    CommandInterpreterInstance->RegisterCommand(*resetCommand);
-    CommandInterpreterInstance->RegisterCommand(*getRegisteredFeatures);
-    CommandInterpreterInstance->RegisterCommand(*infoCustomCommand);
+    CommandInterpreterInstance->RegisterCommand(wifiCommand);
+    CommandInterpreterInstance->RegisterCommand(resetCommand);
+    CommandInterpreterInstance->RegisterCommand(getRegisteredFeatures);
+    CommandInterpreterInstance->RegisterCommand(infoCustomCommand);
 
     server.on("/features", HTTP_GET, getFeaturesAction);
     server.on("/restart", HTTP_POST, reset);
@@ -53,8 +53,8 @@ Feature *SystemFeatures = new Feature("SystemFeatures", []()
     // Init and register low level features and commands
     initRgbLed();
     initLightSensor();
-    CommandInterpreterInstance->RegisterCommand(*rgbLedCustomCommand);
-    CommandInterpreterInstance->RegisterCommand(*getLightSensorValueCommand);
-    CommandInterpreterInstance->RegisterCommand(*getHallSensorValueCommand);
+    CommandInterpreterInstance->RegisterCommand(rgbLedCustomCommand);
+    CommandInterpreterInstance->RegisterCommand(getLightSensorValueCommand);
+    CommandInterpreterInstance->RegisterCommand(getHallSensorValueCommand);
 
     return FeatureState::RUNNING; }, []() {});

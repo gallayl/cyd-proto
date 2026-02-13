@@ -4,7 +4,7 @@
 
 extern LGFX tft;
 
-static String pageCommandHandler(String command)
+static String pageCommandHandler(const String &command)
 {
     String sub = CommandParser::GetCommandParameter(command, 1);
 
@@ -27,5 +27,5 @@ static String pageCommandHandler(String command)
     return String(String("{\"event\":\"page\",\"error\":\"unknown\",\"sub\":\"") + sub + String("\"}"));
 }
 
-CustomCommand *pageCustomCommand = new CustomCommand("page", [](String command)
+CustomCommand *pageCustomCommand = new CustomCommand("page", [](const String &command)
                                                      { return pageCommandHandler(command); });

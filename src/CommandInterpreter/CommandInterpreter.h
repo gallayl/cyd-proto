@@ -14,11 +14,16 @@ private:
 public:
     CommandInterpreter()
     {
-        // this->RegisterCommand(*infoAction);
+        // this->RegisterCommand(infoAction);
     }
 
-    void RegisterCommand(const CustomCommand &newCommand)
+    void RegisterCommand(CustomCommand *newCommand)
     {
+        if (this->_registeredCommandsCount >= COMMANDS_SIZE)
+        {
+            Serial.println(F("Command registry full, cannot register"));
+            return;
+        }
         this->RegisteredCommands[this->_registeredCommandsCount] = newCommand;
         this->_registeredCommandsCount++;
     }
@@ -30,7 +35,7 @@ public:
         uint16_t commandId;
         for (commandId = 0; commandId < this->_registeredCommandsCount; commandId++)
         {
-            commands += this->RegisteredCommands[commandId].GetCommandName() + ", ";
+            commands += this->RegisteredCommands[commandId]->GetCommandName() + ", ";
         };
         return commands;
     }
@@ -39,17 +44,17 @@ public:
     {
         for (uint8_t i = 0; i < this->_registeredCommandsCount; i++)
         {
-            String commandName = this->RegisteredCommands[i].GetCommandName();
+            const String &commandName = this->RegisteredCommands[i]->GetCommandName();
             if (command.equals(commandName) || command.startsWith(commandName + " "))
             {
-                String result = this->RegisteredCommands[i].Execute(command);
+                String result = this->RegisteredCommands[i]->Execute(command);
                 return result;
             }
         }
         return String("{\"message\": \"Unknown command: " + CommandParser::GetCommandName(command) + ".\", \"availableCommands\": \"" + this->getAvailableCommands() + "\"}");
     }
 
-    CustomCommand RegisteredCommands[COMMANDS_SIZE];
+    CustomCommand *RegisteredCommands[COMMANDS_SIZE] = {};
 };
 
 extern CommandInterpreter *CommandInterpreterInstance;

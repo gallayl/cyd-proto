@@ -19,7 +19,8 @@ void initWebSockets()
         }
         else if (type == WS_EVT_DATA)
         {
-            String str = String((char *)data).substring(0, len);
+            String str;
+            str.concat((const char *)data, len);
             String response = CommandInterpreterInstance->ExecuteCommand(str);
             client->text(response);
         } });

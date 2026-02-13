@@ -1,6 +1,6 @@
 #include "rgbLedCommand.h"
 
-CustomCommand *rgbLedCustomCommand = new CustomCommand("rgbLed", [](String command)
+CustomCommand *rgbLedCustomCommand = new CustomCommand("rgbLed", [](const String &command)
                                                        {
                                                            const String sub = CommandParser::GetCommandParameter(command, 1);
                                                            if (sub == "setColor")
@@ -14,7 +14,7 @@ CustomCommand *rgbLedCustomCommand = new CustomCommand("rgbLed", [](String comma
                                                            else if (sub == "off")
                                                            {
                                                                setRgbLedColor(0, 0, 0);
-                                                               LoggerInstance->Info("Turned off RGB LED");
+                                                               LoggerInstance->Info(F("Turned off RGB LED"));
                                                            }
                                                            else
                                                            {

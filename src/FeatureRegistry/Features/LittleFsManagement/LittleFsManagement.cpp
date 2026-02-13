@@ -3,7 +3,7 @@
 Feature *LittleFsFeature = new Feature("LittleFsFeatures", []()
                                        {
     // Register, even if the feature setup fails, so that the command is available to fix the issue (e.g. by formatting the filesystem)
-    CommandInterpreterInstance->RegisterCommand(*formatCustomCommand);
+    CommandInterpreterInstance->RegisterCommand(formatCustomCommand);
 
     if (!LittleFS.begin())
     {
@@ -11,7 +11,7 @@ Feature *LittleFsFeature = new Feature("LittleFsFeatures", []()
         return FeatureState::ERROR;
     }
 
-    CommandInterpreterInstance->RegisterCommand(*showFileListCustomCommand);
+    CommandInterpreterInstance->RegisterCommand(showFileListCustomCommand);
     return FeatureState::RUNNING; }, []() {
 
                                        });

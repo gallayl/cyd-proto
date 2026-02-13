@@ -20,7 +20,7 @@ inline void readCalibrationData()
             if (f.readBytes((char *)calData, 16) == 16)
                 tft.setTouchCalibrate(calData); // LovyanGFX
             f.close();
-            LoggerInstance->Info("Touch calibration data loaded from LittleFS");
+            LoggerInstance->Info(F("Touch calibration data loaded from LittleFS"));
         }
     }
 }

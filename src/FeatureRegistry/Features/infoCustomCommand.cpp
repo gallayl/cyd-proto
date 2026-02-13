@@ -25,7 +25,7 @@ JsonDocument getInfo()
     return response;
 }
 
-CustomCommand *infoCustomCommand = new CustomCommand("info", [](String command)
+CustomCommand *infoCustomCommand = new CustomCommand("info", [](const String &command)
                                                      {
     JsonDocument response = getInfo();
     String output;

@@ -22,7 +22,7 @@ typedef void (*LogListener)(const String &, const String &);
 class Logger
 {
 public:
-    JsonDocument getEntries()
+    const JsonDocument &getEntries() const
     {
         return this->entries;
     }

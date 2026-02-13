@@ -3,14 +3,14 @@
 // the TFT object is defined elsewhere (UiFeature.cpp)
 extern LGFX tft;
 
-static String screenCommandHandler(String command)
+static String screenCommandHandler(const String &command)
 {
     String sub = CommandParser::GetCommandParameter(command, 1);
 
     if (sub == "calibrate")
     {
         calibrateScreen();
-        LoggerInstance->Info("Calibrated touch screen");
+        LoggerInstance->Info(F("Calibrated touch screen"));
         return String("{\"event\":\"calibrate\", \"status\":\"success\"}");
     }
     else if (sub == "demo")
@@ -25,7 +25,7 @@ static String screenCommandHandler(String command)
         tft.drawCircle(120, 160, 50, TFT_MAGENTA);
         tft.drawEllipse(200, 160, 60, 40, TFT_GOLD);
 
-        LoggerInstance->Info("Displayed hello world demo");
+        LoggerInstance->Info(F("Displayed hello world demo"));
         return String("{\"event\":\"helloDemo\"}");
     }
     else if (sub == "rotate")
@@ -49,7 +49,7 @@ static String screenCommandHandler(String command)
             color = (uint16_t)strtoul(colorParam.c_str(), NULL, 0);
         }
         tft.fillScreen(color);
-        LoggerInstance->Info("Screen cleared");
+        LoggerInstance->Info(F("Screen cleared"));
         return String(String("{\"event\":\"clear\",\"color\":\"") + colorParam + String("\"}"));
     }
     else if (sub == "text")
@@ -146,5 +146,5 @@ static String screenCommandHandler(String command)
     return String(String("{\"event\":\"screen\",\"error\":\"unknown\",\"sub\":\"") + sub + String("\"}"));
 }
 
-CustomCommand *screenCustomCommand = new CustomCommand("screen", [](String command)
+CustomCommand *screenCustomCommand = new CustomCommand("screen", [](const String &command)
                                                        { return screenCommandHandler(command); });

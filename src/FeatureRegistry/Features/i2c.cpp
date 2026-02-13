@@ -1,7 +1,7 @@
 #include "i2c.h"
 
 // define command object
-CustomCommand *i2cCommand = new CustomCommand("i2c", [](String command)
+CustomCommand *i2cCommand = new CustomCommand("i2c", [](const String &command)
                                               {
     String sub = CommandParser::GetCommandParameter(command, 1);
     if (sub == "scan")
@@ -17,8 +17,9 @@ CustomCommand *i2cCommand = new CustomCommand("i2c", [](String command)
     else if (sub == "write")
     {
         uint16_t address = strtol(CommandParser::GetCommandParameter(command, 2).c_str(), 0, 16);
-        command.replace("i2c write ", "");
-        writeDevice(address, command);
+        String prefix = "i2c write " + CommandParser::GetCommandParameter(command, 2) + " ";
+        String data = command.substring(prefix.length());
+        writeDevice(address, data);
         return String("Written.");
     }
 
@@ -30,7 +31,7 @@ Feature *i2cFeature = new Feature("i2c", []()
                                   {
     Wire.begin();
 
-    CommandInterpreterInstance->RegisterCommand(*i2cCommand);
+    CommandInterpreterInstance->RegisterCommand(i2cCommand);
 
     server.on("/i2c", HTTP_GET, [](AsyncWebServerRequest *request) {
         request->send(200, MIME_json, scanDevices());

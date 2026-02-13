@@ -44,53 +44,58 @@ public:
 
         void Init()
         {
-                this->RegisterFeature(*TimeFeature);
-                this->RegisterFeature(*LoggingFeature);
-                this->RegisterFeature(*SystemFeatures);
+                this->RegisterFeature(TimeFeature);
+                this->RegisterFeature(LoggingFeature);
+                this->RegisterFeature(SystemFeatures);
 
 #if ENABLE_SERIAL_READ
-                this->RegisterFeature(*SerialReadFeature);
+                this->RegisterFeature(SerialReadFeature);
 #endif
 
 #if ENABLE_LITTLEFS
-                this->RegisterFeature(*LittleFsFeature);
+                this->RegisterFeature(LittleFsFeature);
 #endif
 
 #if ENABLE_PIR_SENSOR
-                this->RegisterFeature(*PirFeature);
+                this->RegisterFeature(PirFeature);
 #endif
 
 #if ENABLE_I2C
-                this->RegisterFeature(*i2cFeature);
+                this->RegisterFeature(i2cFeature);
 #endif
 
 #if ENABLE_OTA
-                this->RegisterFeature(*OtaUpgrade);
+                this->RegisterFeature(OtaUpgrade);
 #endif
 
 #if ENABLE_UI
-                this->RegisterFeature(*UiFeature);
+                this->RegisterFeature(UiFeature);
 #endif
         }
 
-        void RegisterFeature(const Feature &newFeature)
+        void RegisterFeature(Feature *newFeature)
         {
+                if (this->_registeredFeaturesCount >= FEATURES_SIZE)
+                {
+                        LoggerInstance->Error(F("Feature registry full, cannot register"));
+                        return;
+                }
                 this->RegisteredFeatures[this->_registeredFeaturesCount] = newFeature;
                 this->_registeredFeaturesCount++;
-                const String &featureName = newFeature.GetFeatureName();
+                const String &featureName = newFeature->GetFeatureName();
 
                 JsonObject featureEntry = registeredFeatures[featureName].to<JsonObject>();
                 featureEntry["name"] = featureName;
-                featureEntry["state"] = (int)newFeature.GetFeatureState();
+                featureEntry["state"] = (int)newFeature->GetFeatureState();
         }
 
         void SetupFeatures()
         {
                 for (uint8_t i = 0; i < this->_registeredFeaturesCount; i++)
                 {
-                        String featureName = this->RegisteredFeatures[i].GetFeatureName();
+                        const String &featureName = this->RegisteredFeatures[i]->GetFeatureName();
                         LoggerInstance->Info("Setting up feature: " + featureName);
-                        FeatureState newState = this->RegisteredFeatures[i].Setup();
+                        FeatureState newState = this->RegisteredFeatures[i]->Setup();
                         JsonObject feature = registeredFeatures[featureName];
                         feature["state"].set((int)newState);
                 }
@@ -100,11 +105,11 @@ public:
         {
                 for (uint8_t i = 0; i < this->_registeredFeaturesCount; i++)
                 {
-                        this->RegisteredFeatures[i].Loop();
+                        this->RegisteredFeatures[i]->Loop();
                 }
         }
 
-        Feature RegisteredFeatures[FEATURES_SIZE];
+        Feature *RegisteredFeatures[FEATURES_SIZE] = {};
 };
 
 extern FeatureRegistry *FeatureRegistryInstance;
