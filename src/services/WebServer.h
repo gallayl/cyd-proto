@@ -12,5 +12,4 @@
 
 extern AsyncWebServer server;
 
-void initWebServer()
-;
+void initWebServer();

@@ -13,7 +13,7 @@ inline void setRgbLedColor(uint8_t r, uint8_t g, uint8_t b)
     analogWrite(RGB_LED_B_PIN, 255 - b);
 }
 
-void initRgbLed()
+inline void initRgbLed()
 {
     pinMode(RGB_LED_R_PIN, OUTPUT);
     pinMode(RGB_LED_G_PIN, OUTPUT);

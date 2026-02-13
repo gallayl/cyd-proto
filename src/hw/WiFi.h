@@ -69,7 +69,7 @@ inline void startStaMode(String ssid, String staPassPharse)
     }
 }
 
-void initWifi()
+inline void initWifi()
 {
     WiFi.mode(WIFI_AP);
     WiFi.begin();

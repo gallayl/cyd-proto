@@ -8,7 +8,7 @@ inline void initLightSensor()
     // No specific initialization needed for the light sensor
 }
 
-uint16_t readLightSensor()
+inline uint16_t readLightSensor()
 {
     return analogRead(LIGHT_SENSOR_PIN);
 }

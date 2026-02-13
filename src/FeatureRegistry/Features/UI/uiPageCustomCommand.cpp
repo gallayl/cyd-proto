@@ -1,4 +1,5 @@
 #include "uiPageCustomCommand.h"
+#include "./screens/rgbled.h"
 
 extern LGFX tft;
 
@@ -15,7 +16,7 @@ static String pageCommandHandler(String command)
 
     if (sub == "rgb" || sub == "rgbled")
     {
-        rgbLedPage();
+        showRgbLedScreen();
         LoggerInstance->Info("Showing rgbled page");
         return String("{\"event\":\"page\", \"status\":\"success\", \"page\":\"rgb\"}");
     }

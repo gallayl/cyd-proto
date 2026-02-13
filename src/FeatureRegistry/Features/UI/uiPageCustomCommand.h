@@ -7,8 +7,8 @@
 #include "../../../CommandInterpreter/CommandParser.h"
 #include "../Logging.h"
 #include "./Calibration.h"
-#include "./pages/welcome.h"
-#include "./pages/rgbled.h"
+#include "./screens/welcome.h"
+#include "./screens/rgbled.h"
 
 extern LGFX tft;
 
