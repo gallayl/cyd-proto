@@ -1,6 +1,6 @@
 #pragma once
 #include <LovyanGFX.hpp>
-#include "./LovyanGFX_ILI9341_Settings.h"
+#include "../../../hw/LovyanGFX_ILI9341_Settings.h"
 #include <LittleFS.h>
 #include "../Logging.h"
 

@@ -2,8 +2,7 @@
 #include "./cydConfig.h"
 #include <XPT2046_Touchscreen_TT.h>
 #include <LovyanGFX.hpp>
-#include "./LovyanGFX_ILI9341_Settings.h"
-
+#include "../../../hw/Screen.h"
 #include "../../Feature.h"
 #include "../../../CommandInterpreter/CommandInterpreter.h"
 #include "../Logging.h"
@@ -14,12 +13,8 @@
 #include "./rotateScreenCommand.h"
 #include "./Calibration.h"
 
-LGFX tft;
-
 Feature *UiFeature = new Feature("UI", []()
                                  {    
-    tft.init();
-
     tft.fillScreen(TFT_BLACK);
 
     tft.setTextColor(TFT_WHITE, TFT_BLACK);

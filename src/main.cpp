@@ -3,6 +3,7 @@
 #include "./services/WebServer.h"
 #include "./services/WebSocketServer.h"
 #include "./hw/WiFi.h"
+#include "./hw/Screen.h"
 #include "./FeatureRegistry/FeatureRegistry.h"
 
 int16_t throttleValue = 0;
@@ -14,6 +15,7 @@ void setup()
 
     Serial.println("Starting up Sticky...");
 
+    initScreen();
     initWifi();
     initWebServer();
     initWebSockets();

@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 #include <LovyanGFX.hpp>
-#include "./LovyanGFX_ILI9341_Settings.h"
+#include "../../../hw/LovyanGFX_ILI9341_Settings.h"
 #include "../../../CommandInterpreter/CustomCommand.h"
 #include "../../../CommandInterpreter/CommandParser.h"
 #include "../Logging.h"

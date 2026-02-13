@@ -1,11 +1,9 @@
 #pragma once
 
 #include <LovyanGFX.hpp>
-#include "./LovyanGFX_ILI9341_Settings.h"
+#include "../../../hw/Screen.h"
 #include "../../../CommandInterpreter/CustomCommand.h"
 #include "../Logging.h"
-
-extern LGFX tft;
 
 CustomCommand *helloDemoCustomCommand = new CustomCommand("hello", [](String command)
                                                           {    

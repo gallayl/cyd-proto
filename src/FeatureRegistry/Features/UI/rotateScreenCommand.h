@@ -2,13 +2,10 @@
 
 #include <stdlib.h>
 #include <LovyanGFX.hpp>
-#include "./LovyanGFX_ILI9341_Settings.h"
+#include "../../../hw/Screen.h"
 #include "../../../CommandInterpreter/CustomCommand.h"
 #include "../../../CommandInterpreter/CommandParser.h"
 #include "../Logging.h"
-
-// the TFT object is defined in UiFeature.h
-extern LGFX tft;
 
 CustomCommand *rotateScreenCustomCommand = new CustomCommand("rotate", [](String command)
                                                              {
