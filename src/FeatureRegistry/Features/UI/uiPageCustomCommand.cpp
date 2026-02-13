@@ -1,4 +1,5 @@
 #include "uiPageCustomCommand.h"
+#include "./screens/welcome.h"
 #include "./screens/rgbled.h"
 
 extern LGFX tft;

@@ -1,8 +1,7 @@
 #pragma once
 
-#include "../../../../hw/RgbLed.h" // adjust relative include path
+#include "../screens.h"
 
-inline void showRgbLedScreen()
-{
-    // TODO
-}
+// forward declaration only; implementation in screens.cpp
+
+void showRgbLedScreen();

@@ -1,5 +1,7 @@
+#pragma once
 
-inline void showWelcomeScreen()
-{
-    // TODO
-}
+#include "../screens.h"
+
+// forward declaration only; implementation in screens.cpp
+
+void showWelcomeScreen();
