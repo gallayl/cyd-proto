@@ -104,19 +104,23 @@ namespace UI
         bool handleTouchEnd(int px, int py)
         {
             bool handled = false;
+
+            // if we started the touch on the start button, fire the callback
+            // regardless of where the finger is lifted.  this matches normal
+            // "tap" behaviour and avoids situations where a tiny finger shift
+            // causes the click to be ignored.
+            if (startPressed)
+            {
+                if (onStartClick)
+                    onStartClick();
+                handled = true;
+            }
+
+            // now check for app buttons using the original touch-down index
             if (py >= Theme::TaskbarY)
             {
                 int tbY = Theme::TaskbarY;
                 int tbH = Theme::TaskbarHeight;
-
-                if (startPressed &&
-                    px >= 2 && px < 2 + Theme::StartButtonWidth &&
-                    py >= tbY + 2 && py < tbY + tbH - 2)
-                {
-                    if (onStartClick)
-                        onStartClick();
-                    handled = true;
-                }
 
                 int appX = Theme::StartButtonWidth + 6;
                 int appBtnW = 0;
@@ -140,6 +144,8 @@ namespace UI
                     }
                 }
             }
+
+            // reset state after handling the end of touch
             startPressed = false;
             touchedAppIndex = -1;
             return handled;

@@ -16,7 +16,7 @@ namespace UI
     inline bool initRenderer()
     {
         auto &c = canvas();
-        c.setColorDepth(16);
+        c.setColorDepth(8);
         return c.createSprite(tft.width(), tft.height()) != nullptr;
     }
 
