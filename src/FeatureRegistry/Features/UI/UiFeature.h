@@ -1,5 +1,4 @@
 #pragma once
-#include "./cydConfig.h"
 #include <XPT2046_Touchscreen_TT.h>
 #include <LovyanGFX.hpp>
 #include "../../../hw/Screen.h"
@@ -7,10 +6,7 @@
 #include "../../../CommandInterpreter/CommandInterpreter.h"
 #include "../Logging.h"
 
-#include "./clearScreenCustomCommand.h"
-#include "./helloCustomCommand.h"
-#include "./calibrateCustomCommand.h"
-#include "./rotateScreenCommand.h"
+#include "./screenCustomCommand.h"
 #include "./Calibration.h"
 
 Feature *UiFeature = new Feature("UI", []()
@@ -25,11 +21,8 @@ Feature *UiFeature = new Feature("UI", []()
     readCalibrationData();
 
 
-    // register our custom commands
-    CommandInterpreterInstance->RegisterCommand(*clearScreenCustomCommand);
-    CommandInterpreterInstance->RegisterCommand(*helloDemoCustomCommand);
-    CommandInterpreterInstance->RegisterCommand(*calibrateCustomCommand);
-    CommandInterpreterInstance->RegisterCommand(*rotateScreenCustomCommand);
+    // register our consolidated "screen" namespace command
+    CommandInterpreterInstance->RegisterCommand(*screenCustomCommand);
 
 
     LoggerInstance->Info("UI feature initialized");
