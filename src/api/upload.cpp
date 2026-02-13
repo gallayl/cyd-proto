@@ -1,14 +1,13 @@
 #include "upload.h"
 #include <LittleFS.h>
-#include "../mime.h"  // for MIME_plainText/MIME_json
+#include "../mime.h" // for MIME_plainText/MIME_json
 
 ArRequestHandlerFunction onPostUploadFiles = ([](AsyncWebServerRequest *request)
                                               {
     boolean shouldReboot = !Update.hasError();
     AsyncWebServerResponse *response = request->beginResponse(200, MIME_plainText, shouldReboot ? "OK" : "FAIL");
     response->addHeader("Connection", "close");
-    request->send(response);
-});
+    request->send(response); });
 
 ArUploadHandlerFunction uploadFiles = ([](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
                                        {
@@ -32,5 +31,4 @@ ArUploadHandlerFunction uploadFiles = ([](AsyncWebServerRequest *request, String
     {
         LoggerInstance->Info("Upload finished");
         request->send(200, MIME_json, "{\"status\":\"ok\"}");
-    };
-});
+    }; });

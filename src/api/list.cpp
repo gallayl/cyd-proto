@@ -44,5 +44,4 @@ ArRequestHandlerFunction listFiles = ([](AsyncWebServerRequest *request)
 
                                           String responseStr;
                                           serializeJson(response, responseStr);
-                                          request->send(200, MIME_json, responseStr);
-                                      });
+                                          request->send(200, MIME_json, responseStr); });
