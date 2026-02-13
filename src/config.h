@@ -30,5 +30,3 @@
  * Enable the UI/display feature (TFT + touch)
  */
 #define ENABLE_UI true
-
-

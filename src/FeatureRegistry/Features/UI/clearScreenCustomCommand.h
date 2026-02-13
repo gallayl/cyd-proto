@@ -20,5 +20,4 @@ CustomCommand *clearScreenCustomCommand = new CustomCommand("info", [](String co
                                                                 }
                                                                 tft.fillScreen(color);
                                                                 LoggerInstance->Info("Screen cleared");
-                                                                return String(String("{\"event\":\"clear\",\"color\":") + colorParam + String("}"));
-                                                            });
+                                                                return String(String("{\"event\":\"clear\",\"color\":") + colorParam + String("}")); });

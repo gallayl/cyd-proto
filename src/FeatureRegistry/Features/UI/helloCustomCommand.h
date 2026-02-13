@@ -7,7 +7,7 @@
 extern TFT_eSPI tft;
 
 CustomCommand *helloDemoCustomCommand = new CustomCommand("hello", [](String command)
-{    
+                                                          {    
     // simple hello world demo on the TFT
     tft.fillScreen(TFT_BLACK);
     tft.setCursor(0, 0);
@@ -15,5 +15,4 @@ CustomCommand *helloDemoCustomCommand = new CustomCommand("hello", [](String com
     tft.setTextSize(2);
     tft.println("Hello World!");
     LoggerInstance->Info("Displayed hello world demo");
-    return String("{\"event\":\"helloDemo\"}");
-});
+    return String("{\"event\":\"helloDemo\"}"); });
