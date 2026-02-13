@@ -8,7 +8,7 @@ extern LGFX tft;
 
 #define CALIBRATION_FILE "/CalDatLolyLfs9341"
 
-void readCalibrationData()
+inline void readCalibrationData()
 {
     uint16_t calData[8];
 
@@ -25,7 +25,7 @@ void readCalibrationData()
     }
 }
 
-void calibrateScreen()
+inline void calibrateScreen()
 {
     uint16_t calData[8];
 

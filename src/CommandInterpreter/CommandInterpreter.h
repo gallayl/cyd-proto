@@ -52,4 +52,4 @@ public:
     CustomCommand RegisteredCommands[COMMANDS_SIZE];
 };
 
-CommandInterpreter *CommandInterpreterInstance = new CommandInterpreter();
+extern CommandInterpreter *CommandInterpreterInstance;

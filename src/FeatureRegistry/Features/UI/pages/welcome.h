@@ -1,6 +1,6 @@
 #include <lvgl.h>
 
-void showWelcomeScreen()
+inline void showWelcomeScreen()
 {
     // Create a new screen
     lv_obj_t *welcomeScreen = lv_obj_create(NULL);

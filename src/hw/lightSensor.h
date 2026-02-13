@@ -3,7 +3,7 @@
 
 #define LIGHT_SENSOR_PIN 34
 
-void initLightSensor()
+inline void initLightSensor()
 {
     // No specific initialization needed for the light sensor
 }

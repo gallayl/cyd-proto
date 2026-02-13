@@ -108,4 +108,4 @@ public:
         Feature RegisteredFeatures[FEATURES_SIZE];
 };
 
-FeatureRegistry *FeatureRegistryInstance = new FeatureRegistry();
+extern FeatureRegistry *FeatureRegistryInstance;

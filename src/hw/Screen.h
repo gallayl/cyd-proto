@@ -3,9 +3,9 @@
 #include <LovyanGFX.hpp>
 #include "./LovyanGFX_ILI9341_Settings.h"
 
-LGFX tft;
+extern LGFX tft;
 
-void initScreen()
+inline void initScreen()
 {
     tft.init();
 }

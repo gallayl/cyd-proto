@@ -1,3 +1,5 @@
 #pragma once
 
-JsonDocument registeredFeatures = JsonDocument().to<JsonObject>();
+#include <ArduinoJson.h>
+
+extern JsonDocument registeredFeatures;

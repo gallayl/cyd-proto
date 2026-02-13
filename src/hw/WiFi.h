@@ -9,7 +9,7 @@
 // ensure logger declaration available (guard against include order)
 extern Logger *LoggerInstance;
 
-String getSignalStrength(int32_t rssi)
+inline String getSignalStrength(int32_t rssi)
 {
     if (rssi > -30)
     {
@@ -34,7 +34,7 @@ String getSignalStrength(int32_t rssi)
     return F("Unknown");
 }
 
-String getEncryptionType(wifi_auth_mode_t mode)
+inline String getEncryptionType(wifi_auth_mode_t mode)
 {
     // translate ESP32 wifi_auth_mode_t to human readable strings
     switch (mode)
@@ -60,7 +60,7 @@ String getEncryptionType(wifi_auth_mode_t mode)
     }
 }
 
-void startStaMode(String ssid, String staPassPharse)
+inline void startStaMode(String ssid, String staPassPharse)
 {
     if (WiFi.getMode() == WIFI_AP && WiFi.begin() != WL_CONNECTED)
     {

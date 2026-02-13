@@ -29,7 +29,7 @@ static void rgb_slider_event_cb(lv_event_t *e)
     lv_obj_set_style_bg_color(colorPreview, lv_color_make(curR, curG, curB), 0);
 }
 
-void rgbLedPage()
+inline void rgbLedPage()
 {
     // create new screen and load
     lv_obj_t *screen = lv_obj_create(NULL);
