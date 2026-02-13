@@ -1,14 +1,28 @@
-#include <Arduino.h>
+#include "./cydConfig.h"
+#include <Wire.h>
+#include "./CommandInterpreter/CommandInterpreter.h"
+#include "./services/WebServer.h"
+#include "./services/WebSocketServer.h"
+#include "./hw/WiFi.h"
+#include "./FeatureRegistry/FeatureRegistry.h"
 
-// put function declarations here:
-int myFunction(int, int);
+int16_t throttleValue = 0;
+int16_t steerValue = 0;
 
-void setup() {
-  Serial.begin(115200
-  );
-  Serial.println("CYD Init!");
+void setup()
+{
+    Serial.begin(115200);
+
+    Serial.println("Starting up Sticky...");
+
+    initWifi();
+    initWebServer();
+    initWebSockets();
+
+    FeatureRegistryInstance->SetupFeatures();
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
+void loop()
+{
+    FeatureRegistryInstance->LoopFeatures();
 }
