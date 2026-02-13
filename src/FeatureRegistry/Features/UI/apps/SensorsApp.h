@@ -3,6 +3,7 @@
 #include "../App.h"
 #include "../elements/container.h"
 #include "../elements/label.h"
+#include "../elements/button.h"
 #include "../Theme.h"
 #include "../../../../hw/lightSensor.h"
 #include <Arduino.h>
@@ -52,24 +53,21 @@ namespace UI
             lbl2->setAlign(TextAlign::LEFT);
             hallLabel = lbl2.get();
             cont.addChild(std::move(lbl2));
+            curY += rowH + 8;
+
+            auto refreshBtn = std::make_unique<Button>("Refresh", cx + 4, curY, 70, 22);
+            refreshBtn->setBackgroundColor(Theme::ButtonFace);
+            refreshBtn->setTextColor(Theme::TextColor, Theme::ButtonFace);
+            refreshBtn->setCallback([this]()
+                                    { refreshValues(); });
+            cont.addChild(std::move(refreshBtn));
 
             refreshValues();
-        }
-
-        void loop() override
-        {
-            unsigned long now = millis();
-            if (now - lastRefresh > 1000)
-            {
-                refreshValues();
-                lastRefresh = now;
-            }
         }
 
     private:
         Label *lightLabel{nullptr};
         Label *hallLabel{nullptr};
-        unsigned long lastRefresh{0};
 
         void refreshValues()
         {

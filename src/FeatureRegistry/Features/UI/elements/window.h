@@ -22,6 +22,7 @@ namespace UI
               content()
         {
             setBounds(ix, iy, iw, ih);
+            content.setBounds(contentX(), contentY(), contentW(), contentH());
             titleLabel.setTextSize(1);
             closeBtn.setTextSize(1);
             closeBtn.setBackgroundColor(Theme::ButtonFace);
