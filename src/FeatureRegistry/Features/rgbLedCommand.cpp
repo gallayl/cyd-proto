@@ -20,5 +20,4 @@ CustomCommand *rgbLedCustomCommand = new CustomCommand("rgbLed", [](String comma
                                                            {
                                                                LoggerInstance->Error("Unknown rgbLed subcommand: " + sub);
                                                            }
-                                                           return String("{\"event\": \"rgbLedCommandExecuted\"}");
-                                                       });
+                                                           return String("{\"event\": \"rgbLedCommandExecuted\"}"); });

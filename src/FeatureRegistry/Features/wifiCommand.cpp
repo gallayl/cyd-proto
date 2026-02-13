@@ -90,5 +90,4 @@ CustomCommand *wifiCommand = new CustomCommand("wifi", [](String command)
         WiFi.begin();
         return String("{\"event\": \"disconnecting\"}");
     }
-    return String("{\"event\": \"Unknown WiFi operation command. The available commands are: info, list, connect <ssid> <password>, startSTA<ssid, password>, stopSTA\"}");
-});
+    return String("{\"event\": \"Unknown WiFi operation command. The available commands are: info, list, connect <ssid> <password>, startSTA<ssid, password>, stopSTA\"}"); });

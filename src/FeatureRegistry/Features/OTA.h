@@ -4,7 +4,7 @@
 #include <Update.h>
 #include "../Feature.h"
 #include "../../services/WebServer.h"
-#include "../../services/WebSocketServer.h"  // for webSocket
+#include "../../services/WebSocketServer.h" // for webSocket
 
 #define REFRESH_TIMEOUT_AFTER_UPDATE "30"
 

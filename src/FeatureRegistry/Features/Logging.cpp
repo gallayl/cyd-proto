@@ -8,8 +8,7 @@ CustomCommand *showLogCustomCommand = new CustomCommand("showLog", [](String com
     char buffer[LOG_BUFFER_LENGTH];
     JsonDocument response = LoggerInstance->getEntries();
     serializeJson(response, buffer);
-    return String(buffer);
-});
+    return String(buffer); });
 
 ArRequestHandlerFunction showLogRequestHandler = [](AsyncWebServerRequest *request)
 {
@@ -25,5 +24,4 @@ Feature *LoggingFeature = new Feature("Logging", []()
                                       {
     CommandInterpreterInstance->RegisterCommand(*showLogCustomCommand);
     server.on("/log", HTTP_GET, showLogRequestHandler);
-    return FeatureState::RUNNING;
-}, []() {});
+    return FeatureState::RUNNING; }, []() {});

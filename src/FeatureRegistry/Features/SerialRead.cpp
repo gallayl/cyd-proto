@@ -1,9 +1,9 @@
 #include "SerialRead.h"
 #include <Arduino.h>
 
-Feature *SerialReadFeature = new Feature("SerialRead",
-                                        []() -> FeatureState { return FeatureState::RUNNING; },
-                                        []() {
+Feature *SerialReadFeature = new Feature("SerialRead", []() -> FeatureState
+                                         { return FeatureState::RUNNING; }, []()
+                                         {
                                             if (Serial.available())
                                             {
                                                 String command = Serial.readStringUntil('\n');
@@ -11,5 +11,4 @@ Feature *SerialReadFeature = new Feature("SerialRead",
                                                 command.replace("\r", "");
                                                 String response = CommandInterpreterInstance->ExecuteCommand(command);
                                                 Serial.println(response);
-                                            }
-                                        });
+                                            } });

@@ -10,11 +10,11 @@ class CommandInterpreter
 {
 private:
     uint8_t _registeredCommandsCount = 0;
-public:
 
+public:
     CommandInterpreter()
     {
-            // this->RegisterCommand(*infoAction);
+        // this->RegisterCommand(*infoAction);
     }
 
     void RegisterCommand(CustomCommand newCommand)
@@ -51,6 +51,5 @@ public:
 
     CustomCommand RegisteredCommands[COMMANDS_SIZE];
 };
-
 
 CommandInterpreter *CommandInterpreterInstance = new CommandInterpreter();

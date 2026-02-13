@@ -1,5 +1,5 @@
 #include "OTA.h"
-#include "../../services/WebSocketServer.h"  // ensure webSocket is declared (fixed relative path)
+#include "../../services/WebSocketServer.h" // ensure webSocket is declared (fixed relative path)
 
 // redundant extern in this translation unit to satisfy IntelliSense
 extern AsyncWebSocket *webSocket;
@@ -11,16 +11,14 @@ ArRequestHandlerFunction getRedirectPage = ([](AsyncWebServerRequest *request)
                                             {
                                                 AsyncWebServerResponse *response = request->beginResponse(200, MIME_html, "<html><head><meta http-equiv=\"refresh\" content=\"30\"></head><body>Update done, page will be refreshed.</body></html>");
                                                 response->addHeader("Refresh", REFRESH_TIMEOUT_AFTER_UPDATE);
-                                                request->send(response);
-                                            });
+                                                request->send(response); });
 
 ArRequestHandlerFunction onPostUpdate = ([](AsyncWebServerRequest *request)
                                          {
                                              boolean shouldReboot = !Update.hasError();
                                              AsyncWebServerResponse *response = request->beginResponse(200, MIME_plainText, shouldReboot ? "OK" : "FAIL");
                                              response->addHeader("Connection", "close");
-                                             request->send(response);
-                                         });
+                                             request->send(response); });
 
 ArUploadHandlerFunction onUploadUpdate = ([](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
                                           {
@@ -69,12 +67,10 @@ ArUploadHandlerFunction onUploadUpdate = ([](AsyncWebServerRequest *request, Str
                                                   {
                                                       Update.printError(Serial);
                                                   }
-                                              }
-                                          });
+                                              } });
 
 Feature *OtaUpgrade = new Feature("OTA", []()
                                   {
                                       server.on("/update", HTTP_GET, getUpdateForm);
                                       server.on("/update", HTTP_POST, onPostUpdate, onUploadUpdate);
-                                      return FeatureState::RUNNING;
-                                  }, []() {});
+                                      return FeatureState::RUNNING; }, []() {});

@@ -31,5 +31,4 @@ CustomCommand *infoCustomCommand = new CustomCommand("info", [](String command)
 
     char buffer[JSON_BUFFER_SIZE];
     serializeJson(response, buffer);
-    return String(buffer);
-});
+    return String(buffer); });

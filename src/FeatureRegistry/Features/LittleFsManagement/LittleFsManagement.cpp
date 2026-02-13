@@ -12,7 +12,6 @@ Feature *LittleFsFeature = new Feature("LittleFsFeatures", []()
     }
 
     CommandInterpreterInstance->RegisterCommand(*showFileListCustomCommand);
-    return FeatureState::RUNNING;
-}, []() {
+    return FeatureState::RUNNING; }, []() {
 
-});
+                                       });

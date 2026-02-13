@@ -10,8 +10,7 @@ CustomCommand *getRegisteredFeatures = new CustomCommand("getRegisteredFeatures"
                                                          {
     char output[1024];
     serializeJson(registeredFeatures, output);
-    return String(output);
-});
+    return String(output); });
 
 // handlers
 ArRequestHandlerFunction getFeaturesAction = [](AsyncWebServerRequest *request)
@@ -56,6 +55,4 @@ Feature *SystemFeatures = new Feature("SystemFeatures", []()
     CommandInterpreterInstance->RegisterCommand(*getLightSensorValueCommand);
     CommandInterpreterInstance->RegisterCommand(*getHallSensorValueCommand);
 
-    return FeatureState::RUNNING;
-}, []() {
-});
+    return FeatureState::RUNNING; }, []() {});

@@ -29,5 +29,4 @@ CustomCommand *showFileListCustomCommand = new CustomCommand("list", [](String c
 
     root.close();
 
-    return String(buffer);
-});
+    return String(buffer); });

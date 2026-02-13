@@ -23,8 +23,7 @@ CustomCommand *i2cCommand = new CustomCommand("i2c", [](String command)
     }
 
     String fallback = "The awailable I2C Commands are: scan, read, write";
-    return fallback;
-});
+    return fallback; });
 
 // feature object
 Feature *i2cFeature = new Feature("i2c", []()
@@ -37,5 +36,4 @@ Feature *i2cFeature = new Feature("i2c", []()
         request->send(200, MIME_json, scanDevices());
     });
 
-    return FeatureState::RUNNING;
-}, []() {});
+    return FeatureState::RUNNING; }, []() {});
