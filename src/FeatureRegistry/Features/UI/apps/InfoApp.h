@@ -8,6 +8,7 @@
 #include "../../infoCustomCommand.h"
 #include <ArduinoJson.h>
 #include <Arduino.h>
+#include <memory>
 
 namespace UI
 {

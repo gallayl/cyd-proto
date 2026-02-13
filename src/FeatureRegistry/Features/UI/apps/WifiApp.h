@@ -7,6 +7,8 @@
 #include "../Theme.h"
 #include "../../../../hw/WiFi.h"
 #include <WiFi.h>
+#include <memory>
+#include <vector>
 
 namespace UI
 {

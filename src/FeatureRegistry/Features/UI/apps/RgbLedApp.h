@@ -5,6 +5,7 @@
 #include "../elements/label.h"
 #include "../elements/button.h"
 #include "../Renderer.h"
+#include <memory>
 #include "../Theme.h"
 #include "../../../../hw/RgbLed.h"
 
