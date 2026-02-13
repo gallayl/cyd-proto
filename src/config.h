@@ -3,7 +3,7 @@
 #define WEBSOCKETS_URL "/ws"
 
 #define STA_SSID "sticky"
-#define STA_PASSPHARSE "sticky1234"
+#define STA_PASSPHRASE "sticky1234"
 
 #define STA_IP "192.168.0.1"
 #define STA_GATEWAY "192.168.0.1"

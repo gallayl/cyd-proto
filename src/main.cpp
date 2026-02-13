@@ -6,9 +6,6 @@
 #include "./hw/Screen.h"
 #include "./FeatureRegistry/FeatureRegistry.h"
 
-int16_t throttleValue = 0;
-int16_t steerValue = 0;
-
 void setup()
 {
     Serial.begin(115200);
@@ -20,6 +17,7 @@ void setup()
     initWebServer();
     initWebSockets();
 
+    FeatureRegistryInstance->Init();
     FeatureRegistryInstance->SetupFeatures();
 }
 

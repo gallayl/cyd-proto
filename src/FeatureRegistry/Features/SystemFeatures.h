@@ -1,3 +1,5 @@
+#pragma once
+
 #include "AsyncJson.h"
 #include "../registeredFeatures.h"
 #include "../Feature.h"

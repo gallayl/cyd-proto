@@ -3,27 +3,29 @@
 // define commands
 CustomCommand *resetCommand = new CustomCommand("restart", [](String command)
                                                 {
+    delay(100);
     ESP.restart();
     return String("{\"event\": \"restart\"}"); });
 
 CustomCommand *getRegisteredFeatures = new CustomCommand("getRegisteredFeatures", [](String command)
                                                          {
-    char output[1024];
+    String output;
     serializeJson(registeredFeatures, output);
-    return String(output); });
+    return output; });
 
 // handlers
 ArRequestHandlerFunction getFeaturesAction = [](AsyncWebServerRequest *request)
 {
-    char output[1024];
+    String output;
     serializeJson(registeredFeatures, output);
     request->send(200, MIME_json, output);
 };
 
 ArRequestHandlerFunction reset = [](AsyncWebServerRequest *request)
 {
-    ESP.restart();
     request->send(200, MIME_json, "{\"event\": \"restart\"}");
+    delay(100);
+    ESP.restart();
 };
 
 ArRequestHandlerFunction getInfoAction = [](AsyncWebServerRequest *request)

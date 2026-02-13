@@ -17,8 +17,8 @@ typedef void (*FeatureLoopFunction)();
 class Feature
 {
 public:
-    Feature(String name = "featureName", FeatureSetupFunction setupCallback = []()
-                                         { return FeatureState::PENDING; },
+    Feature(const String &name = "featureName", FeatureSetupFunction setupCallback = []()
+                                                { return FeatureState::PENDING; },
             FeatureLoopFunction loopCallback = []() {}) : _featureName(name), _onSetup(setupCallback), _onLoop(loopCallback) {};
 
     FeatureState Setup()
@@ -34,12 +34,12 @@ public:
         return this->_onLoop();
     }
 
-    String GetFeatureName()
+    const String &GetFeatureName() const
     {
         return this->_featureName;
     }
 
-    FeatureState GetFeatureState()
+    FeatureState GetFeatureState() const
     {
         return this->_featureState;
     }

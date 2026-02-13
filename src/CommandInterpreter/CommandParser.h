@@ -1,31 +1,28 @@
 #pragma once
 
 #include <Arduino.h>
+#include <vector>
 
 #define COMMAND_DELIMITER " "
 
 class CommandParser
 {
 public:
-    static String GetCommandName(String command)
+    static String GetCommandName(const String &command)
     {
         return CommandParser::GetCommandParameter(command, 0);
     }
 
-    static String GetCommandParameter(String command, uint8_t parameterNo)
+    static String GetCommandParameter(const String &command, uint8_t parameterNo)
     {
-        int str_len = command.length() + 1;
-        char buf[str_len];
-        command.toCharArray(buf, str_len);
-        char *p = buf;
+        size_t str_len = command.length() + 1;
+        std::vector<char> buf(str_len);
+        command.toCharArray(buf.data(), str_len);
+        char *p = buf.data();
         char *str = NULL;
         int currentSegment = 0;
         while (currentSegment++ <= parameterNo && (str = strtok_r(p, COMMAND_DELIMITER, &p)) != NULL)
-        { // delimiter is the semicolon
-          // Serial.print("Segment ");
-          // Serial.print(currentSegment);
-          // Serial.print(" is ");
-          // Serial.println(str);
+        {
         }
         return str ? String(str) : "";
     }

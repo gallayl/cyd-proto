@@ -32,17 +32,17 @@
 #include "./Features/UI/UiFeature.h"
 #endif
 
-#define FEATURES_SIZE 128
+#define FEATURES_SIZE 16
 
 class FeatureRegistry
 {
 private:
-        String _featureNames[FEATURES_SIZE];
-
         uint8_t _registeredFeaturesCount = 0;
 
 public:
-        FeatureRegistry()
+        FeatureRegistry() {}
+
+        void Init()
         {
                 this->RegisterFeature(*TimeFeature);
                 this->RegisterFeature(*LoggingFeature);
@@ -62,7 +62,6 @@ public:
 
 #if ENABLE_I2C
                 this->RegisterFeature(*i2cFeature);
-
 #endif
 
 #if ENABLE_OTA
@@ -74,11 +73,11 @@ public:
 #endif
         }
 
-        void RegisterFeature(Feature newFeature)
+        void RegisterFeature(const Feature &newFeature)
         {
                 this->RegisteredFeatures[this->_registeredFeaturesCount] = newFeature;
                 this->_registeredFeaturesCount++;
-                String featureName = newFeature.GetFeatureName();
+                const String &featureName = newFeature.GetFeatureName();
 
                 JsonObject featureEntry = registeredFeatures[featureName].to<JsonObject>();
                 featureEntry["name"] = featureName;

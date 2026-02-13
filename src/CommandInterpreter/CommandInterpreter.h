@@ -4,7 +4,7 @@
 #include "./CustomCommand.h"
 #include "./CommandParser.h"
 
-#define COMMANDS_SIZE 128
+#define COMMANDS_SIZE 24
 
 class CommandInterpreter
 {
@@ -17,7 +17,7 @@ public:
         // this->RegisterCommand(*infoAction);
     }
 
-    void RegisterCommand(CustomCommand newCommand)
+    void RegisterCommand(const CustomCommand &newCommand)
     {
         this->RegisteredCommands[this->_registeredCommandsCount] = newCommand;
         this->_registeredCommandsCount++;
@@ -35,9 +35,9 @@ public:
         return commands;
     }
 
-    String ExecuteCommand(String command)
+    String ExecuteCommand(const String &command)
     {
-        for (uint8_t i = 0; i < COMMANDS_SIZE; i++)
+        for (uint8_t i = 0; i < this->_registeredCommandsCount; i++)
         {
             String commandName = this->RegisteredCommands[i].GetCommandName();
             if (command.equals(commandName) || command.startsWith(commandName + " "))

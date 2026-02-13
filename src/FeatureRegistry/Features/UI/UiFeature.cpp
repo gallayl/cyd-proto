@@ -2,7 +2,6 @@
 #include "../Logging.h"
 #include "screens.h"            // page definitions and touch helpers
 #include "ActionQueue.h"        // deferred callbacks from widgets
-#include "../../../hw/RgbLed.h" // initialize LED hardware
 
 // physical display dimensions (ILI9341 rotated portrait)
 const int screenWidth = 240;
@@ -21,9 +20,6 @@ Feature *UiFeature = new Feature("UI", []()
     tft.println("UI Feature Initialized");
 
     readCalibrationData();
-
-    // prepare RGB LED hardware for the demo screen
-    initRgbLed();
 
     // register our consolidated "screen" namespace command
     CommandInterpreterInstance->RegisterCommand(*screenCustomCommand);

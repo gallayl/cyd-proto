@@ -17,7 +17,7 @@ JsonDocument getFileList()
 #else
     File file = root.openNextFile();
 #endif
-    do
+    while (file)
     {
         JsonObject o = fileList.add<JsonObject>();
         o["name"] = file.name();
@@ -33,8 +33,7 @@ JsonDocument getFileList()
 #else
         file = root.openNextFile();
 #endif
-
-    } while (file);
+    }
     return response;
 }
 

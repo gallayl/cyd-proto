@@ -20,32 +20,32 @@ CustomCommand *wifiCommand = new CustomCommand("wifi", [](String command)
     }
     if (!operation.compareTo("list"))
     {
-        JsonDocument response = JsonDocument().as<JsonArray>();
+        JsonDocument response;
+        JsonArray arr = response.to<JsonArray>();
 
         int n = WiFi.scanNetworks();
 
         for (int i = 0; i < n; ++i)
         {
-            JsonObject element = response.as<JsonArray>().add<JsonObject>();
+            JsonObject element = arr.add<JsonObject>();
             element["ssid"] = WiFi.SSID(i);
             element["rssi"] = WiFi.RSSI(i);
             element["rssiText"] = getSignalStrength(WiFi.RSSI(i));
             element["encryption"] = getEncryptionType(WiFi.encryptionType(i));
-            response.add(element);
         }
-        char buffer[JSON_BUFFER_SIZE];
-        serializeJson(response, buffer);
-        return String(buffer);
+        String output;
+        serializeJson(response, output);
+        return output;
     }
     if (!operation.compareTo("startSTA"))
     {
         String ssid = CommandParser::GetCommandParameter(command, 2);
-        String passpharse = CommandParser::GetCommandParameter(command, 3);
-        if (ssid.length() < 3 || passpharse.length() < 5)
+        String passphrase = CommandParser::GetCommandParameter(command, 3);
+        if (ssid.length() < 3 || passphrase.length() < 5)
         {
-            return String("{\"error\": \"ssid or passpharse too short\"}");
+            return String("{\"error\": \"ssid or passphrase too short\"}");
         }
-        startStaMode(ssid, passpharse);
+        startStaMode(ssid, passphrase);
         return String("{\"event\": \"starting STA\"}");
     }
 
@@ -63,25 +63,25 @@ CustomCommand *wifiCommand = new CustomCommand("wifi", [](String command)
         if (WiFi.getMode() == WIFI_AP || WiFi.getMode() == WIFI_AP_STA)
         {
             JsonObject ap = response["ap"].to<JsonObject>();
-            ap["ipAddress"] = WiFi.localIP().toString();
-            ap["macAddress"] = WiFi.macAddress();
-            ap["ssid"] = WiFi.SSID();
+            ap["ipAddress"] = WiFi.softAPIP().toString();
+            ap["macAddress"] = WiFi.softAPmacAddress();
         }
 
         if (WiFi.getMode() == WIFI_STA || WiFi.getMode() == WIFI_AP_STA)
         {
             JsonObject sta = response["sta"].to<JsonObject>();
-            sta["ipAddress"] = WiFi.softAPIP().toString();
-            sta["macAddress"] = WiFi.softAPmacAddress();
+            sta["ipAddress"] = WiFi.localIP().toString();
+            sta["macAddress"] = WiFi.macAddress();
+            sta["ssid"] = WiFi.SSID();
         }
 
         int32_t rssi = WiFi.RSSI();
-        response["wifiStrengh"] = getSignalStrength(rssi);
+        response["wifiStrength"] = getSignalStrength(rssi);
         response["wifiRssiDb"] = rssi;
 
-        char buffer[JSON_BUFFER_SIZE];
-        serializeJson(response, buffer);
-        return String(buffer);
+        String output;
+        serializeJson(response, output);
+        return output;
     }
 
     if (!operation.compareTo("restart"))
@@ -90,4 +90,4 @@ CustomCommand *wifiCommand = new CustomCommand("wifi", [](String command)
         WiFi.begin();
         return String("{\"event\": \"disconnecting\"}");
     }
-    return String("{\"event\": \"Unknown WiFi operation command. The available commands are: info, list, connect <ssid> <password>, startSTA<ssid, password>, stopSTA\"}"); });
+    return String("{\"event\": \"Unknown WiFi operation command. The available commands are: info, list, connect <ssid> <password>, startSTA <ssid> <passphrase>, stopSTA\"}"); });

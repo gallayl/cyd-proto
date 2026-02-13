@@ -10,15 +10,15 @@ typedef String (*CommandCallbackFunction)(String command);
 class CustomCommand
 {
 public:
-    CustomCommand(String name = "commandName", CommandCallbackFunction callback = [](String command)
-                                               { return String("Unknown command."); }) : _commandName(name), _onExecute(callback) {};
+    CustomCommand(const String &name = "commandName", CommandCallbackFunction callback = [](String command)
+                                                      { return String("Unknown command."); }) : _commandName(name), _onExecute(callback) {};
 
-    String Execute(String command)
+    String Execute(const String &command)
     {
         return this->_onExecute(command);
     }
 
-    String GetCommandName()
+    const String &GetCommandName() const
     {
         return this->_commandName;
     }

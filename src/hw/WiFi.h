@@ -78,7 +78,7 @@ inline void initWifi()
     if (state != WL_CONNECTED)
     {
         LoggerInstance->Error(F("Failed to connect to access point"));
-        startStaMode(STA_SSID, STA_PASSPHARSE);
+        startStaMode(STA_SSID, STA_PASSPHRASE);
     }
     else
     {

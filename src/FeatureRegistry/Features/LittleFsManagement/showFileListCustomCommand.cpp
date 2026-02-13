@@ -1,5 +1,4 @@
 #include "showFileListCustomCommand.h"
-#include "../../../config.h"
 
 CustomCommand *showFileListCustomCommand = new CustomCommand("list", [](String command)
                                                              {
@@ -24,9 +23,8 @@ CustomCommand *showFileListCustomCommand = new CustomCommand("list", [](String c
         file.close();
     }
 
-    char buffer[JSON_BUFFER_SIZE];
-    serializeJson(response, buffer);
-
     root.close();
 
-    return String(buffer); });
+    String output;
+    serializeJson(response, output);
+    return output; });

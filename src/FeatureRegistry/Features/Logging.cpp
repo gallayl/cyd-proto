@@ -5,10 +5,10 @@ Logger *LoggerInstance = new Logger();
 
 CustomCommand *showLogCustomCommand = new CustomCommand("showLog", [](String command)
                                                         {
-    char buffer[LOG_BUFFER_LENGTH];
     JsonDocument response = LoggerInstance->getEntries();
-    serializeJson(response, buffer);
-    return String(buffer); });
+    String output;
+    serializeJson(response, output);
+    return output; });
 
 ArRequestHandlerFunction showLogRequestHandler = [](AsyncWebServerRequest *request)
 {

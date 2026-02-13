@@ -14,9 +14,10 @@ extern Logger *LoggerInstance;
 class AsyncWebServer;
 extern AsyncWebServer server;
 
-typedef void (*LogListener)(String, String);
+typedef void (*LogListener)(const String &, const String &);
 
 #define LOG_LISTENERS_COUNT 10
+#define MAX_LOG_ENTRIES 100
 
 class Logger
 {
@@ -26,40 +27,45 @@ public:
         return this->entries;
     }
 
-    void Info(String message)
+    void Info(const String &message)
     {
         this->handle("I", message);
     }
 
-    void Error(String message)
+    void Error(const String &message)
     {
         this->handle("E", message);
     }
 
-    void Debug(String message)
+    void Debug(const String &message)
     {
         this->handle("D", message);
     }
 
     void AddListener(LogListener listener)
     {
-        this->listeners[this->listenersCount] = listener;
-        this->listenersCount++;
+        if (this->listenersCount < LOG_LISTENERS_COUNT)
+        {
+            this->listeners[this->listenersCount] = listener;
+            this->listenersCount++;
+        }
     }
 
     Logger()
     {
-        this->entries = JsonDocument().to<JsonArray>();
+        this->entries.to<JsonArray>();
         this->listenersCount = 0;
+        this->entryCount = 0;
     }
 
 private:
     JsonDocument entries;
+    uint16_t entryCount;
 
     byte listenersCount;
     LogListener listeners[LOG_LISTENERS_COUNT];
 
-    void handle(String severity, String message)
+    void handle(const String &severity, const String &message)
     {
         unsigned long epochTime = getEpochTime();
         String utcTime = getUtcTime();
@@ -77,9 +83,19 @@ private:
         }
     }
 
-    void addEntry(String severity, String message, unsigned long epochTime, String utcTime)
+    void addEntry(const String &severity, const String &message, unsigned long epochTime, const String &utcTime)
     {
-        JsonObject entry = this->entries.add<JsonObject>();
+        if (this->entryCount >= MAX_LOG_ENTRIES)
+        {
+            JsonArray arr = this->entries.as<JsonArray>();
+            arr.remove(0);
+        }
+        else
+        {
+            this->entryCount++;
+        }
+
+        JsonObject entry = this->entries.as<JsonArray>().add<JsonObject>();
         entry["severity"] = severity;
         entry["message"] = message;
         entry["epochTime"] = epochTime;
@@ -88,8 +104,6 @@ private:
 };
 
 extern Logger *LoggerInstance;
-
-#define LOG_BUFFER_LENGTH 1024
 
 extern CustomCommand *showLogCustomCommand;
 extern ArRequestHandlerFunction showLogRequestHandler;

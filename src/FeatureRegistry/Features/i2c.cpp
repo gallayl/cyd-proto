@@ -19,10 +19,10 @@ CustomCommand *i2cCommand = new CustomCommand("i2c", [](String command)
         uint16_t address = strtol(CommandParser::GetCommandParameter(command, 2).c_str(), 0, 16);
         command.replace("i2c write ", "");
         writeDevice(address, command);
-        return String("Writed.");
+        return String("Written.");
     }
 
-    String fallback = "The awailable I2C Commands are: scan, read, write";
+    String fallback = "The available I2C Commands are: scan, read, write";
     return fallback; });
 
 // feature object

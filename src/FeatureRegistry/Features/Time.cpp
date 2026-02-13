@@ -16,7 +16,7 @@ String getUtcTime()
     char buffer[80];
 
     time(&rawtime);
-    timeinfo = localtime(&rawtime);
+    timeinfo = gmtime(&rawtime);
 
     strftime(buffer, 80, "%FT%TZ", timeinfo);
     return String(buffer);

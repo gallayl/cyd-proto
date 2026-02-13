@@ -4,10 +4,7 @@
 
 ArRequestHandlerFunction onPostUploadFiles = ([](AsyncWebServerRequest *request)
                                               {
-    boolean shouldReboot = !Update.hasError();
-    AsyncWebServerResponse *response = request->beginResponse(200, MIME_plainText, shouldReboot ? "OK" : "FAIL");
-    response->addHeader("Connection", "close");
-    request->send(response); });
+    request->send(200, MIME_plainText, "OK"); });
 
 ArUploadHandlerFunction uploadFiles = ([](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
                                        {

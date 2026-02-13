@@ -21,10 +21,10 @@ void initWebSockets()
         {
             String str = String((char *)data).substring(0, len);
             String response = CommandInterpreterInstance->ExecuteCommand(str);
-            server->textAll(response);
+            client->text(response);
         } });
 
-    LoggerInstance->AddListener([](String scope, String message)
+    LoggerInstance->AddListener([](const String &scope, const String &message)
                                 {
         webSocket->textAll(scope + ":" +  message);
     });

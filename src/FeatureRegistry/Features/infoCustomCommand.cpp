@@ -28,7 +28,6 @@ JsonDocument getInfo()
 CustomCommand *infoCustomCommand = new CustomCommand("info", [](String command)
                                                      {
     JsonDocument response = getInfo();
-
-    char buffer[JSON_BUFFER_SIZE];
-    serializeJson(response, buffer);
-    return String(buffer); });
+    String output;
+    serializeJson(response, output);
+    return output; });
