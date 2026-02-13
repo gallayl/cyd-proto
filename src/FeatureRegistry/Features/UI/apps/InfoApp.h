@@ -23,73 +23,79 @@ namespace UI
             int cx, cy, cw, ch;
             cont.getBounds(cx, cy, cw, ch);
 
+            auto scroll = std::make_unique<ScrollableContainer>();
+            scroll->setBounds(cx, cy, cw, ch);
+
             int rowH = 14;
             int curY = cy + 4;
 
             JsonDocument info = getInfo();
 
             // ESP section
-            addRow(cont, cx, curY, w, "-- ESP --");
+            addRow(*scroll, cx, curY, cw, "-- ESP --");
             curY += rowH;
 
             if (info.containsKey("esp"))
             {
                 JsonObject esp = info["esp"];
-                addRow(cont, cx, curY, w, "SDK: " + String(esp["sdkVersion"].as<const char *>()));
+                addRow(*scroll, cx, curY, cw, "SDK: " + String(esp["sdkVersion"].as<const char *>()));
                 curY += rowH;
-                addRow(cont, cx, curY, w, "CPU: " + String(esp["cpuFreqMhz"].as<int>()) + " MHz");
+                addRow(*scroll, cx, curY, cw, "CPU: " + String(esp["cpuFreqMhz"].as<int>()) + " MHz");
                 curY += rowH;
-                addRow(cont, cx, curY, w, "Heap: " + String(esp["freeHeap"].as<uint32_t>()) + " B");
+                addRow(*scroll, cx, curY, cw, "Heap: " + String(esp["freeHeap"].as<uint32_t>()) + " B");
                 curY += rowH;
-                addRow(cont, cx, curY, w, "Sketch: " + String(esp["freeSkSpace"].as<uint32_t>()) + " B");
+                addRow(*scroll, cx, curY, cw, "Sketch: " + String(esp["freeSkSpace"].as<uint32_t>()) + " B");
                 curY += rowH;
             }
 
             curY += 4;
-            addRow(cont, cx, curY, w, "-- Flash --");
+            addRow(*scroll, cx, curY, cw, "-- Flash --");
             curY += rowH;
 
             if (info.containsKey("flash"))
             {
                 JsonObject flash = info["flash"];
-                addRow(cont, cx, curY, w, "Size: " + String(flash["size"].as<uint32_t>()) + " B");
+                addRow(*scroll, cx, curY, cw, "Size: " + String(flash["size"].as<uint32_t>()) + " B");
                 curY += rowH;
-                addRow(cont, cx, curY, w, "Speed: " + String(flash["speed"].as<uint32_t>() / 1000000) + " MHz");
+                addRow(*scroll, cx, curY, cw, "Speed: " + String(flash["speed"].as<uint32_t>() / 1000000) + " MHz");
                 curY += rowH;
             }
 
             curY += 4;
-            addRow(cont, cx, curY, w, "-- Filesystem --");
+            addRow(*scroll, cx, curY, cw, "-- Filesystem --");
             curY += rowH;
 
             if (info.containsKey("fs"))
             {
                 JsonObject fs = info["fs"];
-                addRow(cont, cx, curY, w, "Total: " + String(fs["totalBytes"].as<uint32_t>()) + " B");
+                addRow(*scroll, cx, curY, cw, "Total: " + String(fs["totalBytes"].as<uint32_t>()) + " B");
                 curY += rowH;
-                addRow(cont, cx, curY, w, "Used: " + String(fs["usedBytes"].as<uint32_t>()) + " B");
+                addRow(*scroll, cx, curY, cw, "Used: " + String(fs["usedBytes"].as<uint32_t>()) + " B");
                 curY += rowH;
             }
 
             curY += 4;
-            addRow(cont, cx, curY, w, "-- WiFi --");
+            addRow(*scroll, cx, curY, cw, "-- WiFi --");
             curY += rowH;
-            addRow(cont, cx, curY, w, "IP: " + WiFi.localIP().toString());
+            addRow(*scroll, cx, curY, cw, "IP: " + WiFi.localIP().toString());
             curY += rowH;
-            addRow(cont, cx, curY, w, "MAC: " + WiFi.macAddress());
+            addRow(*scroll, cx, curY, cw, "MAC: " + WiFi.macAddress());
             curY += rowH;
-            addRow(cont, cx, curY, w, "RSSI: " + String(WiFi.RSSI()) + " dBm");
+            addRow(*scroll, cx, curY, cw, "RSSI: " + String(WiFi.RSSI()) + " dBm");
             curY += rowH;
+
+            scroll->setContentHeight(curY - cy);
+            cont.addChild(std::move(scroll));
         }
 
     private:
-        void addRow(Container &cont, int cx, int ry, int w, const String &text)
+        void addRow(ScrollableContainer &sc, int cx, int ry, int w, const String &text)
         {
             auto lbl = std::make_unique<Label>(text, cx + 4, ry, w - 8, 12);
             lbl->setTextColor(Theme::TextColor, Theme::WindowBg);
             lbl->setTextSize(1);
             lbl->setAlign(TextAlign::LEFT);
-            cont.addChild(std::move(lbl));
+            sc.addChild(std::move(lbl));
         }
     };
 

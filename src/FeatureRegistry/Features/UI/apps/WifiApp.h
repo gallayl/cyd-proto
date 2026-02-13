@@ -2,6 +2,7 @@
 
 #include "../App.h"
 #include "../elements/container.h"
+#include "../elements/scrollable.h"
 #include "../elements/label.h"
 #include "../elements/button.h"
 #include "../Theme.h"
@@ -20,25 +21,28 @@ namespace UI
 
         void setup(Container &cont, int w, int h) override
         {
-            contentRef = &cont;
-            contentW = w;
-            contentH = h;
-
             int cx, cy, cw, ch;
             cont.getBounds(cx, cy, cw, ch);
+
+            auto scroll = std::make_unique<ScrollableContainer>();
+            scroll->setBounds(cx, cy, cw, ch);
+            scrollRef = scroll.get();
+            scrollAreaX = cx;
+            scrollAreaW = cw;
+
             int rowH = 14;
             int curY = cy + 4;
 
-            addRow(cont, cx, curY, w, "-- Connection --");
+            addRow(*scroll, cx, curY, cw, "-- Connection --");
             curY += rowH;
 
-            statusLabel = addRowLabel(cont, cx, curY, w, "Status: ...");
+            statusLabel = addRowLabel(*scroll, cx, curY, cw, "Status: ...");
             curY += rowH;
-            ipLabel = addRowLabel(cont, cx, curY, w, "IP: ...");
+            ipLabel = addRowLabel(*scroll, cx, curY, cw, "IP: ...");
             curY += rowH;
-            ssidLabel = addRowLabel(cont, cx, curY, w, "SSID: ...");
+            ssidLabel = addRowLabel(*scroll, cx, curY, cw, "SSID: ...");
             curY += rowH;
-            rssiLabel = addRowLabel(cont, cx, curY, w, "RSSI: ...");
+            rssiLabel = addRowLabel(*scroll, cx, curY, cw, "RSSI: ...");
             curY += rowH + 4;
 
             // Scan button
@@ -47,10 +51,12 @@ namespace UI
             scanBtn->setTextColor(Theme::TextColor, Theme::ButtonFace);
             scanBtn->setCallback([this]()
                                  { doScan(); });
-            cont.addChild(std::move(scanBtn));
+            scroll->addChild(std::move(scanBtn));
             curY += 28;
 
             scanStartY = curY;
+            scroll->setContentHeight(curY - cy);
+            cont.addChild(std::move(scroll));
             refreshInfo();
         }
 
@@ -65,8 +71,8 @@ namespace UI
         }
 
     private:
-        Container *contentRef{nullptr};
-        int contentW{0}, contentH{0};
+        ScrollableContainer *scrollRef{nullptr};
+        int scrollAreaX{0}, scrollAreaW{0};
         Label *statusLabel{nullptr};
         Label *ipLabel{nullptr};
         Label *ssidLabel{nullptr};
@@ -112,18 +118,16 @@ namespace UI
 
         void doScan()
         {
-            if (!contentRef)
+            if (!scrollRef)
                 return;
 
-            int cx, cy, cw, ch;
-            contentRef->getBounds(cx, cy, cw, ch);
-            int w = contentW;
+            int cx = scrollAreaX;
+            int w = scrollAreaW;
             int rowH = 14;
             int curY = scanStartY;
 
             int n = WiFi.scanNetworks();
 
-            // clear previous scan labels from the screen by overwriting text
             for (auto *lbl : scanLabels)
             {
                 lbl->setText("");
@@ -132,38 +136,44 @@ namespace UI
 
             if (n <= 0)
             {
-                scanLabels.push_back(addRowLabel(*contentRef, cx, curY, w, "No networks found"));
-                return;
-            }
-
-            addRow(*contentRef, cx, curY, w, "-- Networks --");
-            curY += rowH;
-
-            for (int i = 0; i < n && i < 10; i++)
-            {
-                String line = WiFi.SSID(i) + " (" + String(WiFi.RSSI(i)) + ")";
-                scanLabels.push_back(addRowLabel(*contentRef, cx, curY, w, line));
+                scanLabels.push_back(addRowLabel(*scrollRef, cx, curY, w, "No networks found"));
                 curY += rowH;
             }
+            else
+            {
+                addRow(*scrollRef, cx, curY, w, "-- Networks --");
+                curY += rowH;
+
+                for (int i = 0; i < n && i < 10; i++)
+                {
+                    String line = WiFi.SSID(i) + " (" + String(WiFi.RSSI(i)) + ")";
+                    scanLabels.push_back(addRowLabel(*scrollRef, cx, curY, w, line));
+                    curY += rowH;
+                }
+            }
+
+            int sx, sy, sw, sh;
+            scrollRef->getBounds(sx, sy, sw, sh);
+            scrollRef->setContentHeight(curY - sy);
         }
 
-        void addRow(Container &cont, int cx, int ry, int w, const String &text)
+        void addRow(ScrollableContainer &sc, int cx, int ry, int w, const String &text)
         {
             auto lbl = std::make_unique<Label>(text, cx + 4, ry, w - 8, 12);
             lbl->setTextColor(Theme::TextColor, Theme::WindowBg);
             lbl->setTextSize(1);
             lbl->setAlign(TextAlign::LEFT);
-            cont.addChild(std::move(lbl));
+            sc.addChild(std::move(lbl));
         }
 
-        Label *addRowLabel(Container &cont, int cx, int ry, int w, const String &text)
+        Label *addRowLabel(ScrollableContainer &sc, int cx, int ry, int w, const String &text)
         {
             auto lbl = std::make_unique<Label>(text, cx + 4, ry, w - 8, 12);
             lbl->setTextColor(Theme::TextColor, Theme::WindowBg);
             lbl->setTextSize(1);
             lbl->setAlign(TextAlign::LEFT);
             Label *ptr = lbl.get();
-            cont.addChild(std::move(lbl));
+            sc.addChild(std::move(lbl));
             return ptr;
         }
     };

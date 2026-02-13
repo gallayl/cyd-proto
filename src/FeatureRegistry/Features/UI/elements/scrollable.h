@@ -51,9 +51,26 @@ namespace UI
             // clip to viewport
             c.setClipRect(x, y, viewW, height);
 
-            // position content offset
-            content.setBounds(x, y - scrollOffset, viewW, contentHeight);
+            // temporarily offset children by -scrollOffset so the clip rect
+            // hides elements above/below the visible area
+            auto children = content.getChildren();
+            for (auto *child : children)
+            {
+                int cx, cy, cw, ch;
+                child->getBounds(cx, cy, cw, ch);
+                child->setBounds(cx, cy - scrollOffset, cw, ch);
+            }
+
+            content.setBounds(x, y, viewW, contentHeight);
             content.draw();
+
+            // restore original positions
+            for (auto *child : children)
+            {
+                int cx, cy, cw, ch;
+                child->getBounds(cx, cy, cw, ch);
+                child->setBounds(cx, cy + scrollOffset, cw, ch);
+            }
 
             c.clearClipRect();
 
@@ -69,12 +86,43 @@ namespace UI
             if (!mounted)
                 return;
 
+            // continuous thumb drag
+            if (draggingThumb)
+            {
+                int trackH = height - 2 * Theme::ScrollbarWidth;
+                int maxScroll = contentHeight - height;
+                if (maxScroll > 0 && trackH > 0)
+                {
+                    int delta = py - dragStartY;
+                    int thumbH = (height * trackH) / contentHeight;
+                    if (thumbH < 10)
+                        thumbH = 10;
+                    int thumbTrack = trackH - thumbH;
+                    if (thumbTrack > 0)
+                    {
+                        scrollOffset = dragStartOffset + (delta * maxScroll) / thumbTrack;
+                        clampScroll();
+                    }
+                }
+                return;
+            }
+
+            // continuous content drag
+            if (draggingContent)
+            {
+                int delta = lastTouchY - py;
+                scrollOffset += delta;
+                clampScroll();
+                lastTouchY = py;
+                return;
+            }
+
+            // first touch
             bool needsScroll = contentHeight > height;
             int sbX = x + width - Theme::ScrollbarWidth;
 
             if (needsScroll && px >= sbX)
             {
-                // scrollbar interaction
                 draggingThumb = true;
                 dragStartY = py;
                 dragStartOffset = scrollOffset;
@@ -85,7 +133,6 @@ namespace UI
             int adjY = py + scrollOffset;
             content.handleTouch(px, adjY);
 
-            // start drag tracking for content area scrolling
             draggingContent = true;
             lastTouchY = py;
         }
@@ -104,40 +151,6 @@ namespace UI
             draggingContent = false;
             int adjY = py + scrollOffset;
             content.handleTouchEnd(px, adjY);
-        }
-
-        void handleDrag(int px, int py)
-        {
-            if (!mounted)
-                return;
-
-            if (draggingThumb)
-            {
-                int trackH = height - 2 * Theme::ScrollbarWidth;
-                int maxScroll = contentHeight - height;
-                if (maxScroll <= 0 || trackH <= 0)
-                    return;
-
-                int delta = py - dragStartY;
-                int thumbH = (height * trackH) / contentHeight;
-                if (thumbH < 10)
-                    thumbH = 10;
-                int thumbTrack = trackH - thumbH;
-                if (thumbTrack <= 0)
-                    return;
-
-                scrollOffset = dragStartOffset + (delta * maxScroll) / thumbTrack;
-                clampScroll();
-                return;
-            }
-
-            if (draggingContent)
-            {
-                int delta = lastTouchY - py;
-                scrollOffset += delta;
-                clampScroll();
-                lastTouchY = py;
-            }
         }
 
     private:
