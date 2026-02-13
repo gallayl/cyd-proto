@@ -91,7 +91,7 @@ namespace UI
             // title text
             titleLabel.setBounds(tbX + 2, tbY, tbW - Theme::CloseButtonSize - 6, tbH);
             titleLabel.setTextColor(tbText, tbColor);
-            titleLabel.setAlign(lgfx::textdatum_t::top_left);
+            titleLabel.setAlign(TextAlign::LEFT);
             titleLabel.draw();
 
             // close button

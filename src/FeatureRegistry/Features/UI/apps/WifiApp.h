@@ -22,8 +22,8 @@ namespace UI
             contentW = w;
             contentH = h;
 
-            int cx = cont.x;
-            int cy = cont.y;
+            int cx, cy, cw, ch;
+            cont.getBounds(cx, cy, cw, ch);
             int rowH = 14;
             int curY = cy + 4;
 
@@ -113,7 +113,8 @@ namespace UI
             if (!contentRef)
                 return;
 
-            int cx = contentRef->x;
+            int cx, cy, cw, ch;
+            contentRef->getBounds(cx, cy, cw, ch);
             int w = contentW;
             int rowH = 14;
             int curY = scanStartY;
@@ -149,7 +150,7 @@ namespace UI
             auto lbl = std::make_unique<Label>(text, cx + 4, ry, w - 8, 12);
             lbl->setTextColor(Theme::TextColor, Theme::WindowBg);
             lbl->setTextSize(1);
-            lbl->setAlign(lgfx::textdatum_t::top_left);
+            lbl->setAlign(TextAlign::LEFT);
             cont.addChild(std::move(lbl));
         }
 
@@ -158,7 +159,7 @@ namespace UI
             auto lbl = std::make_unique<Label>(text, cx + 4, ry, w - 8, 12);
             lbl->setTextColor(Theme::TextColor, Theme::WindowBg);
             lbl->setTextSize(1);
-            lbl->setAlign(lgfx::textdatum_t::top_left);
+            lbl->setAlign(TextAlign::LEFT);
             Label *ptr = lbl.get();
             cont.addChild(std::move(lbl));
             return ptr;

@@ -23,8 +23,8 @@ namespace UI
             contentH = h;
 
             int baseY = 0;
-            int cx = cont.x;
-            int cy = cont.y;
+            int cx, cy, cw, ch;
+            cont.getBounds(cx, cy, cw, ch);
 
             // color preview at top
             previewY = cy + 4;

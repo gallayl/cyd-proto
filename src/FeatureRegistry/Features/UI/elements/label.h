@@ -8,6 +8,13 @@
 namespace UI
 {
 
+    enum class TextAlign
+    {
+        CENTER,
+        LEFT,
+        RIGHT
+    };
+
     // simple text label; will draw itself when mounted and whenever the
     // text changes. positioning is controlled via setBounds inherited from
     // Element.
@@ -35,7 +42,7 @@ namespace UI
 
         void setTextSize(uint8_t size) { textSize = size; }
 
-        void setAlign(lgfx::textdatum_t datum) { align = datum; }
+        void setAlign(TextAlign a) { align = a; }
 
         void draw() override
         {
@@ -45,23 +52,27 @@ namespace UI
             c.setTextColor(color, bgColor);
             c.setTextSize(textSize);
 
-            // try to center the text inside our bounds; falls back to
-            // top-left if measuring APIs aren't available.
             int16_t tx = x;
             int16_t ty = y;
             if (width > 0 && height > 0)
             {
                 int16_t tw = c.textWidth(text);
                 int16_t th = c.fontHeight();
-                if (align == lgfx::textdatum_t::top_left)
+
+                switch (align)
                 {
+                case TextAlign::CENTER:
                     if (tw < width)
                         tx = x + (width - tw) / 2;
-                }
-                else if (align == lgfx::textdatum_t::top_right)
-                {
+                    break;
+                case TextAlign::LEFT:
+                    tx = x + 2;
+                    break;
+                case TextAlign::RIGHT:
                     tx = x + width - tw - 2;
+                    break;
                 }
+
                 if (th < height)
                     ty = y + (height - th) / 2;
             }
@@ -75,7 +86,7 @@ namespace UI
         uint16_t color{TFT_WHITE};
         uint16_t bgColor{TFT_BLACK};
         uint8_t textSize{1};
-        lgfx::textdatum_t align{lgfx::textdatum_t::top_left};
+        TextAlign align{TextAlign::CENTER};
     };
 
 } // namespace UI
