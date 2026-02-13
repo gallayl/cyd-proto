@@ -34,6 +34,8 @@
 
 #define FEATURES_SIZE 16
 
+extern Feature *SystemFeatures;
+
 class FeatureRegistry
 {
 private:
