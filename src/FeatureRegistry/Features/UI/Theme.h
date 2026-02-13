@@ -25,6 +25,8 @@ namespace UI
         constexpr uint16_t MenuHighlightText = TFT_WHITE;
         constexpr uint16_t ScrollTrack = 0xC618;
         constexpr uint16_t ScrollThumb = 0xC618;
+        constexpr uint16_t MenuSeparatorDark = 0x8410;  // #808080 (same as ButtonShadow)
+        constexpr uint16_t MenuSeparatorLight = TFT_WHITE; // highlight line below dark
 
         // layout constants
         constexpr int ScreenWidth = 240;
@@ -39,6 +41,9 @@ namespace UI
         constexpr int WindowBorderWidth = 2;
         constexpr int ScrollbarWidth = 14;
         constexpr int MenuItemHeight = 20;
+        constexpr int MenuWidth = 120;
+        constexpr int SubMenuWidth = 120;
+        constexpr int MenuSeparatorHeight = 8;
 
     } // namespace Theme
 } // namespace UI

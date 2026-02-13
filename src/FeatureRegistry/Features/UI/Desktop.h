@@ -7,6 +7,12 @@
 #include "apps/RgbLedApp.h"
 #include "apps/InfoApp.h"
 #include "apps/WifiApp.h"
+#include "apps/SensorsApp.h"
+#include "apps/LogViewerApp.h"
+#include "apps/FileManagerApp.h"
+#include "apps/DisplaySettingsApp.h"
+#include "apps/FeaturesApp.h"
+#include <ESP.h>
 
 namespace UI
 {
@@ -16,12 +22,53 @@ namespace UI
     public:
         void init()
         {
+            // register all apps
             registerApp("RGB LED", []() -> App *
                         { return new RgbLedApp(); });
+            registerApp("Sensors", []() -> App *
+                        { return new SensorsApp(); });
             registerApp("Info", []() -> App *
                         { return new InfoApp(); });
             registerApp("WiFi", []() -> App *
                         { return new WifiApp(); });
+            registerApp("Display", []() -> App *
+                        { return new DisplaySettingsApp(); });
+            registerApp("Features", []() -> App *
+                        { return new FeaturesApp(); });
+            registerApp("Log Viewer", []() -> App *
+                        { return new LogViewerApp(); });
+            registerApp("File Manager", []() -> App *
+                        { return new FileManagerApp(); });
+
+            // build hierarchical menu
+            auto openApp = [this](const char *name)
+            {
+                return [this, name]()
+                {
+                    if (onAppSelected)
+                        onAppSelected(name);
+                };
+            };
+
+            startMenu.setMenuItems({
+                MenuItem::Submenu("Programs", {
+                                                  MenuItem::Leaf("RGB LED", openApp("RGB LED")),
+                                                  MenuItem::Leaf("Sensors", openApp("Sensors")),
+                                              }),
+                MenuItem::Submenu("Settings", {
+                                                  MenuItem::Leaf("WiFi", openApp("WiFi")),
+                                                  MenuItem::Leaf("Display", openApp("Display")),
+                                              }),
+                MenuItem::Submenu("System", {
+                                                MenuItem::Leaf("Info", openApp("Info")),
+                                                MenuItem::Leaf("Features", openApp("Features")),
+                                                MenuItem::Leaf("Log Viewer", openApp("Log Viewer")),
+                                                MenuItem::Leaf("File Manager", openApp("File Manager")),
+                                            }),
+                MenuItem::Separator(),
+                MenuItem::Leaf("Restart", []()
+                               { ESP.restart(); }),
+            });
 
             taskbar.setStartClickCallback([this]()
                                           { startMenu.toggle(); });
@@ -29,8 +76,8 @@ namespace UI
             taskbar.setAppClickCallback([](const char *name)
                                         { windowManager().focusApp(name); });
 
-            startMenu.setAppSelectedCallback([this](const char *name)
-                                             { windowManager().openApp(name); });
+            onAppSelected = [](const char *name)
+            { windowManager().openApp(name); };
 
             // wire overlay callbacks into window manager
             windowManager().setOverlayDraw([this]()
@@ -68,6 +115,7 @@ namespace UI
     private:
         Taskbar taskbar;
         StartMenu startMenu;
+        std::function<void(const char *)> onAppSelected;
 
         void updateTaskbarApps()
         {
