@@ -109,7 +109,7 @@ namespace UI
             // regardless of where the finger is lifted.  this matches normal
             // "tap" behaviour and avoids situations where a tiny finger shift
             // causes the click to be ignored.
-            if (startPressed)
+            if (startTouching)
             {
                 if (onStartClick)
                     onStartClick();
@@ -146,7 +146,7 @@ namespace UI
             }
 
             // reset state after handling the end of touch
-            startPressed = false;
+            startTouching = false;
             touchedAppIndex = -1;
             return handled;
         }
