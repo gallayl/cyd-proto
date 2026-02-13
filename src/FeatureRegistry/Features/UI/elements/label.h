@@ -2,11 +2,8 @@
 
 #include <LovyanGFX.hpp>
 #include <Arduino.h>
-#include "../../../../hw/Screen.h"
-#include "container.h" // provides UI::Element base
-
-// display object from hardware layer
-extern LGFX tft;
+#include "container.h"
+#include "../Renderer.h"
 
 namespace UI
 {
@@ -26,9 +23,9 @@ namespace UI
         void setText(const String &txt)
         {
             text = txt;
-            if (mounted)
-                draw();
         }
+
+        const String &getText() const { return text; }
 
         void setTextColor(uint16_t fg, uint16_t bg = TFT_BLACK)
         {
@@ -38,12 +35,15 @@ namespace UI
 
         void setTextSize(uint8_t size) { textSize = size; }
 
+        void setAlign(lgfx::textdatum_t datum) { align = datum; }
+
         void draw() override
         {
             if (!mounted)
                 return;
-            tft.setTextColor(color, bgColor);
-            tft.setTextSize(textSize);
+            auto &c = canvas();
+            c.setTextColor(color, bgColor);
+            c.setTextSize(textSize);
 
             // try to center the text inside our bounds; falls back to
             // top-left if measuring APIs aren't available.
@@ -51,18 +51,23 @@ namespace UI
             int16_t ty = y;
             if (width > 0 && height > 0)
             {
-                // textWidth/fontHeight automatically respect the current
-                // text size/font, so we don't pass our stored textSize.
-                int16_t tw = tft.textWidth(text);
-                int16_t th = tft.fontHeight();
-                if (tw < width)
-                    tx = x + (width - tw) / 2;
+                int16_t tw = c.textWidth(text);
+                int16_t th = c.fontHeight();
+                if (align == lgfx::textdatum_t::top_left)
+                {
+                    if (tw < width)
+                        tx = x + (width - tw) / 2;
+                }
+                else if (align == lgfx::textdatum_t::top_right)
+                {
+                    tx = x + width - tw - 2;
+                }
                 if (th < height)
                     ty = y + (height - th) / 2;
             }
 
-            tft.setCursor(tx, ty);
-            tft.print(text);
+            c.setCursor(tx, ty);
+            c.print(text);
         }
 
     private:
@@ -70,6 +75,7 @@ namespace UI
         uint16_t color{TFT_WHITE};
         uint16_t bgColor{TFT_BLACK};
         uint8_t textSize{1};
+        lgfx::textdatum_t align{lgfx::textdatum_t::top_left};
     };
 
 } // namespace UI

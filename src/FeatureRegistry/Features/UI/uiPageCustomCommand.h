@@ -6,9 +6,6 @@
 #include "../../../CommandInterpreter/CustomCommand.h"
 #include "../../../CommandInterpreter/CommandParser.h"
 #include "../Logging.h"
-#include "./Calibration.h"
-#include "./screens/welcome.h"
-#include "./screens/rgbled.h"
 
 extern LGFX tft;
 

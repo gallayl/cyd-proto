@@ -2,10 +2,8 @@
 
 #include <LovyanGFX.hpp>
 #include "label.h"
-#include "../ActionQueue.h" // for UI::queueAction
-
-// display object from hardware layer
-extern LGFX tft;
+#include "../ActionQueue.h"
+#include "../Renderer.h"
 
 namespace UI
 {
@@ -20,10 +18,7 @@ namespace UI
         Button(const String &txt = String(), int ix = 0, int iy = 0, int iw = 0, int ih = 0)
             : label(txt, ix, iy, iw, ih)
         {
-            // initial bounds must be propagated to label as well
             setBounds(ix, iy, iw, ih);
-            // black text on our default background; store so we can keep
-            // the two in sync if either one changes later
             labelFg = TFT_BLACK;
             label.setTextColor(labelFg, bgColor);
         }
@@ -34,10 +29,8 @@ namespace UI
         void setBackgroundColor(uint16_t c)
         {
             bgColor = c;
-            // update label background too so text doesn't vanish
             label.setTextColor(labelFg, bgColor);
         }
-        // set label colour; background defaults to the button's fill
         void setTextColor(uint16_t fg)
         {
             labelFg = fg;
@@ -50,26 +43,27 @@ namespace UI
         }
         void setTextSize(uint8_t size) { label.setTextSize(size); }
 
+        bool isPressed() const { return pressed; }
+        void setPressed(bool p) { pressed = p; }
+
         void draw() override
         {
             if (!mounted)
                 return;
+            auto &c = canvas();
 
-            // colours for the 3‑D look; swap when pressed
             uint16_t light = pressed ? borderDarkColor : borderLightColor;
             uint16_t dark = pressed ? borderLightColor : borderDarkColor;
 
-            // fill body
-            tft.fillRect(x, y, width, height, bgColor);
+            c.fillRect(x, y, width, height, bgColor);
 
             // top/left light edge
-            tft.drawFastHLine(x, y, width, light);
-            tft.drawFastVLine(x, y, height, light);
+            c.drawFastHLine(x, y, width, light);
+            c.drawFastVLine(x, y, height, light);
             // bottom/right dark edge
-            tft.drawFastHLine(x, y + height - 1, width, dark);
-            tft.drawFastVLine(x + width - 1, y, height, dark);
+            c.drawFastHLine(x, y + height - 1, width, dark);
+            c.drawFastVLine(x + width - 1, y, height, dark);
 
-            // shift label if pressed for a simple animation
             if (pressed)
             {
                 label.setBounds(x + 1, y + 1, width - 1, height - 1);
@@ -86,7 +80,6 @@ namespace UI
             if (contains(px, py))
             {
                 pressed = true;
-                draw();
             }
         }
 
@@ -94,58 +87,37 @@ namespace UI
         {
             if (pressed && contains(px, py) && onClick)
             {
-                // schedule the callback to run *after* the current
-                // event dispatch has finished. executing a click
-                // handler immediately is dangerous because the handler
-                // may destroy the container that is currently being
-                // iterated, leading to use‑after‑free (see crash
-                // reported in issue).
                 UI::queueAction(onClick);
             }
             pressed = false;
-            draw();
         }
 
         void mount() override
         {
             Element::mount();
-            // make sure the child label is marked as mounted too; otherwise
-            // its draw() will early-return and nothing appears
             label.mount();
-            draw();
         }
 
-    private:
-        // caption element, kept in sync with button bounds
-        Label label;
-        Callback onClick;
-        bool pressed{false};
-        uint16_t bgColor{TFT_LIGHTGREY};
-        uint16_t labelFg{TFT_WHITE}; // track current label foreground colour
-
-        // two colours used for the 3‑D effect; highlight is drawn on the
-        // top/left edges and shadow on bottom/right. these may be swapped
-        // when the button is pressed.
-        uint16_t borderLightColor{TFT_WHITE};
-        uint16_t borderDarkColor{TFT_BLACK};
-
-    public:
-        // change the two-tone border colours; useful if the default
-        // black/white pair doesn't contrast well on a particular
-        // background.
         void setBorderColors(uint16_t light, uint16_t dark)
         {
             borderLightColor = light;
             borderDarkColor = dark;
         }
 
-        // override setBounds so that the contained label moves with the
-        // button without requiring callers to set its bounds manually.
         void setBounds(int ix, int iy, int iw, int ih)
         {
             Element::setBounds(ix, iy, iw, ih);
             label.setBounds(ix, iy, iw, ih);
         }
+
+    private:
+        Label label;
+        Callback onClick;
+        bool pressed{false};
+        uint16_t bgColor{TFT_LIGHTGREY};
+        uint16_t labelFg{TFT_WHITE};
+        uint16_t borderLightColor{TFT_WHITE};
+        uint16_t borderDarkColor{TFT_BLACK};
     };
 
 } // namespace UI

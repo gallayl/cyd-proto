@@ -12,8 +12,6 @@
 extern const int screenWidth;
 extern const int screenHeight;
 
-// forward declaration of feature object
 extern Feature *UiFeature;
 
-// helper if explicit initialization is needed
 void uiFeatureInit();
