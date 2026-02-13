@@ -25,7 +25,7 @@ namespace UI
 
         void setApps(const std::vector<TaskbarApp> &apps) { openApps = apps; }
 
-        void setStartPressed(bool p) { startPressed = p; }
+        void setStartMenuOpen(bool open) { startMenuOpen = open; }
 
         void draw()
         {
@@ -40,7 +40,7 @@ namespace UI
 
             // start button
             drawButton(c, 2, tbY + 2, Theme::StartButtonWidth, tbH - 4,
-                        "Start", startPressed);
+                        "Start", startMenuOpen || startTouching);
 
             // app buttons
             int appX = Theme::StartButtonWidth + 6;
@@ -73,7 +73,7 @@ namespace UI
             if (px >= 2 && px < 2 + Theme::StartButtonWidth &&
                 py >= tbY + 2 && py < tbY + tbH - 2)
             {
-                startPressed = true;
+                startTouching = true;
                 return true;
             }
 
@@ -155,7 +155,8 @@ namespace UI
         StartClickCb onStartClick;
         AppClickCb onAppClick;
         std::vector<TaskbarApp> openApps;
-        bool startPressed{false};
+        bool startMenuOpen{false};
+        bool startTouching{false};
         int touchedAppIndex{-1};
 
         static void drawButton(LGFX_Sprite &c, int bx, int by, int bw, int bh,

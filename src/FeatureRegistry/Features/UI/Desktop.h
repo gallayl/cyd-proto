@@ -79,7 +79,7 @@ namespace UI
                 apps.push_back({oa.name, isFocused});
             }
             taskbar.setApps(apps);
-            taskbar.setStartPressed(startMenu.isVisible());
+            taskbar.setStartMenuOpen(startMenu.isVisible());
         }
 
         void drawOverlays()
