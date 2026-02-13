@@ -3,6 +3,7 @@
 #include "../Feature.h"
 #include "./wifiCommand.h"
 #include "./infoCustomCommand.h"
+#include "./rgbLedCommand.h"
 #include "../../CommandInterpreter/CommandInterpreter.h"
 #include "../../CommandInterpreter/CustomCommand.h"
 #include "../FeatureRegistry.h"
@@ -48,6 +49,7 @@ Feature *SystemFeatures = new Feature("SystemFeatures", []()
     CommandInterpreterInstance->RegisterCommand(*resetCommand);
     CommandInterpreterInstance->RegisterCommand(*getRegisteredFeatures);
     CommandInterpreterInstance->RegisterCommand(*infoCustomCommand);
+    CommandInterpreterInstance->RegisterCommand(*rgbLedCustomCommand);
 
     server.on("/features", HTTP_GET, getFeaturesAction);
     server.on("/restart", HTTP_POST, reset);
