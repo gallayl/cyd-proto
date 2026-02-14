@@ -15,12 +15,13 @@ namespace UI
 
     static void setupWindowCallbacks(WindowManager &wm, OpenApp &oa)
     {
-        oa.window->setCloseCallback([&wm, name = String(oa.name)]()
-                                    { wm.closeApp(name.c_str()); });
-        oa.window->setMinimizeCallback([&wm, name = String(oa.name)]()
-                                       { wm.minimizeApp(name.c_str()); });
-        oa.window->setStateChangeCallback([&wm, name = String(oa.name)](WindowState state)
-                                          { wm.handleWindowStateChange(name.c_str(), state); });
+        WindowManager *wmPtr = &wm;
+        oa.window->setCloseCallback([wmPtr, name = String(oa.name)]()
+                                    { wmPtr->closeApp(name.c_str()); });
+        oa.window->setMinimizeCallback([wmPtr, name = String(oa.name)]()
+                                       { wmPtr->minimizeApp(name.c_str()); });
+        oa.window->setStateChangeCallback([wmPtr, name = String(oa.name)](WindowState state)
+                                          { wmPtr->handleWindowStateChange(name.c_str(), state); });
     }
 
     void WindowManager::openApp(const char *appName)
