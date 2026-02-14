@@ -12,9 +12,15 @@
 #include "../../../../api/list.h"
 #include "../../../../ActionRegistry/ActionRegistry.h"
 #include "../../../../ActionRegistry/FeatureAction.h"
+#include "../../../../fs/VirtualFS.h"
 #include <ArduinoJson.h>
 #include <LittleFS.h>
 #include <memory>
+
+#if ENABLE_SD_CARD
+#include <SD.h>
+#include "../../../Features/SdCard/SdCardFeature.h"
+#endif
 
 namespace UI
 {
@@ -102,14 +108,12 @@ namespace UI
 
             // storage info label
             {
-                size_t totalBytes = LittleFS.totalBytes();
-                size_t usedBytes = LittleFS.usedBytes();
-                String info = String(usedBytes / 1024) + "K/" + String(totalBytes / 1024) + "K";
-
+                String info = getStorageInfo();
                 auto infoLbl = std::make_unique<Label>(info, btnX + btnW + 4, toolY, cw - (btnX + btnW + 4 - cx), toolbarH);
                 infoLbl->setTextColor(Theme::TextColor, Theme::WindowBg);
                 infoLbl->setTextSize(1);
                 infoLbl->setAlign(TextAlign::RIGHT);
+                storageLabel = infoLbl.get();
                 cont.addChild(std::move(infoLbl));
             }
 
@@ -121,6 +125,17 @@ namespace UI
             fl->setViewMode(FileListViewMode::List);
             fl->setOnItemActivated([this](int idx, const FileItem &item)
                                    {
+                // Handle virtual root entries
+                if (isVirtualRoot() && item.isDir)
+                {
+                    if (item.name == "Flash")
+                        currentPath = "/flash/";
+                    else if (item.name == "SD Card")
+                        currentPath = "/sd/";
+                    refreshFileList();
+                    return;
+                }
+
                 if (item.isDir)
                 {
                     if (currentPath.endsWith("/"))
@@ -145,14 +160,114 @@ namespace UI
         String currentPath{"/"};
         FileListView *fileList{nullptr};
         Label *pathLabel{nullptr};
+        Label *storageLabel{nullptr};
         int contentX{0}, contentY{0}, contentW{0}, contentH{0};
+
+        bool isVirtualRoot() const
+        {
+            return currentPath == "/";
+        }
+
+        String getStorageInfo()
+        {
+            if (isVirtualRoot())
+                return "";
+
+            ResolvedPath resolved = resolveVirtualPath(currentPath);
+            if (!resolved.valid || !resolved.fs)
+                return "";
+
+            if (resolved.fs == &LittleFS)
+            {
+                size_t totalBytes = LittleFS.totalBytes();
+                size_t usedBytes = LittleFS.usedBytes();
+                return String(usedBytes / 1024) + "K/" + String(totalBytes / 1024) + "K";
+            }
+
+#if ENABLE_SD_CARD
+            if (resolved.fs == &SD && isSdCardMounted())
+            {
+                uint64_t totalBytes = SD.totalBytes();
+                uint64_t usedBytes = SD.usedBytes();
+                return String((uint32_t)(usedBytes / (1024 * 1024))) + "M/" + String((uint32_t)(totalBytes / (1024 * 1024))) + "M";
+            }
+#endif
+
+            return "";
+        }
+
+        void showVirtualRoot()
+        {
+            if (!fileList)
+                return;
+
+            std::vector<FileItem> items;
+
+            FileItem flashItem;
+            flashItem.name = "Flash";
+            flashItem.isDir = true;
+            flashItem.size = LittleFS.usedBytes();
+            items.push_back(std::move(flashItem));
+
+#if ENABLE_SD_CARD
+            FileItem sdItem;
+            sdItem.name = "SD Card";
+            sdItem.isDir = true;
+            sdItem.size = isSdCardMounted() ? (uint32_t)(SD.usedBytes() / 1024) : 0;
+            items.push_back(std::move(sdItem));
+#endif
+
+            fileList->setItems(items);
+
+            if (pathLabel)
+                pathLabel->setText("/");
+
+            if (storageLabel)
+                storageLabel->setText("");
+
+            markDirty();
+        }
 
         void refreshFileList()
         {
             if (!fileList)
                 return;
 
-            JsonDocument files = getFileList(currentPath.c_str());
+            if (isVirtualRoot())
+            {
+                showVirtualRoot();
+                return;
+            }
+
+            ResolvedPath resolved = resolveVirtualPath(currentPath);
+            if (!resolved.valid || !resolved.fs)
+            {
+                showVirtualRoot();
+                currentPath = "/";
+                return;
+            }
+
+#if ENABLE_SD_CARD
+            if (resolved.fs == &SD && !isSdCardMounted())
+            {
+                std::vector<FileItem> items;
+                FileItem errItem;
+                errItem.name = "(not mounted)";
+                errItem.isDir = false;
+                items.push_back(std::move(errItem));
+                fileList->setItems(items);
+
+                if (pathLabel)
+                    pathLabel->setText(currentPath);
+                if (storageLabel)
+                    storageLabel->setText("");
+
+                markDirty();
+                return;
+            }
+#endif
+
+            JsonDocument files = getFileList(*resolved.fs, resolved.localPath.c_str());
             JsonArray arr = files.as<JsonArray>();
 
             std::vector<FileItem> items;
@@ -171,19 +286,38 @@ namespace UI
             if (pathLabel)
                 pathLabel->setText(currentPath);
 
+            if (storageLabel)
+                storageLabel->setText(getStorageInfo());
+
             markDirty();
         }
 
         void navigateUp(Container &cont, int w, int h)
         {
-            if (currentPath == "/" || currentPath.isEmpty())
+            if (isVirtualRoot())
                 return;
+
+            // If at a filesystem root (e.g. "/flash" or "/sd"), go to virtual root
+            if (currentPath == "/flash" || currentPath == "/flash/" ||
+                currentPath == "/sd" || currentPath == "/sd/")
+            {
+                currentPath = "/";
+                refreshFileList();
+                return;
+            }
 
             int lastSlash = currentPath.lastIndexOf('/');
             if (lastSlash <= 0)
+            {
                 currentPath = "/";
+            }
             else
+            {
                 currentPath = currentPath.substring(0, lastSlash);
+                // Don't go above the filesystem prefix
+                if (currentPath == "/flash" || currentPath == "/sd")
+                    currentPath += "/";
+            }
 
             refreshFileList();
         }

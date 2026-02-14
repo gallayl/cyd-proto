@@ -25,6 +25,10 @@
 
 #endif
 
+#if ENABLE_SD_CARD
+#include "./Features/SdCard/SdCardFeature.h"
+#endif
+
 #if ENABLE_OTA
 #include "./Features/OTA.h"
 #endif
@@ -71,6 +75,10 @@ public:
 
 #if ENABLE_LITTLEFS
                 this->RegisterFeature(LittleFsFeature);
+#endif
+
+#if ENABLE_SD_CARD
+                this->RegisterFeature(SdCardFeature);
 #endif
 
 #if ENABLE_PIR_SENSOR

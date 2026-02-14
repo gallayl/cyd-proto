@@ -43,6 +43,11 @@
 #define ENABLE_LITTLEFS true
 
 /**
+ * Enable the SD card feature
+ */
+#define ENABLE_SD_CARD true
+
+/**
  * Enable to read input from a serial console
  */
 #define ENABLE_SERIAL_READ true

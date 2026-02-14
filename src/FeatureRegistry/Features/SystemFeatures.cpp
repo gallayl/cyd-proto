@@ -7,6 +7,11 @@
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 
+#if ENABLE_SD_CARD
+#include <SD.h>
+#include "./SdCard/SdCardFeature.h"
+#endif
+
 #if ENABLE_WIFI
 #include <WiFi.h>
 #include <IPAddress.h>
@@ -34,6 +39,34 @@ JsonDocument getInfo()
     JsonObject fs = response["fs"].to<JsonObject>();
     fs["totalBytes"] = LittleFS.totalBytes();
     fs["usedBytes"] = LittleFS.usedBytes();
+
+#if ENABLE_SD_CARD
+    JsonObject sd = response["sd"].to<JsonObject>();
+    sd["mounted"] = isSdCardMounted();
+    if (isSdCardMounted())
+    {
+        sdcard_type_t cardType = SD.cardType();
+        const char *typeName = "UNKNOWN";
+        switch (cardType)
+        {
+        case CARD_MMC:
+            typeName = "MMC";
+            break;
+        case CARD_SD:
+            typeName = "SD";
+            break;
+        case CARD_SDHC:
+            typeName = "SDHC";
+            break;
+        default:
+            break;
+        }
+        sd["cardType"] = typeName;
+        sd["totalBytes"] = SD.totalBytes();
+        sd["usedBytes"] = SD.usedBytes();
+        sd["cardSize"] = SD.cardSize();
+    }
+#endif
 
     return response;
 }

@@ -9,7 +9,7 @@
 #include "../UI/Renderer.h"
 #include "BerryUIBindings.h"
 #include "../Logging.h"
-#include <LittleFS.h>
+#include "../../../fs/VirtualFS.h"
 #include <vector>
 
 extern "C" {
@@ -59,8 +59,17 @@ public:
         _handles.clear();
         _handles.push_back({&content, HandleType::CONTAINER});
 
-        // read script
-        File f = LittleFS.open(_scriptPath, "r");
+        // read script (resolve virtual path prefix)
+        ResolvedPath resolved = resolveVirtualPath(_scriptPath);
+        File f;
+        if (resolved.valid && resolved.fs)
+        {
+            f = resolved.fs->open(resolved.localPath, "r");
+        }
+        else
+        {
+            f = LittleFS.open(_scriptPath, "r");
+        }
         if (!f)
         {
             LoggerInstance->Error("BerryApp: cannot open " + _scriptPath);

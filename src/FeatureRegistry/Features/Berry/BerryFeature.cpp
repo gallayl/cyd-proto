@@ -3,6 +3,7 @@
 #include "../../../ActionRegistry/ActionRegistry.h"
 #include "../../../CommandInterpreter/CommandParser.h"
 #include "../../../config.h"
+#include "../../../fs/VirtualFS.h"
 #include <LittleFS.h>
 
 extern "C" {
@@ -26,7 +27,12 @@ bvm *getBerryVM() { return berry_vm; }
 // Parse app name from "# app: <Name>" in first 5 lines of a .be file
 static String parseAppNameFromFile(const String &path)
 {
-    File f = LittleFS.open(path, "r");
+    ResolvedPath resolved = resolveVirtualPath(path);
+    File f;
+    if (resolved.valid && resolved.fs)
+        f = resolved.fs->open(resolved.localPath, "r");
+    else
+        f = LittleFS.open(path, "r");
     if (!f)
         return String();
 
@@ -74,14 +80,14 @@ void openBerryScript(const String &filePath)
 }
 #endif
 
-std::vector<BerryScriptInfo> scanBerryScripts(const char *dir)
+static std::vector<BerryScriptInfo> scanBerryScriptsOnFs(fs::FS &filesystem, const char *localDir, const String &virtualPrefix)
 {
     std::vector<BerryScriptInfo> result;
 
-    if (!LittleFS.exists(dir))
+    if (!filesystem.exists(localDir))
         return result;
 
-    File d = LittleFS.open(dir);
+    File d = filesystem.open(localDir);
     if (!d || !d.isDirectory())
         return result;
 
@@ -91,18 +97,37 @@ std::vector<BerryScriptInfo> scanBerryScripts(const char *dir)
         String filename = entry.name();
         if (filename.endsWith(".be"))
         {
-            String fullPath = String(dir);
-            if (!fullPath.endsWith("/"))
-                fullPath += "/";
-            fullPath += filename;
+            String localPath = String(localDir);
+            if (!localPath.endsWith("/"))
+                localPath += "/";
+            localPath += filename;
+
+            String virtualPath = virtualPrefix + localPath;
 
             BerryScriptInfo info;
-            info.name = parseAppNameFromFile(fullPath);
-            info.path = fullPath;
+            info.name = parseAppNameFromFile(virtualPath);
+            info.path = virtualPath;
             result.push_back(std::move(info));
         }
         entry = d.openNextFile();
     }
+    return result;
+}
+
+std::vector<BerryScriptInfo> scanBerryScripts(const char *dir)
+{
+    // Scan on LittleFS (flash)
+    auto result = scanBerryScriptsOnFs(LittleFS, dir, "/flash");
+
+#if ENABLE_SD_CARD
+    // Also scan on SD card if mounted
+    if (isSdMounted())
+    {
+        auto sdResult = scanBerryScriptsOnFs(SD, dir, "/sd");
+        result.insert(result.end(), sdResult.begin(), sdResult.end());
+    }
+#endif
+
     return result;
 }
 #endif
@@ -213,7 +238,22 @@ static String berryHandler(const String &command)
         if (path.length() > 0 && path[0] != '/')
             path = "/" + path;
 
-        if (!LittleFS.exists(path))
+        // Resolve virtual path to the correct filesystem
+        ResolvedPath resolved = resolveVirtualPath(path);
+        bool fileExists = false;
+        if (resolved.valid && resolved.fs)
+        {
+            fileExists = resolved.fs->exists(resolved.localPath);
+        }
+        else
+        {
+            // Legacy path without prefix — assume flash
+            fileExists = LittleFS.exists(path);
+            if (fileExists)
+                path = "/flash" + path;
+        }
+
+        if (!fileExists)
         {
             return "{\"error\": \"File not found: " + path + "\"}";
         }
@@ -224,7 +264,12 @@ static String berryHandler(const String &command)
         LoggerInstance->Info("Berry: opened " + appName + " (" + path + ")");
         return "{\"event\":\"berry\", \"status\":\"opened\", \"app\":\"" + appName + "\"}";
 #else
-        File f = LittleFS.open(path, "r");
+        ResolvedPath rp = resolveVirtualPath(path);
+        File f;
+        if (rp.valid && rp.fs)
+            f = rp.fs->open(rp.localPath, "r");
+        else
+            f = LittleFS.open(path, "r");
         if (!f)
             return "{\"error\": \"File not found: " + path + "\"}";
         String code = f.readString();
