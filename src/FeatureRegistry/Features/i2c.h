@@ -2,6 +2,7 @@
 
 #include <Wire.h>
 #include <vector>
+#include <ArduinoJson.h>
 
 #include "../../config.h"
 #include "../Feature.h"
