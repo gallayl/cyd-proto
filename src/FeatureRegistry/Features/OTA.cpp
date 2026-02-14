@@ -36,8 +36,7 @@ ArUploadHandlerFunction onUploadUpdate = ([](AsyncWebServerRequest *request, Str
                                               if (!index)
                                               {
                                                   LoggerInstance->Info(F("Starting OTA update..."));
-                                                  if (webSocket)
-                                                      webSocket->textAll("{\"type\":\"otaUpdateStarted\"}");
+                                                  webSocket->textAll("{\"type\":\"otaUpdateStarted\"}");
                                                   if (!Update.begin(request->contentLength(), U_FLASH))
                                                   {
                                                       Update.printError(Serial);
@@ -60,12 +59,10 @@ ArUploadHandlerFunction onUploadUpdate = ([](AsyncWebServerRequest *request, Str
                                                   {
                                                       getRedirectPage(request);
                                                       delay(1000);
-                                                      if (webSocket)
-                                                          webSocket->textAll("{\"type\":\"otaUpdateFinished\"}");
+                                                      webSocket->textAll("{\"type\":\"otaUpdateFinished\"}");
                                                       LoggerInstance->Info(F("Update done, rebooting..."));
                                                       LittleFS.end();
-                                                      if (webSocket)
-                                                          webSocket->closeAll();
+                                                      webSocket->closeAll();
                                                       server.end();
                                                       ESP.restart();
                                                       return;

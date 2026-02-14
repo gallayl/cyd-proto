@@ -14,15 +14,11 @@ void initWebSockets()
                        {
         if (type == WS_EVT_CONNECT)
         {
-            String msg(F("WS connected: "));
-            msg += client->remoteIP().toString();
-            LoggerInstance->Info(msg);
+            LoggerInstance->Info(String("WS connected: " + client->remoteIP().toString()));
         }
         else if (type == WS_EVT_DISCONNECT)
         {
-            String msg(F("WS left: "));
-            msg += client->remoteIP().toString();
-            LoggerInstance->Info(msg);
+            LoggerInstance->Info(String("WS left: " + client->remoteIP().toString()));
         }
         else if (type == WS_EVT_DATA)
         {
@@ -34,14 +30,7 @@ void initWebSockets()
 
     LoggerInstance->AddListener([](const String &scope, const String &message)
                                 {
-        if (!webSocket)
-            return;
-        String buf;
-        buf.reserve(scope.length() + 1 + message.length());
-        buf += scope;
-        buf += ':';
-        buf += message;
-        webSocket->textAll(buf);
+        webSocket->textAll(scope + ":" +  message);
     });
 
     server.addHandler(webSocket);

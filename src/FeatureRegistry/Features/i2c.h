@@ -9,7 +9,7 @@
 #include "../../ActionRegistry/FeatureAction.h"
 #include "../../CommandInterpreter/CommandParser.h"
 
-inline String scanDevices()
+static String scanDevices()
 {
     JsonDocument doc;
     JsonArray arr = doc.to<JsonArray>();
@@ -33,23 +33,14 @@ inline String scanDevices()
     return output;
 }
 
-inline String readDevice(uint16_t address, uint16_t size)
+static String readDevice(uint16_t address, uint16_t size)
 {
+    // use size_t overload explicitly to avoid ambiguity
     Wire.requestFrom((uint8_t)address, (size_t)size);
-
-    JsonDocument doc;
-    JsonArray arr = doc.to<JsonArray>();
-    while (Wire.available())
-    {
-        arr.add(Wire.read());
-    }
-
-    String output;
-    serializeJson(doc, output);
-    return output;
+    return String(Wire.read());
 }
 
-inline void writeDevice(uint16_t address, const String &data)
+static void writeDevice(uint16_t address, const String &data)
 {
     Wire.beginTransmission(address);
 

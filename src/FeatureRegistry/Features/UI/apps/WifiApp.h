@@ -120,9 +120,10 @@ namespace UI
 
             int n = WiFi.scanNetworks();
 
-            // remove old scan labels from the container so they are freed
             for (auto *lbl : scanLabels)
-                scrollRef->getContent().removeChild(lbl);
+            {
+                lbl->setText("");
+            }
             scanLabels.clear();
 
             if (n <= 0)
