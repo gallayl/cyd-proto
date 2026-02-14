@@ -1,3 +1,7 @@
+#include "../../../config.h"
+
+#if ENABLE_UI
+
 #include "screenCustomCommand.h"
 
 // the TFT object is defined elsewhere (UiFeature.cpp)
@@ -148,3 +152,5 @@ static String screenCommandHandler(const String &command)
 
 CustomCommand *screenCustomCommand = new CustomCommand("screen", [](const String &command)
                                                        { return screenCommandHandler(command); });
+
+#endif

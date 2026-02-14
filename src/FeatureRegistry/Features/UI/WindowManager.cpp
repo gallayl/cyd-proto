@@ -1,3 +1,7 @@
+#include "../../../config.h"
+
+#if ENABLE_UI
+
 #include "WindowManager.h"
 
 namespace UI
@@ -213,3 +217,5 @@ namespace UI
     }
 
 } // namespace UI
+
+#endif

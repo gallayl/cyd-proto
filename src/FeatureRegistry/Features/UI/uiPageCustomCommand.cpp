@@ -1,3 +1,7 @@
+#include "../../../config.h"
+
+#if ENABLE_UI
+
 #include "uiPageCustomCommand.h"
 #include "WindowManager.h"
 
@@ -69,3 +73,5 @@ static String pageCommandHandler(const String &command)
 
 CustomCommand *pageCustomCommand = new CustomCommand("page", [](const String &command)
                                                      { return pageCommandHandler(command); });
+
+#endif
