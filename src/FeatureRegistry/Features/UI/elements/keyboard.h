@@ -19,7 +19,10 @@ namespace UI
 
         void toggle()
         {
-            visible ? hide() : show();
+            if (visible)
+                hide();
+            else
+                show();
         }
 
         void show()
@@ -135,13 +138,10 @@ namespace UI
 
         static constexpr int kLetterRow3Count = 3;
         static constexpr KeyDef letterRow3[3] = {
-            {"123", 0, 3},   // mode toggle (special)
-            {" ", ' ', 10},  // space
-            {"Ent", '\n', 3} // enter
+            {"123", 0, 3},       // mode toggle (special)
+            {"Space", ' ', 10},  // space
+            {"Ent", '\n', 3}     // enter
         };
-
-        static constexpr int kLetterTotal =
-            kLetterRow0Count + kLetterRow1Count + kLetterRow2Count + kLetterRow3Count;
 
         // --- symbol mode layout ---
 
@@ -163,19 +163,9 @@ namespace UI
 
         static constexpr int kSymRow3Count = 3;
         static constexpr KeyDef symRow3[3] = {
-            {"ABC", 0, 3},   // mode toggle (special)
-            {" ", ' ', 10},  // space
-            {"Ent", '\n', 3} // enter
-        };
-
-        static constexpr int kSymTotal =
-            kSymRow0Count + kSymRow1Count + kSymRow2Count + kSymRow3Count;
-
-        // compute key pixel width from widthUnits relative to a row's total units
-        struct RowInfo
-        {
-            const KeyDef *keys;
-            int count;
+            {"ABC", 0, 3},       // mode toggle (special)
+            {"Space", ' ', 10},  // space
+            {"Ent", '\n', 3}     // enter
         };
 
         static int totalUnits(const KeyDef *keys, int count)
