@@ -99,7 +99,7 @@ namespace UI
                 for (int i = NCOLORS; i < 16; i++)
                     sprite.setPaletteColor(i, 255, 255, 255);
 
-                sprite.fillSprite(TFT_WHITE);
+                sprite.fillSprite(WHITE_IDX);
             }
         }
 
@@ -127,6 +127,8 @@ namespace UI
         // ---- state ----
         Tool tool{Tool::DRAW};
         uint16_t color{TFT_BLACK};
+        uint8_t colorIdx{0};
+        static constexpr uint8_t WHITE_IDX = 1;
         Button *tbtn[5]{};
         LGFX_Sprite sprite;
         bool spriteOk{false};
@@ -312,18 +314,18 @@ namespace UI
                     tLastY = ly;
 
                     if (tool == Tool::DRAW)
-                        sprite.fillCircle(lx, ly, 1, color);
+                        sprite.fillCircle(lx, ly, 1, colorIdx);
                     else if (tool == Tool::ERASE)
-                        sprite.fillCircle(lx, ly, 3, TFT_WHITE);
+                        sprite.fillCircle(lx, ly, 3, WHITE_IDX);
                     else if (tool == Tool::FILL)
                         doFloodFill(lx, ly);
                 }
                 else
                 {
                     if (tool == Tool::DRAW)
-                        drawThickLine(tLastX, tLastY, lx, ly, color, 1);
+                        drawThickLine(tLastX, tLastY, lx, ly, colorIdx, 1);
                     else if (tool == Tool::ERASE)
-                        drawThickLine(tLastX, tLastY, lx, ly, TFT_WHITE, 3);
+                        drawThickLine(tLastX, tLastY, lx, ly, WHITE_IDX, 3);
 
                     tLastX = lx;
                     tLastY = ly;
@@ -335,9 +337,9 @@ namespace UI
                 int ly = constrain(py - cvY, 0, cvH - 1);
 
                 if (tool == Tool::DRAW)
-                    drawThickLine(tLastX, tLastY, lx, ly, color, 1);
+                    drawThickLine(tLastX, tLastY, lx, ly, colorIdx, 1);
                 else if (tool == Tool::ERASE)
-                    drawThickLine(tLastX, tLastY, lx, ly, TFT_WHITE, 3);
+                    drawThickLine(tLastX, tLastY, lx, ly, WHITE_IDX, 3);
 
                 tLastX = lx;
                 tLastY = ly;
@@ -351,7 +353,10 @@ namespace UI
                 int sw = palW / NCOLORS;
                 int idx = (px - palX) / sw;
                 if (idx >= 0 && idx < NCOLORS)
+                {
                     color = paletteColors()[idx];
+                    colorIdx = idx;
+                }
             }
         }
 
@@ -369,7 +374,7 @@ namespace UI
                 int ry = (tStartY < ly) ? tStartY : ly;
                 int rw = abs(lx - tStartX) + 1;
                 int rh = abs(ly - tStartY) + 1;
-                sprite.drawRect(rx, ry, rw, rh, color);
+                sprite.drawRect(rx, ry, rw, rh, colorIdx);
             }
             else if (tool == Tool::CIRCLE)
             {
@@ -378,7 +383,7 @@ namespace UI
                 int erx = abs(lx - tStartX) / 2;
                 int ery = abs(ly - tStartY) / 2;
                 if (erx > 0 && ery > 0)
-                    sprite.drawEllipse(ecx, ecy, erx, ery, color);
+                    sprite.drawEllipse(ecx, ecy, erx, ery, colorIdx);
             }
 
             touching = false;
@@ -396,7 +401,7 @@ namespace UI
             uint32_t targetColor = sprite.readPixel(fx, fy);
 
             // check if fill would change anything
-            sprite.drawPixel(fx, fy, color);
+            sprite.drawPixel(fx, fy, colorIdx);
             uint32_t filledColor = sprite.readPixel(fx, fy);
             if (filledColor == targetColor)
                 return; // same color, nothing to do
@@ -439,7 +444,7 @@ namespace UI
 
                 while (right < cvW && sprite.readPixel(right, s.y) == targetColor)
                 {
-                    sprite.drawPixel(right, s.y, color);
+                    sprite.drawPixel(right, s.y, colorIdx);
 
                     if (s.y > 0)
                     {
