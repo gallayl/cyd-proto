@@ -16,6 +16,11 @@
 #include "apps/PaintApp.h"
 #include <Esp.h>
 
+#include "../../../../config.h"
+#if ENABLE_BERRY
+#include "../Berry/BerryFeature.h"
+#endif
+
 namespace UI
 {
 
@@ -54,7 +59,7 @@ namespace UI
                 };
             };
 
-            startMenu.setMenuItems({
+            std::vector<MenuItem> menuItems = {
                 MenuItem::Submenu("Programs", {
                                                   MenuItem::Leaf("RGB LED", openApp("RGB LED")),
                                                   MenuItem::Leaf("Sensors", openApp("Sensors")),
@@ -70,10 +75,26 @@ namespace UI
                                                 MenuItem::Leaf("Log Viewer", openApp("Log Viewer")),
                                                 MenuItem::Leaf("File Manager", openApp("File Manager")),
                                             }),
-                MenuItem::Separator(),
-                MenuItem::Leaf("Restart", []()
-                               { ESP.restart(); }),
-            });
+            };
+
+#if ENABLE_BERRY
+            {
+                auto &berryApps = getBerryAppNames();
+                if (!berryApps.empty())
+                {
+                    std::vector<MenuItem> scriptItems;
+                    for (auto &name : berryApps)
+                        scriptItems.push_back(MenuItem::Leaf(name.c_str(), openApp(name.c_str())));
+                    menuItems.push_back(MenuItem::Submenu("Scripts", std::move(scriptItems)));
+                }
+            }
+#endif
+
+            menuItems.push_back(MenuItem::Separator());
+            menuItems.push_back(MenuItem::Leaf("Restart", []()
+                                               { ESP.restart(); }));
+
+            startMenu.setMenuItems(std::move(menuItems));
 
             taskbar.setStartClickCallback([this]()
                                           { startMenu.toggle(); });

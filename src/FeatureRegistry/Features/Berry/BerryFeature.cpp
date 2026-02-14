@@ -8,7 +8,20 @@ extern "C" {
 #include "berry.h"
 }
 
+#if ENABLE_BERRY
+#include "BerryUIBindings.h"
+#include "BerryApp.h"
+#include "../UI/App.h"
+#endif
+
 static bvm *berry_vm = nullptr;
+
+#if ENABLE_BERRY
+bvm *getBerryVM() { return berry_vm; }
+
+static std::vector<String> s_berryAppNames;
+const std::vector<String> &getBerryAppNames() { return s_berryAppNames; }
+#endif
 
 // --- Native bindings exposed to Berry scripts ---
 
@@ -143,6 +156,70 @@ static void registerNativeFunction(const char *name, bntvfunc func)
     be_pop(berry_vm, 1);
 }
 
+#if ENABLE_BERRY
+// --- App discovery ---
+
+static void discoverBerryApps()
+{
+    s_berryAppNames.clear();
+
+    if (!LittleFS.exists("/berry/apps"))
+        return;
+
+    File dir = LittleFS.open("/berry/apps");
+    if (!dir || !dir.isDirectory())
+        return;
+
+    File entry = dir.openNextFile();
+    while (entry)
+    {
+        String filename = entry.name();
+        if (filename.endsWith(".be"))
+        {
+            // Parse app name from "# app: <Name>" in first 5 lines
+            String appName;
+            String fullPath = "/berry/apps/" + filename;
+
+            File f = LittleFS.open(fullPath, "r");
+            if (f)
+            {
+                for (int line = 0; line < 5 && f.available(); line++)
+                {
+                    String l = f.readStringUntil('\n');
+                    l.trim();
+                    if (l.startsWith("# app:"))
+                    {
+                        appName = l.substring(6);
+                        appName.trim();
+                        break;
+                    }
+                }
+                f.close();
+            }
+
+            // fallback to filename without extension
+            if (appName.isEmpty())
+            {
+                appName = filename.substring(0, filename.length() - 3);
+                // capitalize first letter
+                if (appName.length() > 0)
+                    appName.setCharAt(0, toupper(appName.charAt(0)));
+            }
+
+            // register app factory
+            String path = fullPath;
+            String name = appName;
+            UI::registerApp(name.c_str(), [path, name]() -> UI::App *
+                            { return new BerryApp(path, name); });
+            s_berryAppNames.push_back(name);
+
+            LoggerInstance->Info("Berry app: " + name + " (" + fullPath + ")");
+        }
+        entry = dir.openNextFile();
+    }
+}
+#endif
+
 Feature *BerryFeature = new Feature(
     "Berry",
     []()
@@ -156,6 +233,11 @@ Feature *BerryFeature = new Feature(
 
         registerNativeFunction("action", native_action);
         registerNativeFunction("log", native_log);
+
+#if ENABLE_BERRY
+        registerBerryUIModule(berry_vm);
+        discoverBerryApps();
+#endif
 
         ActionRegistryInstance->RegisterAction(&berryAction);
 
