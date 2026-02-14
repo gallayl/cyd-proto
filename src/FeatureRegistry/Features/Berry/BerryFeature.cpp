@@ -2,7 +2,9 @@
 #include "../Logging.h"
 #include "../../../ActionRegistry/ActionRegistry.h"
 #include "../../../CommandInterpreter/CommandParser.h"
+#include "../../../config.h"
 #include <LittleFS.h>
+#include <map>
 
 extern "C" {
 #include "berry.h"
@@ -12,6 +14,9 @@ extern "C" {
 #include "BerryUIBindings.h"
 #include "BerryApp.h"
 #include "../UI/App.h"
+#if ENABLE_UI
+#include "../UI/WindowManager.h"
+#endif
 #endif
 
 static bvm *berry_vm = nullptr;
@@ -20,7 +25,17 @@ static bvm *berry_vm = nullptr;
 bvm *getBerryVM() { return berry_vm; }
 
 static std::vector<String> s_berryAppNames;
+static std::map<String, String> s_berryPathToName;
+
 const std::vector<String> &getBerryAppNames() { return s_berryAppNames; }
+
+static String getBerryAppNameForPath(String path)
+{
+    if (path.length() > 0 && path[0] != '/')
+        path = "/" + path;
+    auto it = s_berryPathToName.find(path);
+    return it != s_berryPathToName.end() ? it->second : String();
+}
 #endif
 
 // --- Native bindings exposed to Berry scripts ---
@@ -126,6 +141,16 @@ static String berryHandler(const String &command)
             return String(F("{\"error\": \"No file path provided\"}"));
         }
 
+#if ENABLE_BERRY && ENABLE_UI
+        String appName = getBerryAppNameForPath(path);
+        if (appName.length() > 0)
+        {
+            UI::windowManager().openApp(appName.c_str());
+            LoggerInstance->Info("Berry: opened app " + appName);
+            return "{\"event\":\"berry\", \"status\":\"opened\", \"app\":\"" + appName + "\"}";
+        }
+#endif
+
         File f = LittleFS.open(path, "r");
         if (!f)
         {
@@ -137,7 +162,28 @@ static String berryHandler(const String &command)
         return berryEval(code);
     }
 
-    return String(F("{\"error\": \"Usage: berry eval <code> | berry run <path>\"}"));
+#if ENABLE_BERRY && ENABLE_UI
+    if (operation == "open")
+    {
+        String appName = CommandParser::GetCommandParameter(command, 2);
+        if (appName.length() == 0)
+        {
+            return String(F("{\"error\": \"No app name provided\"}"));
+        }
+        for (const auto &name : s_berryAppNames)
+        {
+            if (name.equalsIgnoreCase(appName))
+            {
+                UI::windowManager().openApp(name.c_str());
+                LoggerInstance->Info("Berry: opened app " + name);
+                return "{\"event\":\"berry\", \"status\":\"opened\", \"app\":\"" + name + "\"}";
+            }
+        }
+        return "{\"error\": \"Unknown Berry app: " + appName + "\"}";
+    }
+#endif
+
+    return String(F("{\"error\": \"Usage: berry eval <code> | berry run <path> | berry open <appname>\"}"));
 }
 
 // --- Action definition ---
@@ -162,6 +208,7 @@ static void registerNativeFunction(const char *name, bntvfunc func)
 static void discoverBerryApps()
 {
     s_berryAppNames.clear();
+    s_berryPathToName.clear();
 
     if (!LittleFS.exists("/berry/apps"))
         return;
@@ -212,6 +259,7 @@ static void discoverBerryApps()
             UI::registerApp(name.c_str(), [path, name]() -> UI::App *
                             { return new BerryApp(path, name); });
             s_berryAppNames.push_back(name);
+            s_berryPathToName[fullPath] = appName;
 
             LoggerInstance->Info("Berry app: " + name + " (" + fullPath + ")");
         }

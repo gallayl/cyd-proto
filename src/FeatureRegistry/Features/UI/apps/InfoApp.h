@@ -36,7 +36,7 @@ namespace UI
             addRow(*scroll, cx, curY, cw, "-- ESP --");
             curY += rowH;
 
-            if (info.containsKey("esp"))
+            if (info["esp"].is<JsonObject>())
             {
                 JsonObject esp = info["esp"];
                 addRow(*scroll, cx, curY, cw, "SDK: " + String(esp["sdkVersion"].as<const char *>()));
@@ -53,7 +53,7 @@ namespace UI
             addRow(*scroll, cx, curY, cw, "-- Flash --");
             curY += rowH;
 
-            if (info.containsKey("flash"))
+            if (info["flash"].is<JsonObject>())
             {
                 JsonObject flash = info["flash"];
                 addRow(*scroll, cx, curY, cw, "Size: " + String(flash["size"].as<uint32_t>()) + " B");
@@ -66,7 +66,7 @@ namespace UI
             addRow(*scroll, cx, curY, cw, "-- Filesystem --");
             curY += rowH;
 
-            if (info.containsKey("fs"))
+            if (info["fs"].is<JsonObject>())
             {
                 JsonObject fs = info["fs"];
                 addRow(*scroll, cx, curY, cw, "Total: " + String(fs["totalBytes"].as<uint32_t>()) + " B");
