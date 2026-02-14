@@ -114,14 +114,10 @@ namespace UI
             children.clear();
         }
 
-        // provide access to raw pointers for iteration
-        std::vector<Element *> getChildren() const
+        // provide access to children for iteration (no allocation)
+        const std::vector<std::unique_ptr<Element>> &getChildren() const
         {
-            std::vector<Element *> out;
-            out.reserve(children.size());
-            for (auto &c : children)
-                out.push_back(c.get());
-            return out;
+            return children;
         }
 
         // drawing -------------------------------------------------------------

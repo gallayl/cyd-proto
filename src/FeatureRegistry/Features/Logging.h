@@ -78,12 +78,33 @@ private:
         }
     }
 
+    uint16_t compactCounter{0};
+
+    void compactEntries()
+    {
+        JsonDocument fresh;
+        JsonArray freshArr = fresh.to<JsonArray>();
+        JsonArrayConst oldArr = this->entries.as<JsonArrayConst>();
+        for (JsonObjectConst obj : oldArr)
+        {
+            freshArr.add(obj);
+        }
+        this->entries = std::move(fresh);
+    }
+
     void addEntry(const String &severity, const String &message, unsigned long epochTime, const String &utcTime)
     {
         if (this->entryCount >= MAX_LOG_ENTRIES)
         {
             JsonArray arr = this->entries.as<JsonArray>();
             arr.remove(0);
+
+            // periodically compact to reclaim memory from removed entries
+            if (++compactCounter >= 20)
+            {
+                compactCounter = 0;
+                compactEntries();
+            }
         }
         else
         {
