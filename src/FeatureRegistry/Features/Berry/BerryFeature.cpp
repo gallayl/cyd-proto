@@ -4,7 +4,6 @@
 #include "../../../CommandInterpreter/CommandParser.h"
 #include "../../../config.h"
 #include <LittleFS.h>
-#include <map>
 
 extern "C" {
 #include "berry.h"
@@ -24,22 +23,87 @@ static bvm *berry_vm = nullptr;
 #if ENABLE_BERRY
 bvm *getBerryVM() { return berry_vm; }
 
-static std::vector<String> s_berryAppNames;
-static std::map<String, String> s_berryPathToName;
-
-const std::vector<String> &getBerryAppNames() { return s_berryAppNames; }
-
-static String getBerryAppNameForPath(String path)
+// Parse app name from "# app: <Name>" in first 5 lines of a .be file
+static String parseAppNameFromFile(const String &path)
 {
-    if (path.length() > 0 && path[0] != '/')
-        path = "/" + path;
-    auto it = s_berryPathToName.find(path);
-    return it != s_berryPathToName.end() ? it->second : String();
+    File f = LittleFS.open(path, "r");
+    if (!f)
+        return String();
+
+    String appName;
+    for (int line = 0; line < 5 && f.available(); line++)
+    {
+        String l = f.readStringUntil('\n');
+        l.trim();
+        if (l.startsWith("# app:"))
+        {
+            appName = l.substring(6);
+            appName.trim();
+            break;
+        }
+    }
+    f.close();
+
+    if (appName.isEmpty())
+    {
+        int lastSlash = path.lastIndexOf('/');
+        String filename = (lastSlash >= 0) ? path.substring(lastSlash + 1) : path;
+        if (filename.endsWith(".be"))
+            filename = filename.substring(0, filename.length() - 3);
+        if (filename.length() > 0)
+            filename.setCharAt(0, toupper(filename.charAt(0)));
+        appName = filename;
+    }
+
+    return appName;
 }
 
-String getBerryAppNameFromPath(const String &path)
+#if ENABLE_UI
+void openBerryScript(const String &filePath)
 {
-    return getBerryAppNameForPath(path);
+    String path = filePath;
+    if (path.length() > 0 && path[0] != '/')
+        path = "/" + path;
+
+    String appName = parseAppNameFromFile(path);
+    if (appName.isEmpty())
+        return;
+
+    auto *app = new BerryApp(path, appName);
+    UI::windowManager().openApp(appName.c_str(), app);
+}
+#endif
+
+std::vector<BerryScriptInfo> scanBerryScripts(const char *dir)
+{
+    std::vector<BerryScriptInfo> result;
+
+    if (!LittleFS.exists(dir))
+        return result;
+
+    File d = LittleFS.open(dir);
+    if (!d || !d.isDirectory())
+        return result;
+
+    File entry = d.openNextFile();
+    while (entry)
+    {
+        String filename = entry.name();
+        if (filename.endsWith(".be"))
+        {
+            String fullPath = String(dir);
+            if (!fullPath.endsWith("/"))
+                fullPath += "/";
+            fullPath += filename;
+
+            BerryScriptInfo info;
+            info.name = parseAppNameFromFile(fullPath);
+            info.path = fullPath;
+            result.push_back(std::move(info));
+        }
+        entry = d.openNextFile();
+    }
+    return result;
 }
 #endif
 
@@ -146,28 +210,30 @@ static String berryHandler(const String &command)
             return String(F("{\"error\": \"No file path provided\"}"));
         }
 
-#if ENABLE_BERRY && ENABLE_UI
-        String appName = getBerryAppNameForPath(path);
-        if (appName.length() > 0)
-        {
-            UI::windowManager().openApp(appName.c_str());
-            LoggerInstance->Info("Berry: opened app " + appName);
-            return "{\"event\":\"berry\", \"status\":\"opened\", \"app\":\"" + appName + "\"}";
-        }
-#endif
+        if (path.length() > 0 && path[0] != '/')
+            path = "/" + path;
 
-        File f = LittleFS.open(path, "r");
-        if (!f)
+        if (!LittleFS.exists(path))
         {
             return "{\"error\": \"File not found: " + path + "\"}";
         }
+
+#if ENABLE_UI
+        openBerryScript(path);
+        String appName = parseAppNameFromFile(path);
+        LoggerInstance->Info("Berry: opened " + appName + " (" + path + ")");
+        return "{\"event\":\"berry\", \"status\":\"opened\", \"app\":\"" + appName + "\"}";
+#else
+        File f = LittleFS.open(path, "r");
+        if (!f)
+            return "{\"error\": \"File not found: " + path + "\"}";
         String code = f.readString();
         f.close();
-
         return berryEval(code);
+#endif
     }
 
-#if ENABLE_BERRY && ENABLE_UI
+#if ENABLE_UI
     if (operation == "open")
     {
         String appName = CommandParser::GetCommandParameter(command, 2);
@@ -175,13 +241,15 @@ static String berryHandler(const String &command)
         {
             return String(F("{\"error\": \"No app name provided\"}"));
         }
-        for (const auto &name : s_berryAppNames)
+        // scan /berry/apps/ and find matching name
+        auto scripts = scanBerryScripts("/berry/apps");
+        for (auto &s : scripts)
         {
-            if (name.equalsIgnoreCase(appName))
+            if (s.name.equalsIgnoreCase(appName))
             {
-                UI::windowManager().openApp(name.c_str());
-                LoggerInstance->Info("Berry: opened app " + name);
-                return "{\"event\":\"berry\", \"status\":\"opened\", \"app\":\"" + name + "\"}";
+                openBerryScript(s.path);
+                LoggerInstance->Info("Berry: opened app " + s.name);
+                return "{\"event\":\"berry\", \"status\":\"opened\", \"app\":\"" + s.name + "\"}";
             }
         }
         return "{\"error\": \"Unknown Berry app: " + appName + "\"}";
@@ -208,69 +276,6 @@ static void registerNativeFunction(const char *name, bntvfunc func)
 }
 
 #if ENABLE_BERRY
-// --- App discovery ---
-
-static void discoverBerryApps()
-{
-    s_berryAppNames.clear();
-    s_berryPathToName.clear();
-
-    if (!LittleFS.exists("/berry/apps"))
-        return;
-
-    File dir = LittleFS.open("/berry/apps");
-    if (!dir || !dir.isDirectory())
-        return;
-
-    File entry = dir.openNextFile();
-    while (entry)
-    {
-        String filename = entry.name();
-        if (filename.endsWith(".be"))
-        {
-            // Parse app name from "# app: <Name>" in first 5 lines
-            String appName;
-            String fullPath = "/berry/apps/" + filename;
-
-            File f = LittleFS.open(fullPath, "r");
-            if (f)
-            {
-                for (int line = 0; line < 5 && f.available(); line++)
-                {
-                    String l = f.readStringUntil('\n');
-                    l.trim();
-                    if (l.startsWith("# app:"))
-                    {
-                        appName = l.substring(6);
-                        appName.trim();
-                        break;
-                    }
-                }
-                f.close();
-            }
-
-            // fallback to filename without extension
-            if (appName.isEmpty())
-            {
-                appName = filename.substring(0, filename.length() - 3);
-                // capitalize first letter
-                if (appName.length() > 0)
-                    appName.setCharAt(0, toupper(appName.charAt(0)));
-            }
-
-            // register app factory
-            String path = fullPath;
-            String name = appName;
-            UI::registerApp(name.c_str(), [path, name]() -> UI::App *
-                            { return new BerryApp(path, name); });
-            s_berryAppNames.push_back(name);
-            s_berryPathToName[fullPath] = appName;
-
-            LoggerInstance->Info("Berry app: " + name + " (" + fullPath + ")");
-        }
-        entry = dir.openNextFile();
-    }
-}
 #endif
 
 Feature *BerryFeature = new Feature(
@@ -289,7 +294,6 @@ Feature *BerryFeature = new Feature(
 
 #if ENABLE_BERRY
         registerBerryUIModule(berry_vm);
-        discoverBerryApps();
 #endif
 
         ActionRegistryInstance->RegisterAction(&berryAction);

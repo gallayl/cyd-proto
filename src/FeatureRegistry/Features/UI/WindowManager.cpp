@@ -39,37 +39,59 @@ namespace UI
             }
         }
 
-        // find factory
+        // find factory in registry
         for (auto &entry : appRegistry())
         {
             if (String(entry.name) == appName)
             {
-                OpenApp oa;
-                oa.name = appName;
-                oa.app.reset(entry.factory());
-
-                int winX = Theme::WindowBorderWidth;
-                int winY = Theme::DesktopY + 2;
-                int winW = Theme::ScreenWidth - Theme::WindowBorderWidth * 2;
-                int winH = availableDesktopHeight() - 4;
-
-                oa.window = std::make_unique<Window>(
-                    appName, winX, winY, winW, winH);
-
-                setupWindowCallbacks(*this, oa);
-
-                oa.window->mount();
-                oa.app->setup(
-                    oa.window->getContent(),
-                    oa.window->contentW(),
-                    oa.window->contentH());
-
-                openApps.push_back(std::move(oa));
-                updateActiveStates();
-                markDirty();
+                openApp(appName, entry.factory());
                 return;
             }
         }
+    }
+
+    void WindowManager::openApp(const char *appName, App *appInstance)
+    {
+        if (!appInstance)
+            return;
+
+        // if already open, just focus (restore if minimized)
+        for (auto &oa : openApps)
+        {
+            if (oa.name == appName)
+            {
+                if (oa.window->isMinimized())
+                    restoreApp(appName);
+                else
+                    focusApp(appName);
+                delete appInstance;
+                return;
+            }
+        }
+
+        OpenApp oa;
+        oa.name = appName;
+        oa.app.reset(appInstance);
+
+        int winX = Theme::WindowBorderWidth;
+        int winY = Theme::DesktopY + 2;
+        int winW = Theme::ScreenWidth - Theme::WindowBorderWidth * 2;
+        int winH = availableDesktopHeight() - 4;
+
+        oa.window = std::make_unique<Window>(
+            appName, winX, winY, winW, winH);
+
+        setupWindowCallbacks(*this, oa);
+
+        oa.window->mount();
+        oa.app->setup(
+            oa.window->getContent(),
+            oa.window->contentW(),
+            oa.window->contentH());
+
+        openApps.push_back(std::move(oa));
+        updateActiveStates();
+        markDirty();
     }
 
     void WindowManager::closeApp(const char *appName)

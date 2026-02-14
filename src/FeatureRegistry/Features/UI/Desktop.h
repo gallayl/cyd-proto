@@ -80,12 +80,17 @@ namespace UI
 
 #if ENABLE_BERRY
             {
-                auto &berryApps = getBerryAppNames();
-                if (!berryApps.empty())
+                auto scripts = scanBerryScripts();
+                if (!scripts.empty())
                 {
                     std::vector<MenuItem> scriptItems;
-                    for (auto &name : berryApps)
-                        scriptItems.push_back(MenuItem::Leaf(name.c_str(), openApp(name.c_str())));
+                    for (auto &s : scripts)
+                    {
+                        String path = s.path;
+                        scriptItems.push_back(MenuItem::Leaf(s.name.c_str(),
+                                                             [path]()
+                                                             { openBerryScript(path); }));
+                    }
                     menuItems.push_back(MenuItem::Submenu("Scripts", std::move(scriptItems)));
                 }
             }

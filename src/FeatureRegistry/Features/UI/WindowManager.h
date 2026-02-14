@@ -23,6 +23,7 @@ namespace UI
         WindowManager() = default;
 
         void openApp(const char *appName);
+        void openApp(const char *appName, App *appInstance);
         void closeApp(const char *appName);
         void focusApp(const char *appName);
         void minimizeApp(const char *appName);
