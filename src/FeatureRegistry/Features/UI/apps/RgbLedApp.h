@@ -19,19 +19,14 @@ namespace UI
 
         void setup(Container &cont, int w, int h) override
         {
-            contentRef = &cont;
-            contentW = w;
-            contentH = h;
-
             int baseY = 0;
             int cx, cy, cw, ch;
             cont.getBounds(cx, cy, cw, ch);
 
-            // color preview at top
-            previewY = cy + 4;
-            previewX = cx + 4;
-            previewW = w - 8;
-            previewH = 30;
+            // color preview element at top
+            auto preview = std::make_unique<PreviewElement>(this);
+            preview->setBounds(cx + 4, cy + 4, w - 8, 30);
+            cont.addChild(std::move(preview));
             baseY = 38;
 
             // Red row
@@ -55,23 +50,27 @@ namespace UI
             cont.addChild(std::move(offBtn));
         }
 
-        void loop() override
-        {
-            // redraw preview with current color
-            if (contentRef && contentRef->isMounted())
-            {
-                auto &c = canvas();
-                uint16_t rgb565 = c.color565(r, g, b);
-                c.fillRect(previewX, previewY, previewW, previewH, rgb565);
-                c.drawRect(previewX, previewY, previewW, previewH, Theme::ButtonShadow);
-            }
-        }
-
     private:
-        Container *contentRef{nullptr};
-        int contentW{0}, contentH{0};
         uint8_t r{0}, g{0}, b{0};
-        int previewX{0}, previewY{0}, previewW{0}, previewH{0};
+
+        class PreviewElement : public Element
+        {
+        public:
+            explicit PreviewElement(RgbLedApp *a) : app(a) {}
+
+            void draw() override
+            {
+                if (!mounted || !app)
+                    return;
+                auto &c = canvas();
+                uint16_t rgb565 = c.color565(app->r, app->g, app->b);
+                c.fillRect(x, y, width, height, rgb565);
+                c.drawRect(x, y, width, height, Theme::ButtonShadow);
+            }
+
+        private:
+            RgbLedApp *app;
+        };
 
         void applyColor()
         {

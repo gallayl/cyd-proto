@@ -111,9 +111,9 @@ namespace UI
             windowManager().handleTouchEnd(px, py);
         }
 
-        void loop()
+        void tickTimers()
         {
-            windowManager().loopApps();
+            windowManager().tickTimers();
         }
 
     private:

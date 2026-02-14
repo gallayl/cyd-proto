@@ -160,11 +160,12 @@ namespace UI
         }
     }
 
-    void WindowManager::loopApps()
+    void WindowManager::tickTimers()
     {
         for (auto &oa : openApps)
         {
-            oa.app->loop();
+            if (oa.app->tickTimers())
+                markDirty();
         }
     }
 

@@ -25,4 +25,17 @@ namespace UI
         canvas().pushSprite(0, 0);
     }
 
+    namespace detail
+    {
+        inline bool &dirtyFlag()
+        {
+            static bool flag = true;
+            return flag;
+        }
+    } // namespace detail
+
+    inline void markDirty() { detail::dirtyFlag() = true; }
+    inline bool isDirty() { return detail::dirtyFlag(); }
+    inline void clearDirty() { detail::dirtyFlag() = false; }
+
 } // namespace UI

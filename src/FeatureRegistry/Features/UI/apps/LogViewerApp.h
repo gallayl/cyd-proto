@@ -35,22 +35,14 @@ namespace UI
             populateLog();
 
             cont.addChild(std::move(scroll));
-        }
 
-        void loop() override
-        {
-            unsigned long now = millis();
-            if (now - lastRefresh > 3000)
-            {
-                refreshLog();
-                lastRefresh = now;
-            }
+            scheduleTimer(3000, [this]()
+                          { refreshLog(); });
         }
 
     private:
         ScrollableContainer *scrollRef{nullptr};
         int scrollAreaX{0}, scrollAreaY{0}, scrollAreaW{0}, scrollAreaH{0};
-        unsigned long lastRefresh{0};
         std::vector<Label *> logLabels;
         int lastEntryCount{0};
 

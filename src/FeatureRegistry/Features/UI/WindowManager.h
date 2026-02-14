@@ -43,7 +43,7 @@ namespace UI
         using OverlayTouchEndFn = std::function<bool(int, int)>;
         void setOverlayTouchEnd(OverlayTouchEndFn fn) { overlayTouchEnd = std::move(fn); }
 
-        void loopApps();
+        void tickTimers();
 
     private:
         std::vector<OpenApp> openApps;

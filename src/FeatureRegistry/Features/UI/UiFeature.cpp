@@ -33,14 +33,17 @@ Feature *UiFeature = new Feature("UI", []()
                                  {
     static bool prevTouched = false;
     static int prevX = 0, prevY = 0;
+    static unsigned long lastDraw = 0;
     int tx, ty;
     bool touched = tft.getTouch(&tx, &ty);
 
     if (touched) {
         UI::desktop().handleTouch(tx, ty);
+        UI::markDirty();
     } else if (prevTouched) {
         UI::desktop().handleTouchEnd(prevX, prevY);
         UI::executeQueuedActions();
+        UI::markDirty();
     }
 
     prevTouched = touched;
@@ -49,8 +52,16 @@ Feature *UiFeature = new Feature("UI", []()
         prevY = ty;
     }
 
-    UI::desktop().loop();
-    UI::desktop().draw(); });
+    UI::desktop().tickTimers();
+
+    if (UI::isDirty()) {
+        unsigned long now = millis();
+        if (now - lastDraw >= 33) {
+            UI::desktop().draw();
+            UI::clearDirty();
+            lastDraw = now;
+        }
+    } });
 
 void uiFeatureInit()
 {

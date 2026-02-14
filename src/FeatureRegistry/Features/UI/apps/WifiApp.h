@@ -58,16 +58,9 @@ namespace UI
             scroll->setContentHeight(curY - cy);
             cont.addChild(std::move(scroll));
             refreshInfo();
-        }
 
-        void loop() override
-        {
-            unsigned long now = millis();
-            if (now - lastRefresh > 5000)
-            {
-                refreshInfo();
-                lastRefresh = now;
-            }
+            scheduleTimer(5000, [this]()
+                          { refreshInfo(); });
         }
 
     private:
@@ -78,7 +71,6 @@ namespace UI
         Label *ssidLabel{nullptr};
         Label *rssiLabel{nullptr};
         int scanStartY{0};
-        unsigned long lastRefresh{0};
         std::vector<Label *> scanLabels;
 
         void refreshInfo()
