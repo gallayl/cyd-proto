@@ -179,7 +179,9 @@ FeatureAction rgbLedAction = {
             int g = CommandParser::GetCommandParameter(command, 3).toInt();
             int b = CommandParser::GetCommandParameter(command, 4).toInt();
             setRgbLedColor(r, g, b);
-            LoggerInstance->Info("Set RGB LED color to " + String(r) + "," + String(g) + "," + String(b));
+            char logBuf[48];
+            snprintf(logBuf, sizeof(logBuf), "Set RGB LED color to %d,%d,%d", r, g, b);
+            LoggerInstance->Info(logBuf);
         }
         else if (sub == "off")
         {
@@ -199,8 +201,11 @@ FeatureAction lightSensorAction = {
     .handler = [](const String &command)
     {
         uint16_t value = readLightSensor();
-        LoggerInstance->Info("Read light sensor value: " + String(value));
-        return String("{\"event\": \"getLightSensorValue\", \"value\": " + String(value) + "}");
+        char buf[80];
+        snprintf(buf, sizeof(buf), "Read light sensor value: %u", value);
+        LoggerInstance->Info(buf);
+        snprintf(buf, sizeof(buf), "{\"event\": \"getLightSensorValue\", \"value\": %u}", value);
+        return String(buf);
     },
     .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
 
@@ -209,8 +214,11 @@ FeatureAction hallSensorAction = {
     .handler = [](const String &command)
     {
         uint16_t value = hallRead();
-        LoggerInstance->Info("Read hall sensor value: " + String(value));
-        return String("{\"event\": \"getHallSensorValue\", \"value\": " + String(value) + "}");
+        char buf[80];
+        snprintf(buf, sizeof(buf), "Read hall sensor value: %u", value);
+        LoggerInstance->Info(buf);
+        snprintf(buf, sizeof(buf), "{\"event\": \"getHallSensorValue\", \"value\": %u}", value);
+        return String(buf);
     },
     .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
 

@@ -4,9 +4,23 @@
 
 ArRequestHandlerFunction onPostUploadFiles = ([](AsyncWebServerRequest *request) {});
 
+static String sanitizeFilename(const String &raw)
+{
+    String name = raw;
+    // strip any path separators and parent-directory references
+    name.replace("..", "");
+    name.replace("/", "");
+    name.replace("\\", "");
+    name.trim();
+    if (name.length() == 0)
+        name = "unnamed";
+    return name;
+}
+
 ArUploadHandlerFunction uploadFiles = ([](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
                                        {
-        fs::File file = LittleFS.open("/" + filename, index == 0 ? "w" : "a");
+        String safeName = sanitizeFilename(filename);
+        fs::File file = LittleFS.open("/" + safeName, index == 0 ? "w" : "a");
 
         if (!file)
         {

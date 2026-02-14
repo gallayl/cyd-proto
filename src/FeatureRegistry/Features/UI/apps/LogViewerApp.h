@@ -97,10 +97,9 @@ namespace UI
             if (count == lastEntryCount)
                 return;
 
-            // clear old labels
-            for (auto *lbl : logLabels)
-                lbl->setText("");
+            // remove old labels from the container so they are freed
             logLabels.clear();
+            scrollRef->getContent().clear();
 
             int rowH = 12;
             int curY = scrollAreaY + 2;
