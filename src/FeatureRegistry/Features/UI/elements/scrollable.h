@@ -16,6 +16,9 @@ namespace UI
         int getContentHeight() const { return contentHeight; }
         int getScrollOffset() const { return scrollOffset; }
 
+        void setAutoContentHeight(bool enabled) { autoHeight = enabled; }
+        void setThinScrollbar(bool enabled) { thinScrollbar = enabled; }
+
         void addChild(std::unique_ptr<Element> child)
         {
             content.addChild(std::move(child));
@@ -39,14 +42,32 @@ namespace UI
             Element::unmount();
         }
 
+        void autoContentHeightFromChildren()
+        {
+            int maxBottom = y;
+            for (auto *child : content.getChildren())
+            {
+                int cx, cy, cw, ch;
+                child->getBounds(cx, cy, cw, ch);
+                int bottom = cy + ch;
+                if (bottom > maxBottom)
+                    maxBottom = bottom;
+            }
+            contentHeight = maxBottom - y;
+        }
+
         void draw() override
         {
             if (!mounted)
                 return;
             auto &c = canvas();
 
+            if (autoHeight)
+                autoContentHeightFromChildren();
+
+            int sbW = scrollbarWidth();
             bool needsScroll = contentHeight > height;
-            int viewW = needsScroll ? width - Theme::ScrollbarWidth : width;
+            int viewW = needsScroll ? width - sbW : width;
 
             // clip to viewport
             c.setClipRect(x, y, viewW, height);
@@ -77,7 +98,10 @@ namespace UI
             // scrollbar
             if (needsScroll)
             {
-                drawScrollbar(c);
+                if (thinScrollbar)
+                    drawThinScrollbar(c);
+                else
+                    drawScrollbar(c);
             }
         }
 
@@ -86,10 +110,12 @@ namespace UI
             if (!mounted)
                 return;
 
+            int sbW = scrollbarWidth();
+
             // continuous thumb drag
             if (draggingThumb)
             {
-                int trackH = height - 2 * Theme::ScrollbarWidth;
+                int trackH = thinScrollbar ? height : (height - 2 * sbW);
                 int maxScroll = contentHeight - height;
                 if (maxScroll > 0 && trackH > 0)
                 {
@@ -119,7 +145,7 @@ namespace UI
 
             // first touch
             bool needsScroll = contentHeight > height;
-            int sbX = x + width - Theme::ScrollbarWidth;
+            int sbX = x + width - sbW;
 
             if (needsScroll && px >= sbX)
             {
@@ -162,6 +188,13 @@ namespace UI
         int dragStartY{0};
         int dragStartOffset{0};
         int lastTouchY{0};
+        bool autoHeight{false};
+        bool thinScrollbar{false};
+
+        int scrollbarWidth() const
+        {
+            return thinScrollbar ? Theme::ThinScrollbarWidth : Theme::ScrollbarWidth;
+        }
 
         void clampScroll()
         {
@@ -172,6 +205,30 @@ namespace UI
                 scrollOffset = 0;
             if (scrollOffset > maxScroll)
                 scrollOffset = maxScroll;
+        }
+
+        void drawThinScrollbar(LGFX_Sprite &c)
+        {
+            int sbW = Theme::ThinScrollbarWidth;
+            int sbX = x + width - sbW;
+            int sbY = y;
+            int sbH = height;
+
+            // thin track
+            c.fillRect(sbX, sbY, sbW, sbH, Theme::ScrollTrack);
+
+            int maxScroll = contentHeight - height;
+            if (maxScroll <= 0)
+                return;
+
+            // thumb proportional to visible area
+            int thumbH = (height * sbH) / contentHeight;
+            if (thumbH < 8)
+                thumbH = 8;
+            int thumbTrack = sbH - thumbH;
+            int thumbY = sbY + (thumbTrack * scrollOffset) / maxScroll;
+
+            c.fillRect(sbX + 1, thumbY, sbW - 2, thumbH, Theme::ButtonShadow);
         }
 
         void drawScrollbar(LGFX_Sprite &c)

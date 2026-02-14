@@ -2,6 +2,7 @@
 
 #include <functional>
 #include "container.h"
+#include "scrollable.h"
 #include "label.h"
 #include "button.h"
 #include "../Renderer.h"
@@ -19,10 +20,13 @@ namespace UI
             : titleText(title),
               closeBtn("x", 0, 0, Theme::CloseButtonSize, Theme::CloseButtonSize),
               titleLabel(title, 0, 0, 0, Theme::TitleBarHeight),
-              content()
+              scrollableContent()
         {
             setBounds(ix, iy, iw, ih);
-            content.setBounds(contentX(), contentY(), contentW(), contentH());
+            scrollableContent.setBounds(contentX(), contentY(), contentW(), contentH());
+            scrollableContent.getContent().setBounds(contentX(), contentY(), contentW(), contentH());
+            scrollableContent.setAutoContentHeight(true);
+            scrollableContent.setThinScrollbar(true);
             titleLabel.setTextSize(1);
             closeBtn.setTextSize(1);
             closeBtn.setBackgroundColor(Theme::ButtonFace);
@@ -43,7 +47,7 @@ namespace UI
 
         const String &getTitle() const { return titleText; }
 
-        Container &getContent() { return content; }
+        Container &getContent() { return scrollableContent.getContent(); }
 
         void mount() override
         {
@@ -52,14 +56,14 @@ namespace UI
             Element::mount();
             titleLabel.mount();
             closeBtn.mount();
-            content.mount();
+            scrollableContent.mount();
         }
 
         void unmount() override
         {
             if (!mounted)
                 return;
-            content.unmount();
+            scrollableContent.unmount();
             closeBtn.unmount();
             titleLabel.unmount();
             Element::unmount();
@@ -102,34 +106,33 @@ namespace UI
             closeBtn.draw();
 
             // content area background
-            int cX = x + bw;
-            int cY = tbY + tbH;
-            int cW = width - bw * 2;
-            int cH = height - bw * 2 - tbH;
+            int cX = contentX();
+            int cY = contentY();
+            int cW = contentW();
+            int cH = contentH();
             c.fillRect(cX, cY, cW, cH, Theme::WindowBg);
 
-            // draw content children
-            content.setBounds(cX, cY, cW, cH);
-            content.draw();
+            // draw scrollable content
+            scrollableContent.setBounds(cX, cY, cW, cH);
+            scrollableContent.draw();
         }
 
         void onTouch(int px, int py) override
         {
             if (!mounted)
                 return;
-            int bw = Theme::WindowBorderWidth;
-            int cbX = x + width - bw - Theme::CloseButtonSize - 2;
-            int cbY = y + bw + (Theme::TitleBarHeight - Theme::CloseButtonSize) / 2;
             if (closeBtn.contains(px, py))
             {
                 closeBtn.onTouch(px, py);
                 return;
             }
-            int cX, cY, cW, cH;
-            content.getBounds(cX, cY, cW, cH);
+            int cX = contentX();
+            int cY = contentY();
+            int cW = contentW();
+            int cH = contentH();
             if (px >= cX && px < cX + cW && py >= cY && py < cY + cH)
             {
-                content.handleTouch(px, py);
+                scrollableContent.onTouch(px, py);
             }
         }
 
@@ -138,7 +141,7 @@ namespace UI
             if (!mounted)
                 return;
             closeBtn.onTouchEnd(px, py);
-            content.handleTouchEnd(px, py);
+            scrollableContent.onTouchEnd(px, py);
         }
 
         int contentX() const { return x + Theme::WindowBorderWidth; }
@@ -151,7 +154,7 @@ namespace UI
         bool active{true};
         Button closeBtn;
         Label titleLabel;
-        Container content;
+        ScrollableContainer scrollableContent;
     };
 
 } // namespace UI

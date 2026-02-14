@@ -40,6 +40,7 @@ namespace UI
         constexpr int CloseButtonSize = 14;
         constexpr int WindowBorderWidth = 2;
         constexpr int ScrollbarWidth = 14;
+        constexpr int ThinScrollbarWidth = 5;
         constexpr int MenuItemHeight = 20;
         constexpr int MenuWidth = 120;
         constexpr int SubMenuWidth = 120;
