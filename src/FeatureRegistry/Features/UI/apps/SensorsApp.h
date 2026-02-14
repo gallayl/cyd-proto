@@ -40,21 +40,6 @@ namespace UI
             cont.addChild(std::move(lbl));
             curY += rowH + 8;
 
-            auto header2 = std::make_unique<Label>("-- Hall Sensor --", cx + 4, curY, cw - 8, 12);
-            header2->setTextColor(Theme::TextColor, Theme::WindowBg);
-            header2->setTextSize(1);
-            header2->setAlign(TextAlign::LEFT);
-            cont.addChild(std::move(header2));
-            curY += rowH;
-
-            auto lbl2 = std::make_unique<Label>("Value: ...", cx + 4, curY, cw - 8, 12);
-            lbl2->setTextColor(Theme::TextColor, Theme::WindowBg);
-            lbl2->setTextSize(1);
-            lbl2->setAlign(TextAlign::LEFT);
-            hallLabel = lbl2.get();
-            cont.addChild(std::move(lbl2));
-            curY += rowH + 8;
-
             auto refreshBtn = std::make_unique<Button>("Refresh", cx + 4, curY, 70, 22);
             refreshBtn->setBackgroundColor(Theme::ButtonFace);
             refreshBtn->setTextColor(Theme::TextColor, Theme::ButtonFace);
@@ -67,7 +52,6 @@ namespace UI
 
     private:
         Label *lightLabel{nullptr};
-        Label *hallLabel{nullptr};
 
         void refreshValues()
         {
@@ -75,11 +59,6 @@ namespace UI
             {
                 uint16_t val = readLightSensor();
                 lightLabel->setText("Value: " + String(val));
-            }
-            if (hallLabel)
-            {
-                int val = hallRead();
-                hallLabel->setText("Value: " + String(val));
             }
         }
     };
