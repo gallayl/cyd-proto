@@ -3,6 +3,7 @@
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <WiFiClientSecure.h>
+#include <esp_wifi.h>
 #include "../config.h"
 #include "../FeatureRegistry/Features/Logging.h"
 
@@ -69,9 +70,24 @@ inline void startStaMode(String ssid, String staPassPharse)
     }
 }
 
+inline bool hasStoredCredentials()
+{
+    wifi_config_t conf;
+    esp_wifi_get_config(WIFI_IF_STA, &conf);
+    return strlen((char *)conf.sta.ssid) > 0;
+}
+
 inline void initWifi()
 {
     WiFi.mode(WIFI_AP);
+
+    if (!hasStoredCredentials())
+    {
+        LoggerInstance->Info(F("No WiFi credentials saved, starting in AP mode only"));
+        startStaMode(STA_SSID, STA_PASSPHRASE);
+        return;
+    }
+
     WiFi.begin();
     wl_status_t state = (wl_status_t)WiFi.waitForConnectResult();
 
