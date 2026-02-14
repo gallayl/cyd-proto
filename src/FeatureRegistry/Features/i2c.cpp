@@ -1,6 +1,10 @@
 #include "i2c.h"
 #include "../../ActionRegistry/ActionRegistry.h"
 
+// CYD: GPIO 21 is display backlight; use GPIO 27 (SDA) and 22 (SCL) to avoid conflict
+#define I2C_SDA_PIN 27
+#define I2C_SCL_PIN 22
+
 FeatureAction i2cAction = {
     .name = "i2c",
     .handler = [](const String &command)
@@ -34,7 +38,7 @@ Feature *i2cFeature = new Feature(
     "i2c",
     []()
     {
-        Wire.begin();
+        Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
 
         ActionRegistryInstance->RegisterAction(&i2cAction);
 
