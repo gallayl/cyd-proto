@@ -73,7 +73,7 @@ public:
             auto cfg = _panel_instance.config(); // Gets the structure for display panel settings. 表示パネル設定用の構造体を取得します。
 
             cfg.pin_cs = 15;   // pin number to which CS is connected (-1 = disable)
-            cfg.pin_rst = 4;   // pin number to which RST is connected (-1 = disable)
+            cfg.pin_rst = -1;  // pin number to which RST is connected (-1 = disable) — pin 4 is shared with RGB LED red
             cfg.pin_busy = -1; // pin number to which BUSY is connected (-1 = disable)
 
             // * The following settings are set to general default values ​​for each panel, so please try commenting out any items you are unsure about.

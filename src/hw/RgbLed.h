@@ -19,8 +19,8 @@ inline void initRgbLed()
     pinMode(RGB_LED_G_PIN, OUTPUT);
     pinMode(RGB_LED_B_PIN, OUTPUT);
 
-    // turn off the LED by default
-    digitalWrite(RGB_LED_R_PIN, LOW);
-    digitalWrite(RGB_LED_G_PIN, LOW);
-    digitalWrite(RGB_LED_B_PIN, LOW);
+    // turn off the LED by default (active-low: HIGH = off)
+    digitalWrite(RGB_LED_R_PIN, HIGH);
+    digitalWrite(RGB_LED_G_PIN, HIGH);
+    digitalWrite(RGB_LED_B_PIN, HIGH);
 }

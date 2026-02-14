@@ -6,7 +6,11 @@ FeatureAction formatAction = {
     .type = "POST",
     .handler = [](const String &command)
     {
+        LittleFS.end();
         LittleFS.format();
+        if (!LittleFS.begin()) {
+            return String("{\"error\": \"Mount after format failed\"}");
+        }
         return String("{\"event\": \"format\"}");
     },
     .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};

@@ -12,6 +12,7 @@ extern LGFX tft;
 inline void initScreen()
 {
     tft.init();
+    tft.setBrightness(128);
 }
 
 #endif
