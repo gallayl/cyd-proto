@@ -57,6 +57,11 @@
  */
 #define ENABLE_UI true
 
+/**
+ * Enable the Berry scripting language VM
+ */
+#define ENABLE_BERRY true
+
 // --- Compile-time dependency checks ---
 
 #if ENABLE_WEBSERVER && !ENABLE_WIFI
@@ -69,4 +74,8 @@
 
 #if ENABLE_UI && !ENABLE_SCREEN
 #error "ENABLE_UI requires ENABLE_SCREEN"
+#endif
+
+#if ENABLE_BERRY && !ENABLE_LITTLEFS
+#error "ENABLE_BERRY requires ENABLE_LITTLEFS"
 #endif

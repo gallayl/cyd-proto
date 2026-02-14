@@ -33,6 +33,10 @@
 #include "./Features/UI/UiFeature.h"
 #endif
 
+#if ENABLE_BERRY
+#include "./Features/Berry/BerryFeature.h"
+#endif
+
 #define FEATURES_SIZE 16
 
 extern Feature *SystemFeatures;
@@ -83,6 +87,10 @@ public:
 
 #if ENABLE_UI
                 this->RegisterFeature(UiFeature);
+#endif
+
+#if ENABLE_BERRY
+                this->RegisterFeature(BerryFeature);
 #endif
         }
 
