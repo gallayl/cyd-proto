@@ -7,7 +7,6 @@
 #include "../Theme.h"
 #include <memory>
 #include <vector>
-#include <cstring>
 
 namespace UI
 {
@@ -33,7 +32,7 @@ namespace UI
             palW = cw;
             palH = paletteH;
 
-            // toolbar buttons (always created regardless of sprite success)
+            // toolbar buttons
             int btnW = cw / 5;
             struct ToolDef
             {
@@ -65,7 +64,7 @@ namespace UI
             }
             updateToolVisual();
 
-            // canvas element (draws the sprite + shape preview)
+            // canvas element
             auto cvEl = std::make_unique<CanvasElement>(this);
             cvEl->setBounds(cvX, cvY, cvW, cvH);
             cont.addChild(std::move(cvEl));
@@ -75,17 +74,33 @@ namespace UI
             palEl->setBounds(palX, palY, palW, palH);
             cont.addChild(std::move(palEl));
 
-            // container-level touch handlers (for canvas drawing + palette)
+            // container-level touch handlers
             cont.setTouchHandler([this](int px, int py)
                                  { onContentTouch(px, py); });
             cont.setTouchEndHandler([this](int px, int py)
                                     { onContentTouchEnd(px, py); });
 
-            // create the paint sprite last (may fail on low memory)
-            sprite.setColorDepth(8);
+            // create the paint sprite (4-bit palette = ~27KB instead of ~53KB)
+            sprite.setColorDepth(4);
             spriteOk = sprite.createSprite(cvW, cvH) != nullptr;
             if (spriteOk)
+            {
+                // set up palette: index i maps to paletteColors()[i]
+                const uint16_t *pc = paletteColors();
+                for (int i = 0; i < NCOLORS; i++)
+                {
+                    uint16_t c = pc[i];
+                    uint8_t r = ((c >> 11) & 0x1F) << 3;
+                    uint8_t g = ((c >> 5) & 0x3F) << 2;
+                    uint8_t b = (c & 0x1F) << 3;
+                    sprite.setPaletteColor(i, r, g, b);
+                }
+                // fill remaining palette entries with white
+                for (int i = NCOLORS; i < 16; i++)
+                    sprite.setPaletteColor(i, 255, 255, 255);
+
                 sprite.fillSprite(TFT_WHITE);
+            }
         }
 
         void teardown() override
@@ -116,7 +131,7 @@ namespace UI
         LGFX_Sprite sprite;
         bool spriteOk{false};
 
-        // touch tracking (all in local canvas coords)
+        // touch tracking (local canvas coords)
         bool touching{false};
         int tStartX{0}, tStartY{0};
         int tLastX{0}, tLastY{0};
@@ -159,26 +174,11 @@ namespace UI
 
                 if (app->spriteOk)
                 {
-                    // blit paint sprite onto screen canvas via raw memcpy
-                    // (both are 8-bit depth so raw bytes are compatible)
-                    uint8_t *src = (uint8_t *)app->sprite.getBuffer();
-                    uint8_t *dst = (uint8_t *)c.getBuffer();
-                    if (src && dst)
-                    {
-                        int dstStride = Theme::ScreenWidth;
-                        int srcStride = app->cvW;
-                        for (int row = 0; row < height; row++)
-                        {
-                            memcpy(
-                                dst + (y + row) * dstStride + x,
-                                src + row * srcStride,
-                                srcStride);
-                        }
-                    }
+                    // pushSprite handles 4-bit palette → 8-bit depth conversion
+                    app->sprite.pushSprite(&c, x, y);
                 }
                 else
                 {
-                    // fallback: white area with error text
                     c.fillRect(x, y, width, height, TFT_WHITE);
                     c.setTextColor(TFT_RED, TFT_WHITE);
                     c.setTextSize(1);
@@ -186,7 +186,7 @@ namespace UI
                     c.print("No memory");
                 }
 
-                // shape preview while dragging (drawn on screen canvas, not sprite)
+                // shape preview while dragging (on screen canvas, not sprite)
                 if (app->touching && app->spriteOk)
                 {
                     int sx = app->tStartX + x;
@@ -331,7 +331,6 @@ namespace UI
             }
             else if (touching)
             {
-                // dragged outside canvas while drawing
                 int lx = constrain(px - cvX, 0, cvW - 1);
                 int ly = constrain(py - cvY, 0, cvH - 1);
 
@@ -344,7 +343,7 @@ namespace UI
                 tLastY = ly;
             }
 
-            // palette area (only if not drawing on canvas)
+            // palette area (only if not drawing)
             if (!touching &&
                 px >= palX && px < palX + palW &&
                 py >= palY && py < palY + palH)
@@ -385,7 +384,7 @@ namespace UI
             touching = false;
         }
 
-        // ---- flood fill (scanline, operates on raw 8-bit buffer) ----
+        // ---- flood fill (uses readPixel for 4-bit palette compatibility) ----
 
         void doFloodFill(int fx, int fy)
         {
@@ -394,20 +393,14 @@ namespace UI
             if (fx < 0 || fx >= cvW || fy < 0 || fy >= cvH)
                 return;
 
-            uint8_t *buf = (uint8_t *)sprite.getBuffer();
-            if (!buf)
-                return;
+            uint32_t targetColor = sprite.readPixel(fx, fy);
 
-            int stride = cvW;
-            uint8_t target = buf[fy * stride + fx];
-
-            // find out what the fill color looks like in 8-bit
+            // check if fill would change anything
             sprite.drawPixel(fx, fy, color);
-            uint8_t fill8 = buf[fy * stride + fx];
-            buf[fy * stride + fx] = target; // restore
-
-            if (target == fill8)
-                return;
+            uint32_t filledColor = sprite.readPixel(fx, fy);
+            if (filledColor == targetColor)
+                return; // same color, nothing to do
+            // first pixel is already filled, continue from here
 
             struct Seed
             {
@@ -415,7 +408,16 @@ namespace UI
             };
             std::vector<Seed> stack;
             stack.reserve(256);
-            stack.push_back({(int16_t)fx, (int16_t)fy});
+
+            // seed neighbours of the already-filled start pixel
+            if (fx > 0)
+                stack.push_back({(int16_t)(fx - 1), (int16_t)fy});
+            if (fx < cvW - 1)
+                stack.push_back({(int16_t)(fx + 1), (int16_t)fy});
+            if (fy > 0)
+                stack.push_back({(int16_t)fx, (int16_t)(fy - 1)});
+            if (fy < cvH - 1)
+                stack.push_back({(int16_t)fx, (int16_t)(fy + 1)});
 
             while (!stack.empty())
             {
@@ -424,24 +426,24 @@ namespace UI
 
                 if (s.x < 0 || s.x >= cvW || s.y < 0 || s.y >= cvH)
                     continue;
-                if (buf[s.y * stride + s.x] != target)
+                if (sprite.readPixel(s.x, s.y) != targetColor)
                     continue;
 
-                // scan left
+                // scanline: find left boundary
                 int left = s.x;
-                while (left > 0 && buf[s.y * stride + left - 1] == target)
+                while (left > 0 && sprite.readPixel(left - 1, s.y) == targetColor)
                     left--;
 
                 int right = left;
                 bool aboveQ = false, belowQ = false;
 
-                while (right < cvW && buf[s.y * stride + right] == target)
+                while (right < cvW && sprite.readPixel(right, s.y) == targetColor)
                 {
-                    buf[s.y * stride + right] = fill8;
+                    sprite.drawPixel(right, s.y, color);
 
                     if (s.y > 0)
                     {
-                        bool m = (buf[(s.y - 1) * stride + right] == target);
+                        bool m = (sprite.readPixel(right, s.y - 1) == targetColor);
                         if (m && !aboveQ)
                         {
                             stack.push_back({(int16_t)right, (int16_t)(s.y - 1)});
@@ -453,7 +455,7 @@ namespace UI
 
                     if (s.y < cvH - 1)
                     {
-                        bool m = (buf[(s.y + 1) * stride + right] == target);
+                        bool m = (sprite.readPixel(right, s.y + 1) == targetColor);
                         if (m && !belowQ)
                         {
                             stack.push_back({(int16_t)right, (int16_t)(s.y + 1)});
