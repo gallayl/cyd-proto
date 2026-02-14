@@ -159,8 +159,11 @@ namespace UI
             int adjY = py + scrollOffset;
             content.handleTouch(px, adjY);
 
-            draggingContent = true;
-            lastTouchY = py;
+            if (needsScroll)
+            {
+                draggingContent = true;
+                lastTouchY = py;
+            }
         }
 
         void onTouchEnd(int px, int py) override
