@@ -27,14 +27,21 @@ CustomCommand *i2cCommand = new CustomCommand("i2c", [](const String &command)
     return fallback; });
 
 // feature object
-Feature *i2cFeature = new Feature("i2c", []()
-                                  {
-    Wire.begin();
+Feature *i2cFeature = new Feature(
+    "i2c",
+    []()
+    {
+        Wire.begin();
 
-    CommandInterpreterInstance->RegisterCommand(i2cCommand);
+        CommandInterpreterInstance->RegisterCommand(i2cCommand);
 
-    server.on("/i2c", HTTP_GET, [](AsyncWebServerRequest *request) {
-        request->send(200, MIME_json, scanDevices());
+        server.on("/i2c", HTTP_GET, [](AsyncWebServerRequest *request)
+                  { request->send(200, MIME_json, scanDevices()); });
+
+        return FeatureState::RUNNING;
+    },
+    []() {},
+    []()
+    {
+        Wire.end();
     });
-
-    return FeatureState::RUNNING; }, []() {});

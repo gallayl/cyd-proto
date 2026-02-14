@@ -69,8 +69,16 @@ ArUploadHandlerFunction onUploadUpdate = ([](AsyncWebServerRequest *request, Str
                                                   }
                                               } });
 
-Feature *OtaUpgrade = new Feature("OTA", []()
-                                  {
-                                      server.on("/update", HTTP_GET, getUpdateForm);
-                                      server.on("/update", HTTP_POST, onPostUpdate, onUploadUpdate);
-                                      return FeatureState::RUNNING; }, []() {});
+Feature *OtaUpgrade = new Feature(
+    "OTA",
+    []()
+    {
+        server.on("/update", HTTP_GET, getUpdateForm);
+        server.on("/update", HTTP_POST, onPostUpdate, onUploadUpdate);
+        return FeatureState::RUNNING;
+    },
+    []() {},
+    []()
+    {
+        LoggerInstance->Info(F("OTA feature stopped"));
+    });

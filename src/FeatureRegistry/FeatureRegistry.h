@@ -41,6 +41,16 @@ class FeatureRegistry
 private:
         uint8_t _registeredFeaturesCount = 0;
 
+        void updateFeatureJson(Feature *feature)
+        {
+                const String &name = feature->GetFeatureName();
+                JsonObject entry = registeredFeatures[name];
+                if (!entry.isNull())
+                {
+                        entry["state"].set((int)feature->GetFeatureState());
+                }
+        }
+
 public:
         FeatureRegistry() {}
 
@@ -95,11 +105,18 @@ public:
         {
                 for (uint8_t i = 0; i < this->_registeredFeaturesCount; i++)
                 {
-                        const String &featureName = this->RegisteredFeatures[i]->GetFeatureName();
+                        Feature *f = this->RegisteredFeatures[i];
+                        const String &featureName = f->GetFeatureName();
+
+                        if (!f->isAutoStart())
+                        {
+                                LoggerInstance->Info("Deferring feature: " + featureName);
+                                continue;
+                        }
+
                         LoggerInstance->Info("Setting up feature: " + featureName);
-                        FeatureState newState = this->RegisteredFeatures[i]->Setup();
-                        JsonObject feature = registeredFeatures[featureName];
-                        feature["state"].set((int)newState);
+                        f->Setup();
+                        updateFeatureJson(f);
                 }
         }
 
@@ -107,8 +124,77 @@ public:
         {
                 for (uint8_t i = 0; i < this->_registeredFeaturesCount; i++)
                 {
-                        this->RegisteredFeatures[i]->Loop();
+                        if (this->RegisteredFeatures[i]->GetFeatureState() == FeatureState::RUNNING)
+                        {
+                                this->RegisteredFeatures[i]->Loop();
+                        }
                 }
+        }
+
+        Feature *GetFeature(const String &name)
+        {
+                for (uint8_t i = 0; i < this->_registeredFeaturesCount; i++)
+                {
+                        if (this->RegisteredFeatures[i]->GetFeatureName() == name)
+                        {
+                                return this->RegisteredFeatures[i];
+                        }
+                }
+                return nullptr;
+        }
+
+        FeatureState SetupFeature(const String &name)
+        {
+                Feature *f = GetFeature(name);
+                if (!f)
+                {
+                        LoggerInstance->Error("Feature not found: " + name);
+                        return FeatureState::ERROR;
+                }
+
+                FeatureState state = f->GetFeatureState();
+                if (state == FeatureState::RUNNING)
+                {
+                        LoggerInstance->Info("Feature already running: " + name);
+                        return state;
+                }
+
+                LoggerInstance->Info("Setting up feature: " + name);
+                FeatureState newState = f->Setup();
+                updateFeatureJson(f);
+                return newState;
+        }
+
+        bool TeardownFeature(const String &name)
+        {
+                Feature *f = GetFeature(name);
+                if (!f)
+                {
+                        LoggerInstance->Error("Feature not found: " + name);
+                        return false;
+                }
+
+                if (f->GetFeatureState() != FeatureState::RUNNING)
+                {
+                        LoggerInstance->Info("Feature not running: " + name);
+                        return false;
+                }
+
+                if (!f->hasTeardown())
+                {
+                        LoggerInstance->Error("Feature has no teardown: " + name);
+                        return false;
+                }
+
+                LoggerInstance->Info("Tearing down feature: " + name);
+                f->Teardown();
+                updateFeatureJson(f);
+                return true;
+        }
+
+        uint8_t GetFeatureCount() const
+        {
+                return this->_registeredFeaturesCount;
         }
 
         Feature *RegisteredFeatures[FEATURES_SIZE] = {};
