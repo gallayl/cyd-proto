@@ -3,65 +3,106 @@ import json
 
 class FileManagerApp
   var name
+  var filelist
+  var path_lbl
+  var current_path
+  var app_w
+  var app_h
 
   def init()
     self.name = 'File Manager'
+    self.current_path = '/'
   end
 
   def setup(content, w, h)
-    var scroll = ui.scrollable(content)
-    var row_h = 14
-    var y = 4
+    self.app_w = w
+    self.app_h = h
+    var y = 0
 
-    self.add_row(scroll, y, w, '-- Files --')
-    y += row_h
+    # path label
+    self.path_lbl = ui.label(content, self.current_path, 0, y, w, 16)
+    ui.set_text_color(self.path_lbl, ui.TEXT_COLOR, ui.WINDOW_BG)
+    ui.set_text_size(self.path_lbl, 1)
+    ui.set_align(self.path_lbl, ui.LEFT)
+    y += 18
 
-    var list_str = action('list')
-    var files = json.load(list_str)
+    # toolbar: back, view mode buttons, storage info
+    var btn_w = 36
+    var bx = 0
 
-    if files != nil
-      for i : 0 .. size(files) - 1
-        var f = files[i]
-        var name = str(f['name'])
-        var is_dir = false
-        if f.find('isDir') != nil is_dir = f['isDir'] end
+    var back_btn = ui.button(content, '<-', bx, y, btn_w, 18)
+    ui.on_click(back_btn, / -> self.navigate_up())
+    bx += btn_w + 2
 
-        var line
-        if is_dir
-          line = '[' + name + ']'
-        else
-          var sz = 0
-          if f.find('size') != nil sz = f['size'] end
-          line = name + '  (' + str(sz) + ' B)'
-        end
+    var list_btn = ui.button(content, 'List', bx, y, btn_w, 18)
+    ui.on_click(list_btn, def ()
+      ui.filelist_set_view(self.filelist, 'list')
+      ui.mark_dirty()
+    end)
+    bx += btn_w + 2
 
-        self.add_row(scroll, y, w, line)
-        y += row_h
-      end
-    end
+    var icon_btn = ui.button(content, 'Icon', bx, y, btn_w, 18)
+    ui.on_click(icon_btn, def ()
+      ui.filelist_set_view(self.filelist, 'icons')
+      ui.mark_dirty()
+    end)
+    bx += btn_w + 2
 
-    y += 4
-    self.add_row(scroll, y, w, '-- Storage --')
-    y += row_h
+    var det_btn = ui.button(content, 'Det', bx, y, btn_w, 18)
+    ui.on_click(det_btn, def ()
+      ui.filelist_set_view(self.filelist, 'details')
+      ui.mark_dirty()
+    end)
+    bx += btn_w + 4
 
+    # storage info
     var info_str = action('info')
     var info = json.load(info_str)
     if info != nil && info.find('fs') != nil
       var fs = info['fs']
-      self.add_row(scroll, y, w, 'Total: ' + str(fs['totalBytes']) + ' B')
-      y += row_h
-      self.add_row(scroll, y, w, 'Used: ' + str(fs['usedBytes']) + ' B')
-      y += row_h
+      var used_k = fs['usedBytes'] / 1024
+      var total_k = fs['totalBytes'] / 1024
+      var info_text = str(used_k) + 'K/' + str(total_k) + 'K'
+      var info_lbl = ui.label(content, info_text, bx, y, w - bx, 18)
+      ui.set_text_color(info_lbl, ui.TEXT_COLOR, ui.WINDOW_BG)
+      ui.set_text_size(info_lbl, 1)
+      ui.set_align(info_lbl, ui.RIGHT)
     end
+    y += 20
 
-    ui.set_content_height(scroll, y)
+    # file list view
+    var list_h = h - y
+    self.filelist = ui.filelist(content, 0, y, w, list_h)
+    ui.filelist_set_view(self.filelist, 'list')
+
+    ui.on_item_selected(self.filelist, / idx -> self.on_select(idx))
+
+    self.refresh()
   end
 
-  def add_row(scroll, y, w, text)
-    var lbl = ui.label(scroll, text, 4, y, w - 8, 12)
-    ui.set_text_color(lbl, ui.TEXT_COLOR, ui.WINDOW_BG)
-    ui.set_text_size(lbl, 1)
-    ui.set_align(lbl, ui.LEFT)
+  def refresh()
+    var list_str = action('list')
+    if list_str == nil return end
+
+    # pass JSON string directly to filelist_set_items
+    ui.filelist_set_items(self.filelist, list_str)
+    ui.set_text(self.path_lbl, self.current_path)
+    ui.mark_dirty()
+  end
+
+  def on_select(idx)
+    ui.mark_dirty()
+  end
+
+  def navigate_up()
+    if self.current_path == '/' return end
+    var last = self.current_path.find('/')
+    if last <= 0
+      self.current_path = '/'
+    else
+      self.current_path = '/'
+    end
+    self.refresh()
   end
 
   def teardown()

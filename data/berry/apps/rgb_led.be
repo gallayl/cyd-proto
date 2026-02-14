@@ -25,21 +25,56 @@ class RgbLedApp
     ui.canvas_fill(self.preview, 0)
     y += 38
 
-    # Red row
-    self.r_lbl = self.add_color_row(content, y, w, 'R', / v -> self.set_r(v))
-    y += 34
+    # Red channel group box
+    var r_gb = ui.groupbox(content, 'Red', 2, y, w - 4, 42)
+    self.r_lbl = self.add_color_controls(r_gb, / v -> self.set_r(v))
+    y += 48
 
-    # Green row
-    self.g_lbl = self.add_color_row(content, y, w, 'G', / v -> self.set_g(v))
-    y += 34
+    # Green channel group box
+    var g_gb = ui.groupbox(content, 'Green', 2, y, w - 4, 42)
+    self.g_lbl = self.add_color_controls(g_gb, / v -> self.set_g(v))
+    y += 48
 
-    # Blue row
-    self.b_lbl = self.add_color_row(content, y, w, 'B', / v -> self.set_b(v))
-    y += 34
+    # Blue channel group box
+    var b_gb = ui.groupbox(content, 'Blue', 2, y, w - 4, 42)
+    self.b_lbl = self.add_color_controls(b_gb, / v -> self.set_b(v))
+    y += 52
 
     # Off button
     var off_btn = ui.button(content, 'Off', 4, y, w - 8, 22)
     ui.on_click(off_btn, / -> self.off())
+  end
+
+  def add_color_controls(gb, set_fn)
+    var cy = 14
+    var val_lbl = ui.label(gb, '0', 2, cy, 30, 20)
+    ui.set_text_color(val_lbl, ui.TEXT_COLOR, ui.WINDOW_BG)
+
+    var minus = ui.button(gb, '-', 36, cy, 28, 20)
+    ui.on_click(minus, def ()
+      var cur = self.get_val_for(val_lbl)
+      if cur >= 25 cur -= 25 else cur = 0 end
+      set_fn(cur)
+    end)
+
+    var plus = ui.button(gb, '+', 68, cy, 28, 20)
+    ui.on_click(plus, def ()
+      var cur = self.get_val_for(val_lbl)
+      if cur <= 230 cur += 25 else cur = 255 end
+      set_fn(cur)
+    end)
+
+    var mx = ui.button(gb, 'Max', 100, cy, 40, 20)
+    ui.on_click(mx, / -> set_fn(255))
+
+    return val_lbl
+  end
+
+  def get_val_for(lbl)
+    if lbl == self.r_lbl return self.r end
+    if lbl == self.g_lbl return self.g end
+    if lbl == self.b_lbl return self.b end
+    return 0
   end
 
   def set_r(val)
@@ -62,7 +97,6 @@ class RgbLedApp
 
   def apply_color()
     action('rgbLed setColor ' + str(self.r) + ' ' + str(self.g) + ' ' + str(self.b))
-    # update preview
     var c = ui.color565(self.r, self.g, self.b)
     ui.canvas_fill(self.preview, c)
     ui.canvas_draw_rect(self.preview, 0, 0, 232, 30, ui.BUTTON_SHADOW)
@@ -76,43 +110,6 @@ class RgbLedApp
     ui.set_text(self.g_lbl, '0')
     ui.set_text(self.b_lbl, '0')
     self.apply_color()
-  end
-
-  def add_color_row(content, y, w, label, set_fn)
-    var lbl = ui.label(content, label, 4, y, 16, 22)
-    ui.set_text_color(lbl, ui.TEXT_COLOR, ui.WINDOW_BG)
-
-    var val_lbl = ui.label(content, '0', 22, y, 30, 22)
-    ui.set_text_color(val_lbl, ui.TEXT_COLOR, ui.WINDOW_BG)
-
-    # minus
-    var minus = ui.button(content, '-', 54, y, 28, 22)
-    ui.on_click(minus, def ()
-      var cur = self.get_val(label)
-      if cur >= 25 cur -= 25 else cur = 0 end
-      set_fn(cur)
-    end)
-
-    # plus
-    var plus = ui.button(content, '+', 86, y, 28, 22)
-    ui.on_click(plus, def ()
-      var cur = self.get_val(label)
-      if cur <= 230 cur += 25 else cur = 255 end
-      set_fn(cur)
-    end)
-
-    # max
-    var mx = ui.button(content, 'Max', 118, y, 40, 22)
-    ui.on_click(mx, / -> set_fn(255))
-
-    return val_lbl
-  end
-
-  def get_val(label)
-    if label == 'R' return self.r end
-    if label == 'G' return self.g end
-    if label == 'B' return self.b end
-    return 0
   end
 
   def teardown()

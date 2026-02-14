@@ -4,6 +4,7 @@
 #include "elements/taskbar.h"
 #include "elements/startmenu.h"
 #include "elements/keyboard.h"
+#include "elements/textfield.h"
 #include "App.h"
 #include "apps/RgbLedApp.h"
 #include "apps/InfoApp.h"
@@ -100,7 +101,7 @@ namespace UI
                                           { startMenu.toggle(); });
 
             taskbar.setAppClickCallback([](const char *name)
-                                        { windowManager().focusApp(name); });
+                                        { windowManager().restoreApp(name); });
 
             taskbar.setKeyboardToggleCallback([this]()
                                               {
@@ -110,6 +111,31 @@ namespace UI
 
             onAppSelected = [](const char *name)
             { windowManager().openApp(name); };
+
+            // keyboard focus routing for TextFields
+            setKeyboardFocusHandler([this](std::function<void(char)> consumer)
+                                    {
+                keyConsumer = std::move(consumer);
+                keyboard.setOnKeyPress([this](char ch)
+                                       {
+                    if (keyConsumer)
+                        keyConsumer(ch);
+                    markDirty(); });
+                if (!keyboard.isVisible())
+                {
+                    keyboard.show();
+                    windowManager().setKeyboardVisible(true);
+                } });
+
+            setKeyboardBlurHandler([this]()
+                                   {
+                keyConsumer = nullptr;
+                keyboard.setOnKeyPress(nullptr);
+                if (keyboard.isVisible())
+                {
+                    keyboard.hide();
+                    windowManager().setKeyboardVisible(false);
+                } });
 
             // wire overlay callbacks into window manager
             windowManager().setOverlayDraw([this]()
@@ -149,6 +175,7 @@ namespace UI
         StartMenu startMenu;
         Keyboard keyboard;
         std::function<void(const char *)> onAppSelected;
+        std::function<void(char)> keyConsumer;
 
         void updateTaskbarApps()
         {

@@ -25,8 +25,12 @@ namespace UI
         void openApp(const char *appName);
         void closeApp(const char *appName);
         void focusApp(const char *appName);
+        void minimizeApp(const char *appName);
+        void restoreApp(const char *appName);
+        void handleWindowStateChange(const char *appName, WindowState state);
         bool isAppOpen(const char *appName) const;
         OpenApp *getFocused();
+        std::vector<OpenApp> &getOpenApps() { return openApps; }
         const std::vector<OpenApp> &getOpenApps() const { return openApps; }
 
         void draw();

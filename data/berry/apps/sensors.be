@@ -4,31 +4,41 @@ import json
 class SensorsApp
   var name
   var light_label
+  var auto_refresh
 
   def init()
     self.name = 'Sensors'
+    self.auto_refresh = false
   end
 
   def setup(content, w, h)
-    var row_h = 14
     var y = 4
 
-    var header = ui.label(content, '-- Light Sensor --', 4, y, w - 8, 12)
-    ui.set_text_color(header, ui.TEXT_COLOR, ui.WINDOW_BG)
-    ui.set_text_size(header, 1)
-    ui.set_align(header, ui.LEFT)
-    y += row_h
+    # Light sensor group box
+    var light_gb = ui.groupbox(content, 'Light Sensor', 2, y, w - 4, 60)
 
-    self.light_label = ui.label(content, 'Value: ...', 4, y, w - 8, 12)
+    self.light_label = ui.label(light_gb, 'Value: ...', 4, 14, w - 20, 14)
     ui.set_text_color(self.light_label, ui.TEXT_COLOR, ui.WINDOW_BG)
     ui.set_text_size(self.light_label, 1)
     ui.set_align(self.light_label, ui.LEFT)
-    y += row_h + 8
 
-    var btn = ui.button(content, 'Refresh', 4, y, 70, 22)
+    var btn = ui.button(light_gb, 'Refresh', 4, 32, 70, 18)
     ui.on_click(btn, / -> self.refresh())
 
+    # auto-refresh checkbox
+    var auto_cb = ui.checkbox(light_gb, 'Auto', 80, 32, 80, 18)
+    ui.on_change(auto_cb, def (checked)
+      self.auto_refresh = checked
+    end)
+
+    y += 66
+
     self.refresh()
+    ui.timer(2000, def ()
+      if self.auto_refresh
+        self.refresh()
+      end
+    end)
   end
 
   def refresh()

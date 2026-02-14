@@ -13,14 +13,27 @@ namespace UI
         return wm;
     }
 
+    static void setupWindowCallbacks(WindowManager &wm, OpenApp &oa)
+    {
+        oa.window->setCloseCallback([&wm, name = String(oa.name)]()
+                                    { wm.closeApp(name.c_str()); });
+        oa.window->setMinimizeCallback([&wm, name = String(oa.name)]()
+                                       { wm.minimizeApp(name.c_str()); });
+        oa.window->setStateChangeCallback([&wm, name = String(oa.name)](WindowState state)
+                                          { wm.handleWindowStateChange(name.c_str(), state); });
+    }
+
     void WindowManager::openApp(const char *appName)
     {
-        // if already open, just focus
+        // if already open, just focus (restore if minimized)
         for (auto &oa : openApps)
         {
             if (oa.name == appName)
             {
-                focusApp(appName);
+                if (oa.window->isMinimized())
+                    restoreApp(appName);
+                else
+                    focusApp(appName);
                 return;
             }
         }
@@ -42,8 +55,7 @@ namespace UI
                 oa.window = std::make_unique<Window>(
                     appName, winX, winY, winW, winH);
 
-                oa.window->setCloseCallback([this, name = String(appName)]()
-                                            { closeApp(name.c_str()); });
+                setupWindowCallbacks(*this, oa);
 
                 oa.window->mount();
                 oa.app->setup(
@@ -89,6 +101,96 @@ namespace UI
         updateActiveStates();
     }
 
+    void WindowManager::minimizeApp(const char *appName)
+    {
+        auto it = std::find_if(openApps.begin(), openApps.end(),
+                               [&](const OpenApp &oa)
+                               { return oa.name == appName; });
+        if (it != openApps.end())
+        {
+            it->window->setState(WindowState::Minimized);
+            markDirty();
+        }
+    }
+
+    void WindowManager::restoreApp(const char *appName)
+    {
+        auto it = std::find_if(openApps.begin(), openApps.end(),
+                               [&](const OpenApp &oa)
+                               { return oa.name == appName; });
+        if (it != openApps.end())
+        {
+            if (it->window->isMinimized())
+            {
+                it->window->setState(WindowState::Restored);
+            }
+            focusApp(appName);
+            markDirty();
+        }
+    }
+
+    void WindowManager::handleWindowStateChange(const char *appName, WindowState state)
+    {
+        auto it = std::find_if(openApps.begin(), openApps.end(),
+                               [&](const OpenApp &oa)
+                               { return oa.name == appName; });
+        if (it == openApps.end())
+            return;
+
+        int winX = Theme::WindowBorderWidth;
+        int winY = Theme::DesktopY + 2;
+        int winW = Theme::ScreenWidth - Theme::WindowBorderWidth * 2;
+        int deskH = availableDesktopHeight();
+        int winH = deskH - 4;
+
+        switch (state)
+        {
+        case WindowState::Maximized:
+            winX = 0;
+            winY = Theme::DesktopY;
+            winW = Theme::ScreenWidth;
+            winH = deskH;
+            break;
+        case WindowState::TopHalf:
+            winX = 0;
+            winY = Theme::DesktopY;
+            winW = Theme::ScreenWidth;
+            winH = deskH / 2;
+            break;
+        case WindowState::BottomHalf:
+            winX = 0;
+            winY = Theme::DesktopY + deskH / 2;
+            winW = Theme::ScreenWidth;
+            winH = deskH / 2;
+            break;
+        case WindowState::Minimized:
+            // handled by minimizeApp
+            return;
+        case WindowState::Restored:
+        default:
+            break;
+        }
+
+        // rebuild window with new bounds
+        it->app->teardown();
+        it->window->unmount();
+
+        it->window = std::make_unique<Window>(
+            it->name.c_str(), winX, winY, winW, winH);
+        it->window->setState(state);
+
+        setupWindowCallbacks(*this, *it);
+
+        it->window->mount();
+        it->app->setup(
+            it->window->getContent(),
+            it->window->contentW(),
+            it->window->contentH());
+
+        updateActiveStates();
+        markDirty();
+    }
+
     bool WindowManager::isAppOpen(const char *appName) const
     {
         for (auto &oa : openApps)
@@ -103,14 +205,21 @@ namespace UI
     {
         if (openApps.empty())
             return nullptr;
-        return &openApps.back();
+        // find topmost non-minimized
+        for (int i = (int)openApps.size() - 1; i >= 0; i--)
+        {
+            if (!openApps[i].window->isMinimized())
+                return &openApps[i];
+        }
+        return nullptr;
     }
 
     void WindowManager::updateActiveStates()
     {
-        for (size_t i = 0; i < openApps.size(); i++)
+        auto *focused = getFocused();
+        for (auto &oa : openApps)
         {
-            openApps[i].window->setActive(i == openApps.size() - 1);
+            oa.window->setActive(focused && &oa == focused);
         }
     }
 
@@ -120,10 +229,11 @@ namespace UI
         // desktop background
         c.fillRect(0, Theme::DesktopY, Theme::ScreenWidth, Theme::DesktopHeight, Theme::DesktopBg);
 
-        // draw windows in z-order (back to front)
+        // draw windows in z-order (back to front), skip minimized
         for (auto &oa : openApps)
         {
-            oa.window->draw();
+            if (!oa.window->isMinimized())
+                oa.window->draw();
         }
 
         // overlay (taskbar, start menu)
@@ -137,19 +247,24 @@ namespace UI
         if (overlayTouch && overlayTouch(px, py))
             return;
 
-        // hit-test windows top-down (back of vector = top)
+        // hit-test windows top-down (back of vector = top), skip minimized
         for (int i = (int)openApps.size() - 1; i >= 0; i--)
         {
+            if (openApps[i].window->isMinimized())
+                continue;
             if (openApps[i].window->contains(px, py))
             {
                 // focus this window if not already focused
-                if (i != (int)openApps.size() - 1)
+                auto *focused = getFocused();
+                if (&openApps[i] != focused)
                 {
                     String name = openApps[i].name;
                     focusApp(name.c_str());
                 }
-                // top window gets the touch
-                openApps.back().window->onTouch(px, py);
+                // top non-minimized window gets the touch
+                auto *nowFocused = getFocused();
+                if (nowFocused)
+                    nowFocused->window->onTouch(px, py);
                 return;
             }
         }
@@ -160,11 +275,10 @@ namespace UI
         if (overlayTouchEnd && overlayTouchEnd(px, py))
             return;
 
-        // forward to focused window
-        if (!openApps.empty())
-        {
-            openApps.back().window->onTouchEnd(px, py);
-        }
+        // forward to focused (non-minimized) window
+        auto *focused = getFocused();
+        if (focused)
+            focused->window->onTouchEnd(px, py);
     }
 
     void WindowManager::tickTimers()
@@ -204,11 +318,13 @@ namespace UI
             oa.app->teardown();
             oa.window->unmount();
 
+            WindowState prevState = oa.window->getState();
+
             oa.window = std::make_unique<Window>(
                 oa.name.c_str(), winX, winY, winW, winH);
+            oa.window->setState(prevState);
 
-            oa.window->setCloseCallback([this, name = String(oa.name)]()
-                                        { closeApp(name.c_str()); });
+            setupWindowCallbacks(*this, oa);
 
             oa.window->mount();
             oa.app->setup(

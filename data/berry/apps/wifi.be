@@ -24,22 +24,27 @@ class WifiApp
     var row_h = 14
     var y = 4
 
-    self.add_row(scroll, y, w, '-- Connection --')
-    y += row_h
+    # Connection group box
+    var conn_gb = ui.groupbox(scroll, 'Connection', 2, y, w - 4, 72)
+    var cy = 14
 
-    self.status_lbl = self.add_row_label(scroll, y, w, 'Status: ...')
-    y += row_h
-    self.ip_lbl = self.add_row_label(scroll, y, w, 'IP: ...')
-    y += row_h
-    self.ssid_lbl = self.add_row_label(scroll, y, w, 'SSID: ...')
-    y += row_h
-    self.rssi_lbl = self.add_row_label(scroll, y, w, 'RSSI: ...')
-    y += row_h + 4
+    self.status_lbl = self.add_row_label(conn_gb, cy, w - 16, 'Status: ...')
+    cy += row_h
+    self.ip_lbl = self.add_row_label(conn_gb, cy, w - 16, 'IP: ...')
+    cy += row_h
+    self.ssid_lbl = self.add_row_label(conn_gb, cy, w - 16, 'SSID: ...')
+    cy += row_h
+    self.rssi_lbl = self.add_row_label(conn_gb, cy, w - 16, 'RSSI: ...')
 
-    var btn = ui.button(scroll, 'Scan', 4, y, 60, 22)
+    y += 78
+
+    # Scan group box
+    var scan_gb = ui.groupbox(scroll, 'Networks', 2, y, w - 4, 28)
+
+    var btn = ui.button(scan_gb, 'Scan', 2, 14, 60, 18)
     ui.on_click(btn, / -> self.do_scan())
-    y += 28
 
+    y += 34
     self.scan_start_y = y
     ui.set_content_height(scroll, y)
 
@@ -85,14 +90,11 @@ class WifiApp
       self.scan_labels.push(self.add_row_label(self.scroll, y, w, 'No networks found'))
       y += row_h
     else
-      self.add_row(self.scroll, y, w, '-- Networks --')
-      y += row_h
-
       var count = size(networks)
       if count > 10 count = 10 end
       for i : 0 .. count - 1
         var n = networks[i]
-        var line = str(n['ssid']) + ' (' + str(n['rssi']) + ')'
+        var line = str(n['ssid']) + ' (' + str(n['rssi']) + ' dBm)'
         self.scan_labels.push(self.add_row_label(self.scroll, y, w, line))
         y += row_h
       end
@@ -101,15 +103,8 @@ class WifiApp
     ui.set_content_height(self.scroll, y)
   end
 
-  def add_row(scroll, y, w, text)
-    var lbl = ui.label(scroll, text, 4, y, w - 8, 12)
-    ui.set_text_color(lbl, ui.TEXT_COLOR, ui.WINDOW_BG)
-    ui.set_text_size(lbl, 1)
-    ui.set_align(lbl, ui.LEFT)
-  end
-
-  def add_row_label(scroll, y, w, text)
-    var lbl = ui.label(scroll, text, 4, y, w - 8, 12)
+  def add_row_label(parent, y, w, text)
+    var lbl = ui.label(parent, text, 4, y, w - 8, 12)
     ui.set_text_color(lbl, ui.TEXT_COLOR, ui.WINDOW_BG)
     ui.set_text_size(lbl, 1)
     ui.set_align(lbl, ui.LEFT)

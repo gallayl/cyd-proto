@@ -7,10 +7,19 @@
 #include "../UI/elements/label.h"
 #include "../UI/elements/button.h"
 #include "../UI/elements/scrollable.h"
+#include "../UI/elements/checkbox.h"
+#include "../UI/elements/radiobutton.h"
+#include "../UI/elements/textfield.h"
+#include "../UI/elements/combobox.h"
+#include "../UI/elements/groupbox.h"
+#include "../UI/elements/tabs.h"
+#include "../UI/elements/filelistview.h"
+#include "../UI/elements/menubar.h"
 #include "../UI/Theme.h"
 #include "../UI/Renderer.h"
 #include "../Logging.h"
 
+#include <ArduinoJson.h>
 #include <LovyanGFX.hpp>
 
 // --- Current app context ---
@@ -121,7 +130,56 @@ static BerryCanvasElement *asCanvas(HandleEntry *h)
     return static_cast<BerryCanvasElement *>(h->ptr);
 }
 
-// helper to add child to either Container or ScrollableContainer
+static UI::Checkbox *asCheckbox(HandleEntry *h)
+{
+    if (!h || h->type != HandleType::CHECKBOX)
+        return nullptr;
+    return static_cast<UI::Checkbox *>(h->ptr);
+}
+
+static UI::RadioButton *asRadio(HandleEntry *h)
+{
+    if (!h || h->type != HandleType::RADIO)
+        return nullptr;
+    return static_cast<UI::RadioButton *>(h->ptr);
+}
+
+static UI::TextField *asTextField(HandleEntry *h)
+{
+    if (!h || h->type != HandleType::TEXTFIELD)
+        return nullptr;
+    return static_cast<UI::TextField *>(h->ptr);
+}
+
+static UI::ComboBox *asComboBox(HandleEntry *h)
+{
+    if (!h || h->type != HandleType::COMBOBOX)
+        return nullptr;
+    return static_cast<UI::ComboBox *>(h->ptr);
+}
+
+static UI::GroupBox *asGroupBox(HandleEntry *h)
+{
+    if (!h || h->type != HandleType::GROUPBOX)
+        return nullptr;
+    return static_cast<UI::GroupBox *>(h->ptr);
+}
+
+static UI::TabControl *asTabControl(HandleEntry *h)
+{
+    if (!h || h->type != HandleType::TABS)
+        return nullptr;
+    return static_cast<UI::TabControl *>(h->ptr);
+}
+
+static UI::FileListView *asFileListView(HandleEntry *h)
+{
+    if (!h || h->type != HandleType::FILELIST)
+        return nullptr;
+    return static_cast<UI::FileListView *>(h->ptr);
+}
+
+// helper to add child to either Container or ScrollableContainer (or GroupBox)
 static bool addChildToParent(BerryApp *app, int parentHandle, std::unique_ptr<UI::Element> child)
 {
     auto *h = app->getHandle(parentHandle);
@@ -136,6 +194,11 @@ static bool addChildToParent(BerryApp *app, int parentHandle, std::unique_ptr<UI
     if (h->type == HandleType::CONTAINER)
     {
         static_cast<UI::Container *>(h->ptr)->addChild(std::move(child));
+        return true;
+    }
+    if (h->type == HandleType::GROUPBOX)
+    {
+        static_cast<UI::GroupBox *>(h->ptr)->addChild(std::move(child));
         return true;
     }
     return false;
@@ -279,6 +342,478 @@ static int ui_canvas(bvm *vm)
     int handle = app->addHandle(ptr, HandleType::CANVAS);
     be_pushint(vm, handle);
     be_return(vm);
+}
+
+// ui.checkbox(parent, text, x, y, w, h) -> handle
+static int ui_checkbox(bvm *vm)
+{
+    auto *app = berryCurrentApp();
+    if (!app || be_top(vm) < 6)
+        be_return_nil(vm);
+
+    int parentH = be_toint(vm, 1);
+    const char *text = be_tostring(vm, 2);
+    int rx = be_toint(vm, 3);
+    int ry = be_toint(vm, 4);
+    int w = be_toint(vm, 5);
+    int h = be_toint(vm, 6);
+
+    int px, py, pw, ph;
+    getParentBounds(app, parentH, px, py, pw, ph);
+
+    auto cb = std::make_unique<UI::Checkbox>(text, px + rx, py + ry, w, h);
+    cb->setTextColor(UI::Theme::TextColor);
+
+    UI::Checkbox *ptr = cb.get();
+    if (!addChildToParent(app, parentH, std::move(cb)))
+        be_return_nil(vm);
+
+    int handle = app->addHandle(ptr, HandleType::CHECKBOX);
+    be_pushint(vm, handle);
+    be_return(vm);
+}
+
+// ui.radio(parent, text, x, y, w, h) -> handle
+static int ui_radio(bvm *vm)
+{
+    auto *app = berryCurrentApp();
+    if (!app || be_top(vm) < 6)
+        be_return_nil(vm);
+
+    int parentH = be_toint(vm, 1);
+    const char *text = be_tostring(vm, 2);
+    int rx = be_toint(vm, 3);
+    int ry = be_toint(vm, 4);
+    int w = be_toint(vm, 5);
+    int h = be_toint(vm, 6);
+
+    int px, py, pw, ph;
+    getParentBounds(app, parentH, px, py, pw, ph);
+
+    auto rb = std::make_unique<UI::RadioButton>(text, px + rx, py + ry, w, h);
+    rb->setTextColor(UI::Theme::TextColor);
+
+    UI::RadioButton *ptr = rb.get();
+    if (!addChildToParent(app, parentH, std::move(rb)))
+        be_return_nil(vm);
+
+    int handle = app->addHandle(ptr, HandleType::RADIO);
+    be_pushint(vm, handle);
+    be_return(vm);
+}
+
+// ui.textfield(parent, text, x, y, w, h) -> handle
+static int ui_textfield(bvm *vm)
+{
+    auto *app = berryCurrentApp();
+    if (!app || be_top(vm) < 6)
+        be_return_nil(vm);
+
+    int parentH = be_toint(vm, 1);
+    const char *text = be_tostring(vm, 2);
+    int rx = be_toint(vm, 3);
+    int ry = be_toint(vm, 4);
+    int w = be_toint(vm, 5);
+    int h = be_toint(vm, 6);
+
+    int px, py, pw, ph;
+    getParentBounds(app, parentH, px, py, pw, ph);
+
+    auto tf = std::make_unique<UI::TextField>(text, px + rx, py + ry, w, h);
+
+    UI::TextField *ptr = tf.get();
+    if (!addChildToParent(app, parentH, std::move(tf)))
+        be_return_nil(vm);
+
+    int handle = app->addHandle(ptr, HandleType::TEXTFIELD);
+    be_pushint(vm, handle);
+    be_return(vm);
+}
+
+// ui.combobox(parent, x, y, w, h) -> handle
+static int ui_combobox(bvm *vm)
+{
+    auto *app = berryCurrentApp();
+    if (!app || be_top(vm) < 5)
+        be_return_nil(vm);
+
+    int parentH = be_toint(vm, 1);
+    int rx = be_toint(vm, 2);
+    int ry = be_toint(vm, 3);
+    int w = be_toint(vm, 4);
+    int h = be_toint(vm, 5);
+
+    int px, py, pw, ph;
+    getParentBounds(app, parentH, px, py, pw, ph);
+
+    auto combo = std::make_unique<UI::ComboBox>(px + rx, py + ry, w, h);
+
+    UI::ComboBox *ptr = combo.get();
+    if (!addChildToParent(app, parentH, std::move(combo)))
+        be_return_nil(vm);
+
+    int handle = app->addHandle(ptr, HandleType::COMBOBOX);
+    be_pushint(vm, handle);
+    be_return(vm);
+}
+
+// ui.combobox_add_item(handle, text)
+static int ui_combobox_add_item(bvm *vm)
+{
+    auto *app = berryCurrentApp();
+    if (!app || be_top(vm) < 2)
+        be_return_nil(vm);
+
+    auto *combo = asComboBox(app->getHandle(be_toint(vm, 1)));
+    if (combo)
+        combo->addItem(be_tostring(vm, 2));
+
+    be_return_nil(vm);
+}
+
+// ui.combobox_set_selected(handle, index)
+static int ui_combobox_set_selected(bvm *vm)
+{
+    auto *app = berryCurrentApp();
+    if (!app || be_top(vm) < 2)
+        be_return_nil(vm);
+
+    auto *combo = asComboBox(app->getHandle(be_toint(vm, 1)));
+    if (combo)
+        combo->setSelectedIndex(be_toint(vm, 2));
+
+    be_return_nil(vm);
+}
+
+// ui.groupbox(parent, label, x, y, w, h) -> handle
+static int ui_groupbox(bvm *vm)
+{
+    auto *app = berryCurrentApp();
+    if (!app || be_top(vm) < 6)
+        be_return_nil(vm);
+
+    int parentH = be_toint(vm, 1);
+    const char *label = be_tostring(vm, 2);
+    int rx = be_toint(vm, 3);
+    int ry = be_toint(vm, 4);
+    int w = be_toint(vm, 5);
+    int h = be_toint(vm, 6);
+
+    int px, py, pw, ph;
+    getParentBounds(app, parentH, px, py, pw, ph);
+
+    auto gb = std::make_unique<UI::GroupBox>(label, px + rx, py + ry, w, h);
+
+    UI::GroupBox *ptr = gb.get();
+    if (!addChildToParent(app, parentH, std::move(gb)))
+        be_return_nil(vm);
+
+    int handle = app->addHandle(ptr, HandleType::GROUPBOX);
+    be_pushint(vm, handle);
+    be_return(vm);
+}
+
+// ui.tabs(parent, x, y, w, h) -> handle
+static int ui_tabs(bvm *vm)
+{
+    auto *app = berryCurrentApp();
+    if (!app || be_top(vm) < 5)
+        be_return_nil(vm);
+
+    int parentH = be_toint(vm, 1);
+    int rx = be_toint(vm, 2);
+    int ry = be_toint(vm, 3);
+    int w = be_toint(vm, 4);
+    int h = be_toint(vm, 5);
+
+    int px, py, pw, ph;
+    getParentBounds(app, parentH, px, py, pw, ph);
+
+    auto tc = std::make_unique<UI::TabControl>(px + rx, py + ry, w, h);
+
+    UI::TabControl *ptr = tc.get();
+    if (!addChildToParent(app, parentH, std::move(tc)))
+        be_return_nil(vm);
+
+    int handle = app->addHandle(ptr, HandleType::TABS);
+    be_pushint(vm, handle);
+    be_return(vm);
+}
+
+// ui.tabs_add(handle, label) -> tab content handle
+static int ui_tabs_add(bvm *vm)
+{
+    auto *app = berryCurrentApp();
+    if (!app || be_top(vm) < 2)
+        be_return_nil(vm);
+
+    auto *tc = asTabControl(app->getHandle(be_toint(vm, 1)));
+    if (!tc)
+        be_return_nil(vm);
+
+    int idx = tc->addTab(be_tostring(vm, 2));
+    UI::Container *content = tc->getTabContent(idx);
+    if (!content)
+        be_return_nil(vm);
+
+    int handle = app->addHandle(content, HandleType::CONTAINER);
+    be_pushint(vm, handle);
+    be_return(vm);
+}
+
+// ui.tabs_set_active(handle, index)
+static int ui_tabs_set_active(bvm *vm)
+{
+    auto *app = berryCurrentApp();
+    if (!app || be_top(vm) < 2)
+        be_return_nil(vm);
+
+    auto *tc = asTabControl(app->getHandle(be_toint(vm, 1)));
+    if (tc)
+        tc->setActiveTab(be_toint(vm, 2));
+
+    be_return_nil(vm);
+}
+
+// ui.filelist(parent, x, y, w, h) -> handle
+static int ui_filelist(bvm *vm)
+{
+    auto *app = berryCurrentApp();
+    if (!app || be_top(vm) < 5)
+        be_return_nil(vm);
+
+    int parentH = be_toint(vm, 1);
+    int rx = be_toint(vm, 2);
+    int ry = be_toint(vm, 3);
+    int w = be_toint(vm, 4);
+    int h = be_toint(vm, 5);
+
+    int px, py, pw, ph;
+    getParentBounds(app, parentH, px, py, pw, ph);
+
+    auto fl = std::make_unique<UI::FileListView>(px + rx, py + ry, w, h);
+
+    UI::FileListView *ptr = fl.get();
+    if (!addChildToParent(app, parentH, std::move(fl)))
+        be_return_nil(vm);
+
+    int handle = app->addHandle(ptr, HandleType::FILELIST);
+    be_pushint(vm, handle);
+    be_return(vm);
+}
+
+// ui.filelist_set_view(handle, mode_str) -- "icons", "list", "details"
+static int ui_filelist_set_view(bvm *vm)
+{
+    auto *app = berryCurrentApp();
+    if (!app || be_top(vm) < 2)
+        be_return_nil(vm);
+
+    auto *fl = asFileListView(app->getHandle(be_toint(vm, 1)));
+    if (!fl)
+        be_return_nil(vm);
+
+    const char *mode = be_tostring(vm, 2);
+    if (strcmp(mode, "icons") == 0)
+        fl->setViewMode(UI::FileListViewMode::Icons);
+    else if (strcmp(mode, "details") == 0)
+        fl->setViewMode(UI::FileListViewMode::Details);
+    else
+        fl->setViewMode(UI::FileListViewMode::List);
+
+    be_return_nil(vm);
+}
+
+// ui.filelist_set_items(handle, json_str) -- set items from JSON string
+static int ui_filelist_set_items(bvm *vm)
+{
+    auto *app = berryCurrentApp();
+    if (!app || be_top(vm) < 2)
+        be_return_nil(vm);
+
+    auto *fl = asFileListView(app->getHandle(be_toint(vm, 1)));
+    if (!fl)
+        be_return_nil(vm);
+
+    if (!be_isstring(vm, 2))
+        be_return_nil(vm);
+
+    const char *jsonStr = be_tostring(vm, 2);
+    JsonDocument doc;
+    DeserializationError err = deserializeJson(doc, jsonStr);
+    if (err)
+        be_return_nil(vm);
+
+    JsonArray arr = doc.as<JsonArray>();
+    std::vector<UI::FileItem> items;
+
+    for (JsonObject obj : arr)
+    {
+        UI::FileItem item;
+        item.name = String(obj["name"] | "?");
+        item.size = obj["size"] | 0;
+        item.isDir = obj["isDir"] | false;
+        item.lastWrite = obj["lastWrite"] | 0;
+        items.push_back(std::move(item));
+    }
+
+    fl->setItems(items);
+    be_return_nil(vm);
+}
+
+// ui.on_change(handle, callback)
+static int ui_on_change(bvm *vm)
+{
+    auto *app = berryCurrentApp();
+    if (!app || be_top(vm) < 2)
+        be_return_nil(vm);
+
+    auto *h = app->getHandle(be_toint(vm, 1));
+    if (!h)
+        be_return_nil(vm);
+
+    int cbId = app->storeCallback(vm, 2);
+    BerryApp *appPtr = app;
+
+    if (h->type == HandleType::CHECKBOX)
+    {
+        static_cast<UI::Checkbox *>(h->ptr)->setOnChange(
+            [appPtr, cbId](bool checked)
+            {
+                appPtr->callBerryCallbackWithArgs(cbId, [checked](bvm *v) -> int
+                                                  {
+                    be_pushbool(v, checked);
+                    return 1; });
+            });
+    }
+    else if (h->type == HandleType::RADIO)
+    {
+        static_cast<UI::RadioButton *>(h->ptr)->setOnChange(
+            [appPtr, cbId](bool selected)
+            {
+                appPtr->callBerryCallbackWithArgs(cbId, [selected](bvm *v) -> int
+                                                  {
+                    be_pushbool(v, selected);
+                    return 1; });
+            });
+    }
+    else if (h->type == HandleType::COMBOBOX)
+    {
+        static_cast<UI::ComboBox *>(h->ptr)->setOnChange(
+            [appPtr, cbId](int idx)
+            {
+                appPtr->callBerryCallbackWithArgs(cbId, [idx](bvm *v) -> int
+                                                  {
+                    be_pushint(v, idx);
+                    return 1; });
+            });
+    }
+    else if (h->type == HandleType::TABS)
+    {
+        static_cast<UI::TabControl *>(h->ptr)->setOnChange(
+            [appPtr, cbId](int idx)
+            {
+                appPtr->callBerryCallbackWithArgs(cbId, [idx](bvm *v) -> int
+                                                  {
+                    be_pushint(v, idx);
+                    return 1; });
+            });
+    }
+    else if (h->type == HandleType::TEXTFIELD)
+    {
+        static_cast<UI::TextField *>(h->ptr)->setOnChange(
+            [appPtr, cbId](const String &text)
+            {
+                String t = text;
+                appPtr->callBerryCallbackWithArgs(cbId, [t](bvm *v) -> int
+                                                  {
+                    be_pushstring(v, t.c_str());
+                    return 1; });
+            });
+    }
+
+    be_return_nil(vm);
+}
+
+// ui.on_item_selected(handle, callback(index))
+static int ui_on_item_selected(bvm *vm)
+{
+    auto *app = berryCurrentApp();
+    if (!app || be_top(vm) < 2)
+        be_return_nil(vm);
+
+    auto *fl = asFileListView(app->getHandle(be_toint(vm, 1)));
+    if (!fl)
+        be_return_nil(vm);
+
+    int cbId = app->storeCallback(vm, 2);
+    BerryApp *appPtr = app;
+    fl->setOnItemSelected(
+        [appPtr, cbId](int idx, const UI::FileItem &item)
+        {
+            appPtr->callBerryCallbackWithArgs(cbId, [idx](bvm *v) -> int
+                                              {
+                be_pushint(v, idx);
+                return 1; });
+        });
+
+    be_return_nil(vm);
+}
+
+// ui.set_checked(handle, bool)
+static int ui_set_checked(bvm *vm)
+{
+    auto *app = berryCurrentApp();
+    if (!app || be_top(vm) < 2)
+        be_return_nil(vm);
+
+    auto *cb = asCheckbox(app->getHandle(be_toint(vm, 1)));
+    if (cb)
+        cb->setChecked(be_tobool(vm, 2));
+
+    be_return_nil(vm);
+}
+
+// ui.get_checked(handle) -> bool
+static int ui_get_checked(bvm *vm)
+{
+    auto *app = berryCurrentApp();
+    if (!app || be_top(vm) < 1)
+        be_return_nil(vm);
+
+    auto *cb = asCheckbox(app->getHandle(be_toint(vm, 1)));
+    if (cb)
+    {
+        be_pushbool(vm, cb->isChecked());
+        be_return(vm);
+    }
+
+    be_return_nil(vm);
+}
+
+// ui.get_text(handle) -> string
+static int ui_get_text(bvm *vm)
+{
+    auto *app = berryCurrentApp();
+    if (!app || be_top(vm) < 1)
+        be_return_nil(vm);
+
+    auto *h = app->getHandle(be_toint(vm, 1));
+    if (!h)
+        be_return_nil(vm);
+
+    if (h->type == HandleType::TEXTFIELD)
+    {
+        be_pushstring(vm, static_cast<UI::TextField *>(h->ptr)->getText().c_str());
+        be_return(vm);
+    }
+    if (h->type == HandleType::LABEL)
+    {
+        be_pushstring(vm, static_cast<UI::Label *>(h->ptr)->getText().c_str());
+        be_return(vm);
+    }
+
+    be_return_nil(vm);
 }
 
 // =================================================================
@@ -834,6 +1369,13 @@ void registerBerryUIModule(bvm *vm)
     reg("button", ui_button);
     reg("scrollable", ui_scrollable);
     reg("canvas", ui_canvas);
+    reg("checkbox", ui_checkbox);
+    reg("radio", ui_radio);
+    reg("textfield", ui_textfield);
+    reg("combobox", ui_combobox);
+    reg("groupbox", ui_groupbox);
+    reg("tabs", ui_tabs);
+    reg("filelist", ui_filelist);
 
     // property setters
     reg("set_text", ui_set_text);
@@ -844,10 +1386,25 @@ void registerBerryUIModule(bvm *vm)
     reg("set_border_colors", ui_set_border_colors);
     reg("set_content_height", ui_set_content_height);
     reg("set_auto_content_height", ui_set_auto_content_height);
+    reg("set_checked", ui_set_checked);
+    reg("get_checked", ui_get_checked);
+    reg("get_text", ui_get_text);
     reg("bounds", ui_bounds);
+
+    // combobox & tabs helpers
+    reg("combobox_add_item", ui_combobox_add_item);
+    reg("combobox_set_selected", ui_combobox_set_selected);
+    reg("tabs_add", ui_tabs_add);
+    reg("tabs_set_active", ui_tabs_set_active);
+
+    // filelist helpers
+    reg("filelist_set_view", ui_filelist_set_view);
+    reg("filelist_set_items", ui_filelist_set_items);
 
     // callbacks & timers
     reg("on_click", ui_on_click);
+    reg("on_change", ui_on_change);
+    reg("on_item_selected", ui_on_item_selected);
     reg("on_touch", ui_on_touch);
     reg("on_touch_end", ui_on_touch_end);
     reg("timer", ui_timer);

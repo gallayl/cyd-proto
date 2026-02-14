@@ -4,6 +4,7 @@
 #include "../elements/container.h"
 #include "../elements/label.h"
 #include "../elements/button.h"
+#include "../elements/groupbox.h"
 #include "../Theme.h"
 #include "../Renderer.h"
 #include "../Calibration.h"
@@ -26,67 +27,64 @@ namespace UI
 
             int baseY = cy + 4;
 
-            // Brightness section
-            auto header = std::make_unique<Label>("Brightness", cx + 4, baseY, cw - 8, 14);
-            header->setTextColor(Theme::TextColor, Theme::WindowBg);
-            header->setTextSize(1);
-            header->setAlign(TextAlign::LEFT);
-            cont.addChild(std::move(header));
-            baseY += 18;
+            // Brightness group box
+            auto brightnessGroup = std::make_unique<GroupBox>("Brightness", cx + 2, baseY, cw - 4, 56);
+            int gx = brightnessGroup->contentX();
+            int gy = brightnessGroup->contentY();
 
             // value label
-            auto valLbl = std::make_unique<Label>(String(brightness), cx + 4, baseY, 40, 22);
+            auto valLbl = std::make_unique<Label>(String(brightness), gx + 2, gy + 2, 40, 22);
             valLbl->setTextColor(Theme::TextColor, Theme::WindowBg);
             valLbl->setTextSize(1);
             brightnessLabel = valLbl.get();
-            cont.addChild(std::move(valLbl));
+            brightnessGroup->addChild(std::move(valLbl));
 
             // minus button
-            auto minusBtn = std::make_unique<Button>("-", cx + 48, baseY, 36, 22);
+            auto minusBtn = std::make_unique<Button>("-", gx + 46, gy + 2, 36, 22);
             minusBtn->setBackgroundColor(Theme::ButtonFace);
             minusBtn->setTextColor(Theme::TextColor, Theme::ButtonFace);
             minusBtn->setCallback([this]()
                                   {
                 if (brightness >= 25) brightness -= 25; else brightness = 0;
                 applyBrightness(); });
-            cont.addChild(std::move(minusBtn));
+            brightnessGroup->addChild(std::move(minusBtn));
 
             // plus button
-            auto plusBtn = std::make_unique<Button>("+", cx + 88, baseY, 36, 22);
+            auto plusBtn = std::make_unique<Button>("+", gx + 86, gy + 2, 36, 22);
             plusBtn->setBackgroundColor(Theme::ButtonFace);
             plusBtn->setTextColor(Theme::TextColor, Theme::ButtonFace);
             plusBtn->setCallback([this]()
                                 {
                 if (brightness <= 230) brightness += 25; else brightness = 255;
                 applyBrightness(); });
-            cont.addChild(std::move(plusBtn));
+            brightnessGroup->addChild(std::move(plusBtn));
 
             // max button
-            auto maxBtn = std::make_unique<Button>("Max", cx + 128, baseY, 40, 22);
+            auto maxBtn = std::make_unique<Button>("Max", gx + 126, gy + 2, 40, 22);
             maxBtn->setBackgroundColor(Theme::ButtonFace);
             maxBtn->setTextColor(Theme::TextColor, Theme::ButtonFace);
             maxBtn->setCallback([this]()
                                 {
                 brightness = 255;
                 applyBrightness(); });
-            cont.addChild(std::move(maxBtn));
+            brightnessGroup->addChild(std::move(maxBtn));
 
-            baseY += 34;
+            cont.addChild(std::move(brightnessGroup));
+            baseY += 62;
 
-            // Calibration section
-            auto calHeader = std::make_unique<Label>("Touch Calibration", cx + 4, baseY, cw - 8, 14);
-            calHeader->setTextColor(Theme::TextColor, Theme::WindowBg);
-            calHeader->setTextSize(1);
-            calHeader->setAlign(TextAlign::LEFT);
-            cont.addChild(std::move(calHeader));
-            baseY += 18;
+            // Calibration group box
+            auto calGroup = std::make_unique<GroupBox>("Touch Calibration", cx + 2, baseY, cw - 4, 48);
+            int cgx = calGroup->contentX();
+            int cgy = calGroup->contentY();
 
-            auto calBtn = std::make_unique<Button>("Calibrate", cx + 4, baseY, 80, 22);
+            auto calBtn = std::make_unique<Button>("Calibrate", cgx + 2, cgy + 2, 80, 22);
             calBtn->setBackgroundColor(Theme::ButtonFace);
             calBtn->setTextColor(Theme::TextColor, Theme::ButtonFace);
             calBtn->setCallback([]()
                                 { calibrateScreen(); });
-            cont.addChild(std::move(calBtn));
+            calGroup->addChild(std::move(calBtn));
+
+            cont.addChild(std::move(calGroup));
         }
 
     private:

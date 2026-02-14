@@ -22,7 +22,15 @@ enum class HandleType
     LABEL,
     BUTTON,
     SCROLLABLE,
-    CANVAS
+    CANVAS,
+    CHECKBOX,
+    RADIO,
+    TEXTFIELD,
+    COMBOBOX,
+    GROUPBOX,
+    TABS,
+    FILELIST,
+    MENUBAR
 };
 
 struct HandleEntry

@@ -3,7 +3,12 @@
 
 JsonDocument getFileList()
 {
-    fs::File root = LittleFS.open("/", "r");
+    return getFileList("/");
+}
+
+JsonDocument getFileList(const char *path)
+{
+    fs::File root = LittleFS.open(path, "r");
     JsonDocument response;
     JsonArray fileList = response.to<JsonArray>();
 

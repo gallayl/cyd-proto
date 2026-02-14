@@ -13,17 +13,16 @@ class DisplaySettingsApp
   def setup(content, w, h)
     var y = 4
 
-    # Brightness section
-    var header = ui.label(content, 'Brightness', 4, y, w - 8, 14)
-    ui.set_text_color(header, ui.TEXT_COLOR, ui.WINDOW_BG)
-    ui.set_text_size(header, 1)
-    ui.set_align(header, ui.LEFT)
-    y += 18
+    # Brightness group box
+    var bright_gb = ui.groupbox(content, 'Brightness', 2, y, w - 4, 56)
+    var gb_bounds = ui.bounds(bright_gb)
+    var gx = gb_bounds[0]
+    var gy = gb_bounds[1]
 
-    self.brightness_lbl = ui.label(content, str(self.brightness), 4, y, 40, 22)
+    self.brightness_lbl = ui.label(bright_gb, str(self.brightness), 2, 14, 40, 22)
     ui.set_text_color(self.brightness_lbl, ui.TEXT_COLOR, ui.WINDOW_BG)
 
-    var minus = ui.button(content, '-', 48, y, 36, 22)
+    var minus = ui.button(bright_gb, '-', 46, 14, 36, 22)
     ui.on_click(minus, def ()
       if self.brightness >= 25
         self.brightness -= 25
@@ -33,7 +32,7 @@ class DisplaySettingsApp
       self.apply()
     end)
 
-    var plus = ui.button(content, '+', 88, y, 36, 22)
+    var plus = ui.button(bright_gb, '+', 86, 14, 36, 22)
     ui.on_click(plus, def ()
       if self.brightness <= 230
         self.brightness += 25
@@ -43,21 +42,18 @@ class DisplaySettingsApp
       self.apply()
     end)
 
-    var mx = ui.button(content, 'Max', 128, y, 40, 22)
+    var mx = ui.button(bright_gb, 'Max', 126, 14, 40, 22)
     ui.on_click(mx, def ()
       self.brightness = 255
       self.apply()
     end)
-    y += 34
 
-    # Calibration section
-    var cal_header = ui.label(content, 'Touch Calibration', 4, y, w - 8, 14)
-    ui.set_text_color(cal_header, ui.TEXT_COLOR, ui.WINDOW_BG)
-    ui.set_text_size(cal_header, 1)
-    ui.set_align(cal_header, ui.LEFT)
-    y += 18
+    y += 62
 
-    var cal_btn = ui.button(content, 'Calibrate', 4, y, 80, 22)
+    # Calibration group box
+    var cal_gb = ui.groupbox(content, 'Touch Calibration', 2, y, w - 4, 48)
+
+    var cal_btn = ui.button(cal_gb, 'Calibrate', 2, 14, 80, 22)
     ui.on_click(cal_btn, / -> action('screen calibrate'))
   end
 

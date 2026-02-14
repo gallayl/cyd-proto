@@ -48,5 +48,34 @@ namespace UI
         constexpr int KeyboardHeight = DesktopHeight / 2;
         constexpr int KeyboardToggleSize = 22;
 
+        // checkbox / radio
+        constexpr int CheckboxSize = 13;
+        constexpr int RadioSize = 12;
+        constexpr uint16_t CheckboxBg = TFT_WHITE;
+
+        // text field
+        constexpr uint16_t TextFieldBg = TFT_WHITE;
+        constexpr int TextFieldHeight = 18;
+
+        // tabs
+        constexpr int TabBarHeight = 20;
+
+        // menu bar
+        constexpr int MenuBarHeight = 18;
+
+        // group box
+        constexpr int GroupBoxPad = 6;
+        constexpr int GroupBoxTopPad = 12;
+
+        // file list
+        constexpr int FileListIconSize = 16;
+        constexpr int FileListRowHeight = 16;
+        constexpr int FileListDetailRowHeight = 14;
+        constexpr int FileListIconGridW = 48;
+        constexpr int FileListIconGridH = 40;
+
+        // window buttons
+        constexpr int WinBtnSize = 14;
+
     } // namespace Theme
 } // namespace UI

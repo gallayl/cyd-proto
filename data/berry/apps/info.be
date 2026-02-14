@@ -9,80 +9,85 @@ class InfoApp
   end
 
   def setup(content, w, h)
-    var scroll = ui.scrollable(content)
-    var row_h = 14
-    var y = 4
+    # use tabs to organize info sections
+    var tab_ctrl = ui.tabs(content, 0, 0, w, h)
+
+    var esp_tab = ui.tabs_add(tab_ctrl, 'ESP')
+    var flash_tab = ui.tabs_add(tab_ctrl, 'Flash')
+    var fs_tab = ui.tabs_add(tab_ctrl, 'FS')
+    var wifi_tab = ui.tabs_add(tab_ctrl, 'WiFi')
 
     var info_str = action('info')
     var info = json.load(info_str)
 
-    self.add_row(scroll, y, w, '-- ESP --')
-    y += row_h
-
-    if info != nil
-      if info.find('esp') != nil
-        var esp = info['esp']
-        self.add_row(scroll, y, w, 'SDK: ' + str(esp['sdkVersion']))
-        y += row_h
-        self.add_row(scroll, y, w, 'CPU: ' + str(esp['cpuFreqMhz']) + ' MHz')
-        y += row_h
-        self.add_row(scroll, y, w, 'Heap: ' + str(esp['freeHeap']) + ' B')
-        y += row_h
-        self.add_row(scroll, y, w, 'Sketch: ' + str(esp['freeSkSpace']) + ' B')
-        y += row_h
-      end
-
-      y += 4
-      self.add_row(scroll, y, w, '-- Flash --')
+    # ESP tab
+    var y = 4
+    var row_h = 14
+    if info != nil && info.find('esp') != nil
+      var esp = info['esp']
+      self.add_row(esp_tab, y, w - 8, 'SDK: ' + str(esp['sdkVersion']))
       y += row_h
-
-      if info.find('flash') != nil
-        var fl = info['flash']
-        self.add_row(scroll, y, w, 'Size: ' + str(fl['size']) + ' B')
-        y += row_h
-        self.add_row(scroll, y, w, 'Speed: ' + str(fl['speed'] / 1000000) + ' MHz')
-        y += row_h
-      end
-
-      y += 4
-      self.add_row(scroll, y, w, '-- Filesystem --')
+      self.add_row(esp_tab, y, w - 8, 'CPU: ' + str(esp['cpuFreqMhz']) + ' MHz')
       y += row_h
-
-      if info.find('fs') != nil
-        var fs = info['fs']
-        self.add_row(scroll, y, w, 'Total: ' + str(fs['totalBytes']) + ' B')
-        y += row_h
-        self.add_row(scroll, y, w, 'Used: ' + str(fs['usedBytes']) + ' B')
-        y += row_h
-      end
+      self.add_row(esp_tab, y, w - 8, 'Free Heap: ' + str(esp['freeHeap']) + ' B')
+      y += row_h
+      self.add_row(esp_tab, y, w - 8, 'Free Sketch: ' + str(esp['freeSkSpace']) + ' B')
+      y += row_h
+    else
+      self.add_row(esp_tab, y, w - 8, 'No ESP info available')
     end
 
-    y += 4
-    self.add_row(scroll, y, w, '-- WiFi --')
-    y += row_h
+    # Flash tab
+    y = 4
+    if info != nil && info.find('flash') != nil
+      var fl = info['flash']
+      self.add_row(flash_tab, y, w - 8, 'Size: ' + str(fl['size']) + ' B')
+      y += row_h
+      self.add_row(flash_tab, y, w - 8, 'Speed: ' + str(fl['speed'] / 1000000) + ' MHz')
+      y += row_h
+    else
+      self.add_row(flash_tab, y, w - 8, 'No flash info available')
+    end
 
+    # Filesystem tab
+    y = 4
+    if info != nil && info.find('fs') != nil
+      var fs = info['fs']
+      self.add_row(fs_tab, y, w - 8, 'Total: ' + str(fs['totalBytes']) + ' B')
+      y += row_h
+      self.add_row(fs_tab, y, w - 8, 'Used: ' + str(fs['usedBytes']) + ' B')
+      y += row_h
+      var free = fs['totalBytes'] - fs['usedBytes']
+      self.add_row(fs_tab, y, w - 8, 'Free: ' + str(free) + ' B')
+      y += row_h
+    else
+      self.add_row(fs_tab, y, w - 8, 'No filesystem info')
+    end
+
+    # WiFi tab
+    y = 4
     var wifi_str = action('wifi info')
     var wifi = json.load(wifi_str)
     if wifi != nil
       if wifi.find('sta') != nil
-        self.add_row(scroll, y, w, 'IP: ' + str(wifi['sta']['ipAddress']))
+        self.add_row(wifi_tab, y, w - 8, 'IP: ' + str(wifi['sta']['ipAddress']))
         y += row_h
-        self.add_row(scroll, y, w, 'MAC: ' + str(wifi['sta']['macAddress']))
+        self.add_row(wifi_tab, y, w - 8, 'MAC: ' + str(wifi['sta']['macAddress']))
         y += row_h
-        self.add_row(scroll, y, w, 'SSID: ' + str(wifi['sta']['ssid']))
+        self.add_row(wifi_tab, y, w - 8, 'SSID: ' + str(wifi['sta']['ssid']))
         y += row_h
       end
       if wifi.find('wifiRssiDb') != nil
-        self.add_row(scroll, y, w, 'RSSI: ' + str(wifi['wifiRssiDb']) + ' dBm')
+        self.add_row(wifi_tab, y, w - 8, 'RSSI: ' + str(wifi['wifiRssiDb']) + ' dBm')
         y += row_h
       end
+    else
+      self.add_row(wifi_tab, y, w - 8, 'No WiFi info available')
     end
-
-    ui.set_content_height(scroll, y)
   end
 
-  def add_row(scroll, y, w, text)
-    var lbl = ui.label(scroll, text, 4, y, w - 8, 12)
+  def add_row(parent, y, w, text)
+    var lbl = ui.label(parent, text, 4, y, w, 12)
     ui.set_text_color(lbl, ui.TEXT_COLOR, ui.WINDOW_BG)
     ui.set_text_size(lbl, 1)
     ui.set_align(lbl, ui.LEFT)

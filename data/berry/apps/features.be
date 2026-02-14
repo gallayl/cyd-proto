@@ -26,13 +26,10 @@ class FeaturesApp
     var scroll = ui.scrollable(self.content)
 
     var row_h = 14
-    var btn_h = 18
     var y = 4
 
-    self.add_row(scroll, y, w, 'Heap:')
-    y += row_h
-
-    # Heap info from system
+    # Heap info group box
+    var heap_gb = ui.groupbox(scroll, 'Memory', 2, y, w - 4, 34)
     var info_str = action('info')
     var info = json.load(info_str)
     if info != nil && info.find('esp') != nil
@@ -41,14 +38,16 @@ class FeaturesApp
       var total = 327680
       var used = total - free
       var text = str(used / 1024) + 'KB / ' + str(total / 1024) + 'KB'
-      self.add_row(scroll, y, w, text)
-      y += row_h + 6
-    else
-      y += 6
+      var lbl = ui.label(heap_gb, text, 4, 14, w - 20, 12)
+      ui.set_text_color(lbl, ui.TEXT_COLOR, ui.WINDOW_BG)
+      ui.set_text_size(lbl, 1)
+      ui.set_align(lbl, ui.LEFT)
     end
+    y += 42
 
-    self.add_row(scroll, y, w, '-- Registered Features --')
-    y += row_h
+    # Features group box
+    var feat_gb = ui.groupbox(scroll, 'Features', 2, y, w - 4, 0)
+    var fy = 14
 
     var feat_str = action('features')
     var features = json.load(feat_str)
@@ -57,18 +56,18 @@ class FeaturesApp
         var f = features[i]
         var fname = str(f['name'])
         var state = str(f['state'])
-        var line = fname + ': ' + state
+        var is_running = (state == 'RUNNING')
 
-        self.add_row(scroll, y, w - 50, line)
+        # checkbox to show running state
+        var cb = ui.checkbox(feat_gb, fname, 2, fy, w - 60, 16)
+        ui.set_checked(cb, is_running)
 
         var can_start = (state == 'PENDING' || state == 'STOPPED' || state == 'ERROR')
-        var can_stop = (state == 'RUNNING')
+        var can_stop = is_running
 
         if can_start || can_stop
-          var btn_w = 42
-          var btn_x = w - btn_w - 4
           var btn_label = can_stop ? 'Stop' : 'Start'
-          var btn = ui.button(scroll, btn_label, btn_x, y, btn_w, btn_h)
+          var btn = ui.button(feat_gb, btn_label, w - 56, fy, 42, 16)
 
           if can_stop
             var n = fname
@@ -85,21 +84,16 @@ class FeaturesApp
               ui.mark_dirty()
             end)
           end
-          y += btn_h + 2
-        else
-          y += row_h
         end
+
+        fy += 20
       end
     end
 
+    # resize group box height based on content
+    # (groupbox doesn't auto-resize, so we set a large enough initial height)
+    y += fy + 6
     ui.set_content_height(scroll, y)
-  end
-
-  def add_row(scroll, y, w, text)
-    var lbl = ui.label(scroll, text, 4, y, w - 8, 12)
-    ui.set_text_color(lbl, ui.TEXT_COLOR, ui.WINDOW_BG)
-    ui.set_text_size(lbl, 1)
-    ui.set_align(lbl, ui.LEFT)
   end
 
   def teardown()
