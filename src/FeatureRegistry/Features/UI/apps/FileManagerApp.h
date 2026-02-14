@@ -7,10 +7,16 @@
 #include "../elements/button.h"
 #include "../elements/filelistview.h"
 #include "../Theme.h"
+#include "../WindowManager.h"
 #include "../../../../api/list.h"
+#include "../../../../config.h"
 #include <ArduinoJson.h>
 #include <LittleFS.h>
 #include <memory>
+
+#if ENABLE_BERRY
+#include "../../Berry/BerryFeature.h"
+#endif
 
 namespace UI
 {
@@ -115,7 +121,7 @@ namespace UI
 
             auto fl = std::make_unique<FileListView>(cx, listY, cw, listH);
             fl->setViewMode(FileListViewMode::List);
-            fl->setOnItemActivated([this, &cont, w, h](int idx, const FileItem &item)
+            fl->setOnItemActivated([this](int idx, const FileItem &item)
                                    {
                 if (item.isDir)
                 {
@@ -124,6 +130,12 @@ namespace UI
                     else
                         currentPath += "/" + item.name;
                     refreshFileList();
+                    return;
+                }
+                // execute .be files
+                if (item.name.endsWith(".be"))
+                {
+                    executeBerryFile(item.name);
                 } });
             fileList = fl.get();
             cont.addChild(std::move(fl));
@@ -176,6 +188,23 @@ namespace UI
                 currentPath = currentPath.substring(0, lastSlash);
 
             refreshFileList();
+        }
+
+        void executeBerryFile(const String &filename)
+        {
+#if ENABLE_BERRY
+            String fullPath;
+            if (currentPath.endsWith("/"))
+                fullPath = currentPath + filename;
+            else
+                fullPath = currentPath + "/" + filename;
+
+            String appName = getBerryAppNameFromPath(fullPath);
+            if (appName.length() > 0)
+            {
+                windowManager().openApp(appName.c_str());
+            }
+#endif
         }
     };
 

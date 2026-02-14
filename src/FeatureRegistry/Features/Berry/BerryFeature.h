@@ -17,5 +17,6 @@ extern "C" {
 
 bvm *getBerryVM();
 const std::vector<String> &getBerryAppNames();
+String getBerryAppNameFromPath(const String &path);
 
 #endif // ENABLE_BERRY

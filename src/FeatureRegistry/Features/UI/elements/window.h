@@ -8,6 +8,7 @@
 #include "menubar.h"
 #include "../Renderer.h"
 #include "../Theme.h"
+#include "../ActionQueue.h"
 
 namespace UI
 {
@@ -88,24 +89,34 @@ namespace UI
 
         void toggleMaximize()
         {
-            if (winState == WindowState::Maximized)
-                winState = WindowState::Restored;
-            else
-                winState = WindowState::Maximized;
+            WindowState newState = (winState == WindowState::Maximized)
+                                       ? WindowState::Restored
+                                       : WindowState::Maximized;
+            winState = newState;
             if (onStateChange)
-                onStateChange(winState);
+            {
+                auto cb = onStateChange;
+                UI::queueAction([cb, newState]()
+                                { cb(newState); });
+            }
         }
 
         void cycleHalfScreen()
         {
+            WindowState newState;
             if (winState == WindowState::TopHalf)
-                winState = WindowState::BottomHalf;
+                newState = WindowState::BottomHalf;
             else if (winState == WindowState::BottomHalf)
-                winState = WindowState::Restored;
+                newState = WindowState::Restored;
             else
-                winState = WindowState::TopHalf;
+                newState = WindowState::TopHalf;
+            winState = newState;
             if (onStateChange)
-                onStateChange(winState);
+            {
+                auto cb = onStateChange;
+                UI::queueAction([cb, newState]()
+                                { cb(newState); });
+            }
         }
 
         void mount() override
@@ -298,9 +309,11 @@ namespace UI
                 minBtn.onTouchEnd(px, py);
                 winState = WindowState::Minimized;
                 if (onMinimize)
-                    onMinimize();
-                if (onStateChange)
-                    onStateChange(winState);
+                {
+                    auto cb = onMinimize;
+                    UI::queueAction([cb]()
+                                    { cb(); });
+                }
                 return;
             }
             minBtn.onTouchEnd(px, py);

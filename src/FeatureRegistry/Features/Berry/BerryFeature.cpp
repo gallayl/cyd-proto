@@ -36,6 +36,11 @@ static String getBerryAppNameForPath(String path)
     auto it = s_berryPathToName.find(path);
     return it != s_berryPathToName.end() ? it->second : String();
 }
+
+String getBerryAppNameFromPath(const String &path)
+{
+    return getBerryAppNameForPath(path);
+}
 #endif
 
 // --- Native bindings exposed to Berry scripts ---
