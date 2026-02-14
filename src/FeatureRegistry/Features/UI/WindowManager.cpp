@@ -33,7 +33,7 @@ namespace UI
                 int winX = Theme::WindowBorderWidth;
                 int winY = Theme::DesktopY + 2;
                 int winW = Theme::ScreenWidth - Theme::WindowBorderWidth * 2;
-                int winH = Theme::DesktopHeight - 4;
+                int winH = availableDesktopHeight() - 4;
 
                 oa.window = std::make_unique<Window>(
                     appName, winX, winY, winW, winH);
@@ -167,6 +167,49 @@ namespace UI
             if (oa.app->tickTimers())
                 markDirty();
         }
+    }
+
+    int WindowManager::availableDesktopHeight() const
+    {
+        if (keyboardVisible)
+            return Theme::DesktopHeight - Theme::KeyboardHeight;
+        return Theme::DesktopHeight;
+    }
+
+    void WindowManager::setKeyboardVisible(bool vis)
+    {
+        if (vis == keyboardVisible)
+            return;
+        keyboardVisible = vis;
+        relayoutWindows();
+        markDirty();
+    }
+
+    void WindowManager::relayoutWindows()
+    {
+        int winX = Theme::WindowBorderWidth;
+        int winY = Theme::DesktopY + 2;
+        int winW = Theme::ScreenWidth - Theme::WindowBorderWidth * 2;
+        int winH = availableDesktopHeight() - 4;
+
+        for (auto &oa : openApps)
+        {
+            oa.app->teardown();
+            oa.window->unmount();
+
+            oa.window = std::make_unique<Window>(
+                oa.name.c_str(), winX, winY, winW, winH);
+
+            oa.window->setCloseCallback([this, name = String(oa.name)]()
+                                        { closeApp(name.c_str()); });
+
+            oa.window->mount();
+            oa.app->setup(
+                oa.window->getContent(),
+                oa.window->contentW(),
+                oa.window->contentH());
+        }
+        updateActiveStates();
     }
 
 } // namespace UI

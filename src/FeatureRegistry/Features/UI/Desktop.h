@@ -3,6 +3,7 @@
 #include "WindowManager.h"
 #include "elements/taskbar.h"
 #include "elements/startmenu.h"
+#include "elements/keyboard.h"
 #include "App.h"
 #include "apps/RgbLedApp.h"
 #include "apps/InfoApp.h"
@@ -80,6 +81,12 @@ namespace UI
             taskbar.setAppClickCallback([](const char *name)
                                         { windowManager().focusApp(name); });
 
+            taskbar.setKeyboardToggleCallback([this]()
+                                              {
+                                                  keyboard.toggle();
+                                                  windowManager().setKeyboardVisible(keyboard.isVisible());
+                                              });
+
             onAppSelected = [](const char *name)
             { windowManager().openApp(name); };
 
@@ -119,6 +126,7 @@ namespace UI
     private:
         Taskbar taskbar;
         StartMenu startMenu;
+        Keyboard keyboard;
         std::function<void(const char *)> onAppSelected;
 
         void updateTaskbarApps()
@@ -136,6 +144,7 @@ namespace UI
 
         void drawOverlays()
         {
+            keyboard.draw();
             taskbar.draw();
             startMenu.draw();
         }
@@ -148,6 +157,8 @@ namespace UI
                 if (startMenu.handleTouch(px, py))
                     return true;
             }
+            if (keyboard.handleTouch(px, py))
+                return true;
             if (taskbar.handleTouch(px, py))
                 return true;
             // touch outside start menu closes it
@@ -166,6 +177,8 @@ namespace UI
                 if (startMenu.handleTouchEnd(px, py))
                     return true;
             }
+            if (keyboard.handleTouchEnd(px, py))
+                return true;
             if (taskbar.handleTouchEnd(px, py))
                 return true;
             return false;

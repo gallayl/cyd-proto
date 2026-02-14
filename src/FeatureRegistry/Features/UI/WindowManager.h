@@ -45,13 +45,19 @@ namespace UI
 
         void tickTimers();
 
+        void setKeyboardVisible(bool vis);
+        bool isKeyboardVisible() const { return keyboardVisible; }
+        int availableDesktopHeight() const;
+
     private:
         std::vector<OpenApp> openApps;
         OverlayDrawFn overlayDraw;
         OverlayTouchFn overlayTouch;
         OverlayTouchEndFn overlayTouchEnd;
+        bool keyboardVisible{false};
 
         void updateActiveStates();
+        void relayoutWindows();
     };
 
     WindowManager &windowManager();

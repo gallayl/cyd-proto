@@ -20,8 +20,11 @@ namespace UI
             bool focused;
         };
 
+        using KeyboardToggleCb = std::function<void()>;
+
         void setStartClickCallback(StartClickCb cb) { onStartClick = std::move(cb); }
         void setAppClickCallback(AppClickCb cb) { onAppClick = std::move(cb); }
+        void setKeyboardToggleCallback(KeyboardToggleCb cb) { onKeyboardToggle = std::move(cb); }
 
         void setApps(const std::vector<TaskbarApp> &apps) { openApps = apps; }
 
@@ -42,10 +45,16 @@ namespace UI
             drawButton(c, 2, tbY + 2, Theme::StartButtonWidth, tbH - 4,
                         "Start", startMenuOpen || startTouching);
 
-            // app buttons
+            // keyboard toggle button (right side)
+            int kbX = Theme::ScreenWidth - Theme::KeyboardToggleSize - 2;
+            int kbY = tbY + 2;
+            int kbS = Theme::KeyboardToggleSize;
+            drawButton(c, kbX, kbY, kbS, tbH - 4, "Kb", kbTouching);
+
+            // app buttons (between start and keyboard toggle)
             int appX = Theme::StartButtonWidth + 6;
             int appBtnW = 0;
-            int availW = Theme::ScreenWidth - appX - 2;
+            int availW = kbX - appX - 2;
             if (!openApps.empty())
             {
                 appBtnW = availW / (int)openApps.size();
@@ -77,10 +86,19 @@ namespace UI
                 return true;
             }
 
+            // keyboard toggle button
+            int kbX = Theme::ScreenWidth - Theme::KeyboardToggleSize - 2;
+            if (px >= kbX && px < kbX + Theme::KeyboardToggleSize &&
+                py >= tbY + 2 && py < tbY + tbH - 2)
+            {
+                kbTouching = true;
+                return true;
+            }
+
             // app buttons
             int appX = Theme::StartButtonWidth + 6;
             int appBtnW = 0;
-            int availW = Theme::ScreenWidth - appX - 2;
+            int availW = kbX - appX - 2;
             if (!openApps.empty())
             {
                 appBtnW = availW / (int)openApps.size();
@@ -116,15 +134,23 @@ namespace UI
                 handled = true;
             }
 
+            if (kbTouching)
+            {
+                if (onKeyboardToggle)
+                    onKeyboardToggle();
+                handled = true;
+            }
+
             // now check for app buttons using the original touch-down index
             if (py >= Theme::TaskbarY)
             {
                 int tbY = Theme::TaskbarY;
                 int tbH = Theme::TaskbarHeight;
 
+                int kbX = Theme::ScreenWidth - Theme::KeyboardToggleSize - 2;
                 int appX = Theme::StartButtonWidth + 6;
                 int appBtnW = 0;
-                int availW = Theme::ScreenWidth - appX - 2;
+                int availW = kbX - appX - 2;
                 if (!openApps.empty())
                 {
                     appBtnW = availW / (int)openApps.size();
@@ -147,6 +173,7 @@ namespace UI
 
             // reset state after handling the end of touch
             startTouching = false;
+            kbTouching = false;
             touchedAppIndex = -1;
             return handled;
         }
@@ -154,9 +181,11 @@ namespace UI
     private:
         StartClickCb onStartClick;
         AppClickCb onAppClick;
+        KeyboardToggleCb onKeyboardToggle;
         std::vector<TaskbarApp> openApps;
         bool startMenuOpen{false};
         bool startTouching{false};
+        bool kbTouching{false};
         int touchedAppIndex{-1};
 
         static void drawButton(LGFX_Sprite &c, int bx, int by, int bw, int bh,

@@ -44,6 +44,8 @@ namespace UI
         constexpr int MenuWidth = 120;
         constexpr int SubMenuWidth = 120;
         constexpr int MenuSeparatorHeight = 8;
+        constexpr int KeyboardHeight = DesktopHeight / 2;
+        constexpr int KeyboardToggleSize = 22;
 
     } // namespace Theme
 } // namespace UI
