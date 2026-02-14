@@ -53,6 +53,7 @@ namespace UI
 
                 openApps.push_back(std::move(oa));
                 updateActiveStates();
+                markDirty();
                 return;
             }
         }
@@ -69,6 +70,7 @@ namespace UI
             it->window->unmount();
             openApps.erase(it);
             updateActiveStates();
+            markDirty();
         }
     }
 
@@ -82,6 +84,7 @@ namespace UI
             OpenApp tmp = std::move(*it);
             openApps.erase(it);
             openApps.push_back(std::move(tmp));
+            markDirty();
         }
         updateActiveStates();
     }
