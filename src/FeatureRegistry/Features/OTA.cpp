@@ -1,3 +1,7 @@
+#include "../../config.h"
+
+#if ENABLE_OTA
+
 #include "OTA.h"
 #include "../../services/WebSocketServer.h" // ensure webSocket is declared (fixed relative path)
 
@@ -82,3 +86,5 @@ Feature *OtaUpgrade = new Feature(
     {
         LoggerInstance->Info(F("OTA feature stopped"));
     });
+
+#endif

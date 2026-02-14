@@ -1,5 +1,9 @@
 #pragma once
 
+#include "../config.h"
+
+#if ENABLE_SCREEN
+
 #include <LovyanGFX.hpp>
 #include "./LovyanGFX_ILI9341_Settings.h"
 
@@ -9,3 +13,5 @@ inline void initScreen()
 {
     tft.init();
 }
+
+#endif

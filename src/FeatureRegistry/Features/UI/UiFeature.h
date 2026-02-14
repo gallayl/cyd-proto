@@ -1,4 +1,9 @@
 #pragma once
+
+#include "../../../config.h"
+
+#if ENABLE_UI
+
 #include <LovyanGFX.hpp>
 #include "../../../hw/Screen.h"
 #include "../../Feature.h"
@@ -15,3 +20,5 @@ extern const int screenHeight;
 extern Feature *UiFeature;
 
 void uiFeatureInit();
+
+#endif

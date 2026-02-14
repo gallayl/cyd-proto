@@ -13,6 +13,7 @@ CustomCommand *getRegisteredFeatures = new CustomCommand("getRegisteredFeatures"
     serializeJson(registeredFeatures, output);
     return output; });
 
+#if ENABLE_WEBSERVER
 // handlers
 ArRequestHandlerFunction getFeaturesAction = [](AsyncWebServerRequest *request)
 {
@@ -37,18 +38,23 @@ ArRequestHandlerFunction getInfoAction = [](AsyncWebServerRequest *request)
     resp->setLength();
     request->send(resp);
 };
+#endif
 
 // feature object
 Feature *SystemFeatures = new Feature("SystemFeatures", []()
                                       {
+#if ENABLE_WIFI
     CommandInterpreterInstance->RegisterCommand(wifiCommand);
+#endif
     CommandInterpreterInstance->RegisterCommand(resetCommand);
     CommandInterpreterInstance->RegisterCommand(getRegisteredFeatures);
     CommandInterpreterInstance->RegisterCommand(infoCustomCommand);
 
+#if ENABLE_WEBSERVER
     server.on("/features", HTTP_GET, getFeaturesAction);
     server.on("/restart", HTTP_POST, reset);
     server.on("/info", HTTP_GET, getInfoAction);
+#endif
 
     // Init and register low level features and commands
     initRgbLed();

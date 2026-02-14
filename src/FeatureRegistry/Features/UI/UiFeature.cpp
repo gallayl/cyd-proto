@@ -1,3 +1,7 @@
+#include "../../../config.h"
+
+#if ENABLE_UI
+
 #include "UiFeature.h"
 #include "../Logging.h"
 #include "ActionQueue.h"
@@ -66,3 +70,5 @@ Feature *UiFeature = new Feature("UI", []()
 void uiFeatureInit()
 {
 }
+
+#endif

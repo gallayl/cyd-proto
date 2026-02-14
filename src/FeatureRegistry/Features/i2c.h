@@ -8,7 +8,9 @@
 #include "../../CommandInterpreter/CustomCommand.h"
 #include "../../CommandInterpreter/CommandParser.h"
 #include "../../CommandInterpreter/CommandInterpreter.h"
+#if ENABLE_WEBSERVER
 #include "../../services/WebServer.h"
+#endif
 
 // helper functions are local to translation unit
 static String scanDevices()

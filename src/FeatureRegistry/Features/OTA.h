@@ -1,5 +1,9 @@
 #pragma once
 
+#include "../../config.h"
+
+#if ENABLE_OTA
+
 #include "./Logging.h"
 #include <Update.h>
 #include "../Feature.h"
@@ -18,3 +22,5 @@ extern ArUploadHandlerFunction onUploadUpdate;
 extern AsyncWebSocket *webSocket;
 // feature object
 extern Feature *OtaUpgrade;
+
+#endif

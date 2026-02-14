@@ -1,3 +1,7 @@
+#include "../config.h"
+
+#if ENABLE_WEBSERVER
+
 #include "WebSocketServer.h"
 
 // global pointer definition
@@ -32,3 +36,5 @@ void initWebSockets()
 
     server.addHandler(webSocket);
 }
+
+#endif

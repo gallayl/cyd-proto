@@ -10,6 +10,7 @@ CustomCommand *showLogCustomCommand = new CustomCommand("showLog", [](const Stri
     serializeJson(entries, output);
     return output; });
 
+#if ENABLE_WEBSERVER
 ArRequestHandlerFunction showLogRequestHandler = [](AsyncWebServerRequest *request)
 {
     AsyncJsonResponse *resp = new AsyncJsonResponse();
@@ -19,9 +20,12 @@ ArRequestHandlerFunction showLogRequestHandler = [](AsyncWebServerRequest *reque
     resp->setLength();
     request->send(resp);
 };
+#endif
 
 Feature *LoggingFeature = new Feature("Logging", []()
                                       {
     CommandInterpreterInstance->RegisterCommand(showLogCustomCommand);
+#if ENABLE_WEBSERVER
     server.on("/log", HTTP_GET, showLogRequestHandler);
+#endif
     return FeatureState::RUNNING; }, []() {});

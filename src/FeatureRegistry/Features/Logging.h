@@ -1,18 +1,21 @@
 #pragma once
 #include <AsyncJson.h>
-#include <ESPAsyncWebServer.h>
+#include "../../config.h"
 #include "../Feature.h"
 #include "./Time.h"
 #include "../../CommandInterpreter/CustomCommand.h"
 #include "../../CommandInterpreter/CommandInterpreter.h"
 
-// forward declaration of global logger so circular includes don't break
-class Logger;
-extern Logger *LoggerInstance;
-
+#if ENABLE_WEBSERVER
+#include <ESPAsyncWebServer.h>
 // forward declare server type and variable; actual definition lives in WebServer.h
 class AsyncWebServer;
 extern AsyncWebServer server;
+#endif
+
+// forward declaration of global logger so circular includes don't break
+class Logger;
+extern Logger *LoggerInstance;
 
 typedef void (*LogListener)(const String &, const String &);
 
@@ -106,6 +109,9 @@ private:
 extern Logger *LoggerInstance;
 
 extern CustomCommand *showLogCustomCommand;
+
+#if ENABLE_WEBSERVER
 extern ArRequestHandlerFunction showLogRequestHandler;
+#endif
 
 extern Feature *LoggingFeature;

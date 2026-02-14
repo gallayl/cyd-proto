@@ -1,3 +1,7 @@
+#include "../config.h"
+
+#if ENABLE_WEBSERVER
+
 #include "WebServer.h"
 
 // define the global server instance
@@ -27,3 +31,5 @@ void initWebServer()
 
     LoggerInstance->Info(F("Server setup done."));
 }
+
+#endif

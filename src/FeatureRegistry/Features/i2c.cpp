@@ -35,8 +35,10 @@ Feature *i2cFeature = new Feature(
 
         CommandInterpreterInstance->RegisterCommand(i2cCommand);
 
+#if ENABLE_WEBSERVER
         server.on("/i2c", HTTP_GET, [](AsyncWebServerRequest *request)
                   { request->send(200, MIME_json, scanDevices()); });
+#endif
 
         return FeatureState::RUNNING;
     },

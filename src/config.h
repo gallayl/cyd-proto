@@ -11,6 +11,32 @@
 
 #define JSON_BUFFER_SIZE 2048
 
+// --- Network ---
+
+/**
+ * Enable the WiFi subsystem
+ */
+#define ENABLE_WIFI true
+
+/**
+ * Enable the HTTP web server and WebSocket server
+ */
+#define ENABLE_WEBSERVER false
+
+// --- Hardware ---
+
+/**
+ * Enable the TFT screen initialization
+ */
+#define ENABLE_SCREEN true
+
+/**
+ * Enable the I2C bus feature
+ */
+#define ENABLE_I2C false
+
+// --- Features ---
+
 /**
  * Enables the LittleFS File System feature
  */
@@ -24,9 +50,23 @@
 /**
  * Enable the OTA firmware upgrade feature
  */
-#define ENABLE_OTA true
+#define ENABLE_OTA false
 
 /**
  * Enable the UI/display feature (TFT + touch)
  */
 #define ENABLE_UI true
+
+// --- Compile-time dependency checks ---
+
+#if ENABLE_WEBSERVER && !ENABLE_WIFI
+#error "ENABLE_WEBSERVER requires ENABLE_WIFI"
+#endif
+
+#if ENABLE_OTA && !ENABLE_WEBSERVER
+#error "ENABLE_OTA requires ENABLE_WEBSERVER"
+#endif
+
+#if ENABLE_UI && !ENABLE_SCREEN
+#error "ENABLE_UI requires ENABLE_SCREEN"
+#endif
