@@ -1,6 +1,5 @@
 #include <Wire.h>
 #include "./config.h"
-#include "./CommandInterpreter/CommandInterpreter.h"
 
 #if ENABLE_WEBSERVER
 #include "./services/WebServer.h"

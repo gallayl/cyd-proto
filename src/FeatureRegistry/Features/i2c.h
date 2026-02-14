@@ -6,14 +6,9 @@
 
 #include "../../config.h"
 #include "../Feature.h"
-#include "../../CommandInterpreter/CustomCommand.h"
+#include "../../ActionRegistry/FeatureAction.h"
 #include "../../CommandInterpreter/CommandParser.h"
-#include "../../CommandInterpreter/CommandInterpreter.h"
-#if ENABLE_WEBSERVER
-#include "../../services/WebServer.h"
-#endif
 
-// helper functions are local to translation unit
 static String scanDevices()
 {
     JsonDocument doc;
@@ -69,6 +64,4 @@ static void writeDevice(uint16_t address, const String &data)
     Wire.endTransmission();
 }
 
-// command and feature objects are defined in cpp
-extern CustomCommand *i2cCommand;
 extern Feature *i2cFeature;

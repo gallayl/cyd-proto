@@ -5,7 +5,8 @@
 #include "../elements/label.h"
 #include "../elements/scrollable.h"
 #include "../Theme.h"
-#include "../../infoCustomCommand.h"
+#include "../../SystemFeatures.h"
+#include <WiFi.h>
 #include <ArduinoJson.h>
 #include <Arduino.h>
 #include <memory>

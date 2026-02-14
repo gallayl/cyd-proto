@@ -4,7 +4,6 @@
 
 #include "WebSocketServer.h"
 
-// global pointer definition
 AsyncWebSocket *webSocket = nullptr;
 
 void initWebSockets()
@@ -25,7 +24,7 @@ void initWebSockets()
         {
             String str;
             str.concat((const char *)data, len);
-            String response = CommandInterpreterInstance->ExecuteCommand(str);
+            String response = ActionRegistryInstance->Execute(str, Transport::WS);
             client->text(response);
         } });
 

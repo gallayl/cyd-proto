@@ -6,12 +6,11 @@
 
 #include <ESPAsyncWebServer.h>
 #include "./WebServer.h"
-#include "../CommandInterpreter/CommandInterpreter.h"
+#include "../ActionRegistry/ActionRegistry.h"
 #include "../FeatureRegistry/Features/Logging.h"
 
 extern AsyncWebSocket *webSocket;
 
-// implementation in WebSocketServer.cpp
 void initWebSockets();
 
 #endif

@@ -9,6 +9,6 @@ Feature *SerialReadFeature = new Feature("SerialRead", []() -> FeatureState
                                                 String command = Serial.readStringUntil('\n');
                                                 command.replace("\n", "");
                                                 command.replace("\r", "");
-                                                String response = CommandInterpreterInstance->ExecuteCommand(command);
+                                                String response = ActionRegistryInstance->Execute(command, Transport::CLI);
                                                 Serial.println(response);
                                             } });

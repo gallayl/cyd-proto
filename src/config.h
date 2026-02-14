@@ -21,7 +21,7 @@
 /**
  * Enable the HTTP web server and WebSocket server
  */
-#define ENABLE_WEBSERVER false
+#define ENABLE_WEBSERVER true
 
 // --- Hardware ---
 
@@ -33,7 +33,7 @@
 /**
  * Enable the I2C bus feature
  */
-#define ENABLE_I2C false
+#define ENABLE_I2C true
 
 // --- Features ---
 
@@ -50,7 +50,7 @@
 /**
  * Enable the OTA firmware upgrade feature
  */
-#define ENABLE_OTA false
+#define ENABLE_OTA true
 
 /**
  * Enable the UI/display feature (TFT + touch)

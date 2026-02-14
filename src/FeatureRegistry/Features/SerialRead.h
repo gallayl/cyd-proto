@@ -1,5 +1,5 @@
 #pragma once
 #include "../Feature.h"
-#include "../../CommandInterpreter/CommandInterpreter.h"
+#include "../../ActionRegistry/ActionRegistry.h"
 
 extern Feature *SerialReadFeature;

@@ -7,11 +7,9 @@
 #include <LovyanGFX.hpp>
 #include "../../../hw/Screen.h"
 #include "../../Feature.h"
-#include "../../../CommandInterpreter/CommandInterpreter.h"
+#include "../../../ActionRegistry/FeatureAction.h"
+#include "../../../CommandInterpreter/CommandParser.h"
 #include "../Logging.h"
-
-#include "./screenCustomCommand.h"
-#include "./uiPageCustomCommand.h"
 #include "./Calibration.h"
 
 extern const int screenWidth;

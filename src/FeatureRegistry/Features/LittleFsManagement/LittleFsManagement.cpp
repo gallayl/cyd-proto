@@ -1,9 +1,31 @@
 #include "LittleFsManagement.h"
+#include "../../../ActionRegistry/ActionRegistry.h"
+
+FeatureAction formatAction = {
+    .name = "format",
+    .type = "POST",
+    .handler = [](const String &command)
+    {
+        LittleFS.format();
+        return String("{\"event\": \"format\"}");
+    },
+    .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
+
+FeatureAction listFilesAction = {
+    .name = "list",
+    .handler = [](const String &command)
+    {
+        JsonDocument response = getFileList();
+        String output;
+        serializeJson(response, output);
+        return output;
+    },
+    .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
 
 Feature *LittleFsFeature = new Feature("LittleFsFeatures", []()
                                        {
-    // Register, even if the feature setup fails, so that the command is available to fix the issue (e.g. by formatting the filesystem)
-    CommandInterpreterInstance->RegisterCommand(formatCustomCommand);
+    // Register format even if setup fails, so the command is available to fix the issue
+    ActionRegistryInstance->RegisterAction(&formatAction);
 
     if (!LittleFS.begin())
     {
@@ -11,7 +33,7 @@ Feature *LittleFsFeature = new Feature("LittleFsFeatures", []()
         return FeatureState::ERROR;
     }
 
-    CommandInterpreterInstance->RegisterCommand(showFileListCustomCommand);
+    ActionRegistryInstance->RegisterAction(&listFilesAction);
     return FeatureState::RUNNING; }, []() {
 
                                        });

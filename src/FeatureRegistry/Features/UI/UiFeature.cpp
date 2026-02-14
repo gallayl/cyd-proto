@@ -5,15 +5,239 @@
 #include <esp_timer.h>
 #include "UiFeature.h"
 #include "../Logging.h"
+#include "../../../ActionRegistry/ActionRegistry.h"
 #include "ActionQueue.h"
 #include "Renderer.h"
 #include "Desktop.h"
+#include "WindowManager.h"
 
 const int screenWidth = 240;
 const int screenHeight = 320;
 
 static volatile bool frameReady = true;
 static esp_timer_handle_t frameTimer = nullptr;
+
+// --- Screen command handler ---
+
+static String screenCommandHandler(const String &command)
+{
+    String sub = CommandParser::GetCommandParameter(command, 1);
+
+    if (sub == "calibrate")
+    {
+        calibrateScreen();
+        LoggerInstance->Info(F("Calibrated touch screen"));
+        return String("{\"event\":\"calibrate\", \"status\":\"success\"}");
+    }
+    else if (sub == "demo")
+    {
+        tft.fillScreen(TFT_BLACK);
+        tft.setCursor(0, 0);
+        tft.setTextColor(TFT_GREENYELLOW);
+        tft.setTextSize(2);
+        tft.println("Hello World!");
+
+        tft.drawCircle(120, 160, 50, TFT_MAGENTA);
+        tft.drawEllipse(200, 160, 60, 40, TFT_GOLD);
+
+        LoggerInstance->Info(F("Displayed hello world demo"));
+        return String("{\"event\":\"helloDemo\"}");
+    }
+    else if (sub == "rotate")
+    {
+        String rotateParam = CommandParser::GetCommandParameter(command, 2);
+        uint16_t rotate = 0;
+        if (rotateParam.length() > 0)
+        {
+            rotate = (uint16_t)strtoul(rotateParam.c_str(), NULL, 0);
+        }
+        tft.setRotation(rotate);
+        LoggerInstance->Info("Screen rotated to " + String(rotate));
+        return String(String("{\"event\":\"rotate\",\"rotation\":") + rotate + String("}"));
+    }
+    else if (sub == "clear")
+    {
+        String colorParam = CommandParser::GetCommandParameter(command, 2);
+        uint16_t color = TFT_BLACK;
+        if (colorParam.length() > 0)
+        {
+            color = (uint16_t)strtoul(colorParam.c_str(), NULL, 0);
+        }
+        tft.fillScreen(color);
+        LoggerInstance->Info(F("Screen cleared"));
+        return String(String("{\"event\":\"clear\",\"color\":\"") + colorParam + String("\"}"));
+    }
+    else if (sub == "text")
+    {
+        int x = CommandParser::GetCommandParameter(command, 2).toInt();
+        int y = CommandParser::GetCommandParameter(command, 3).toInt();
+        uint16_t fg = (uint16_t)strtoul(CommandParser::GetCommandParameter(command, 4).c_str(), NULL, 0);
+        uint16_t bg = (uint16_t)strtoul(CommandParser::GetCommandParameter(command, 5).c_str(), NULL, 0);
+        int sz = CommandParser::GetCommandParameter(command, 6).toInt();
+        int count = 0;
+        int pos = -1;
+        for (int i = 0; i < (int)command.length(); ++i)
+        {
+            if (command[i] == ' ')
+            {
+                if (++count == 6)
+                {
+                    pos = i;
+                    break;
+                }
+            }
+        }
+        String msg = (pos >= 0) ? command.substring(pos + 1) : String();
+        tft.setCursor(x, y);
+        tft.setTextColor(fg, bg);
+        tft.setTextSize(sz);
+        tft.print(msg);
+        LoggerInstance->Info("Drew text: " + msg);
+        return String("{\"event\":\"text\"}");
+    }
+    else if (sub == "pixel")
+    {
+        int x = CommandParser::GetCommandParameter(command, 2).toInt();
+        int y = CommandParser::GetCommandParameter(command, 3).toInt();
+        uint16_t color = (uint16_t)strtoul(CommandParser::GetCommandParameter(command, 4).c_str(), NULL, 0);
+        tft.drawPixel(x, y, color);
+        LoggerInstance->Info("Drew pixel at " + String(x) + "," + String(y));
+        return String("{\"event\":\"pixel\"}");
+    }
+    else if (sub == "rect")
+    {
+        int x = CommandParser::GetCommandParameter(command, 2).toInt();
+        int y = CommandParser::GetCommandParameter(command, 3).toInt();
+        int w = CommandParser::GetCommandParameter(command, 4).toInt();
+        int h = CommandParser::GetCommandParameter(command, 5).toInt();
+        uint16_t color = (uint16_t)strtoul(CommandParser::GetCommandParameter(command, 6).c_str(), NULL, 0);
+        tft.drawRect(x, y, w, h, color);
+        LoggerInstance->Info("Drew rect at " + String(x) + "," + String(y));
+        return String("{\"event\":\"rect\"}");
+    }
+    else if (sub == "fillrect")
+    {
+        int x = CommandParser::GetCommandParameter(command, 2).toInt();
+        int y = CommandParser::GetCommandParameter(command, 3).toInt();
+        int w = CommandParser::GetCommandParameter(command, 4).toInt();
+        int h = CommandParser::GetCommandParameter(command, 5).toInt();
+        uint16_t color = (uint16_t)strtoul(CommandParser::GetCommandParameter(command, 6).c_str(), NULL, 0);
+        tft.fillRect(x, y, w, h, color);
+        LoggerInstance->Info("Drew filled rect at " + String(x) + "," + String(y));
+        return String("{\"event\":\"fillrect\"}");
+    }
+    else if (sub == "circle")
+    {
+        int x = CommandParser::GetCommandParameter(command, 2).toInt();
+        int y = CommandParser::GetCommandParameter(command, 3).toInt();
+        int r = CommandParser::GetCommandParameter(command, 4).toInt();
+        uint16_t color = (uint16_t)strtoul(CommandParser::GetCommandParameter(command, 5).c_str(), NULL, 0);
+        tft.drawCircle(x, y, r, color);
+        LoggerInstance->Info("Drew circle at " + String(x) + "," + String(y));
+        return String("{\"event\":\"circle\"}");
+    }
+    else if (sub == "fillcircle")
+    {
+        int x = CommandParser::GetCommandParameter(command, 2).toInt();
+        int y = CommandParser::GetCommandParameter(command, 3).toInt();
+        int r = CommandParser::GetCommandParameter(command, 4).toInt();
+        uint16_t color = (uint16_t)strtoul(CommandParser::GetCommandParameter(command, 5).c_str(), NULL, 0);
+        tft.fillCircle(x, y, r, color);
+        LoggerInstance->Info("Drew filled circle at " + String(x) + "," + String(y));
+        return String("{\"event\":\"fillcircle\"}");
+    }
+    else if (sub == "brightness")
+    {
+        String val = CommandParser::GetCommandParameter(command, 2);
+        uint8_t b = (uint8_t)strtoul(val.c_str(), NULL, 0);
+        tft.setBrightness(b);
+        LoggerInstance->Info("Brightness set to " + String(b));
+        return String(String("{\"event\":\"brightness\",\"value\":") + b + String("}"));
+    }
+
+    LoggerInstance->Info("Unknown screen subcommand: " + sub);
+    return String(String("{\"event\":\"screen\",\"error\":\"unknown\",\"sub\":\"") + sub + String("\"}"));
+}
+
+// --- Page command handler ---
+
+static String pageCommandHandler(const String &command)
+{
+    String sub = CommandParser::GetCommandParameter(command, 1);
+
+    if (sub == "rgb" || sub == "rgbled")
+    {
+        UI::windowManager().openApp("RGB LED");
+        LoggerInstance->Info("Opening RGB LED app");
+        return String("{\"event\":\"page\", \"status\":\"success\", \"page\":\"rgb\"}");
+    }
+
+    if (sub == "info")
+    {
+        UI::windowManager().openApp("Info");
+        LoggerInstance->Info("Opening Info app");
+        return String("{\"event\":\"page\", \"status\":\"success\", \"page\":\"info\"}");
+    }
+
+    if (sub == "wifi")
+    {
+        UI::windowManager().openApp("WiFi");
+        LoggerInstance->Info("Opening WiFi app");
+        return String("{\"event\":\"page\", \"status\":\"success\", \"page\":\"wifi\"}");
+    }
+
+    if (sub == "sensors")
+    {
+        UI::windowManager().openApp("Sensors");
+        LoggerInstance->Info("Opening Sensors app");
+        return String("{\"event\":\"page\", \"status\":\"success\", \"page\":\"sensors\"}");
+    }
+
+    if (sub == "display")
+    {
+        UI::windowManager().openApp("Display");
+        LoggerInstance->Info("Opening Display app");
+        return String("{\"event\":\"page\", \"status\":\"success\", \"page\":\"display\"}");
+    }
+
+    if (sub == "features")
+    {
+        UI::windowManager().openApp("Features");
+        LoggerInstance->Info("Opening Features app");
+        return String("{\"event\":\"page\", \"status\":\"success\", \"page\":\"features\"}");
+    }
+
+    if (sub == "log")
+    {
+        UI::windowManager().openApp("Log Viewer");
+        LoggerInstance->Info("Opening Log Viewer app");
+        return String("{\"event\":\"page\", \"status\":\"success\", \"page\":\"log\"}");
+    }
+
+    if (sub == "files")
+    {
+        UI::windowManager().openApp("File Manager");
+        LoggerInstance->Info("Opening File Manager app");
+        return String("{\"event\":\"page\", \"status\":\"success\", \"page\":\"files\"}");
+    }
+
+    LoggerInstance->Info("Unknown page subcommand: " + sub);
+    return String(String("{\"event\":\"page\",\"error\":\"unknown\",\"sub\":\"") + sub + String("\"}"));
+}
+
+// --- Action definitions ---
+
+FeatureAction screenAction = {
+    .name = "screen",
+    .handler = screenCommandHandler,
+    .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
+
+FeatureAction pageAction = {
+    .name = "page",
+    .handler = pageCommandHandler,
+    .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
+
+// --- Feature ---
 
 Feature *UiFeature = new Feature("UI", []()
                                  {
@@ -32,8 +256,8 @@ Feature *UiFeature = new Feature("UI", []()
 
     UI::desktop().init();
 
-    CommandInterpreterInstance->RegisterCommand(screenCustomCommand);
-    CommandInterpreterInstance->RegisterCommand(pageCustomCommand);
+    ActionRegistryInstance->RegisterAction(&screenAction);
+    ActionRegistryInstance->RegisterAction(&pageAction);
 
     esp_timer_create_args_t args = {};
     args.callback = [](void *) { frameReady = true; };

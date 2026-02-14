@@ -3,6 +3,7 @@
 #include "../config.h"
 #include "./registeredFeatures.h"
 #include "./Feature.h"
+#include "../ActionRegistry/ActionRegistry.h"
 #include "./Features/Time.h"
 #include "./Features/Logging.h"
 #include "./Features/SystemFeatures.h"
@@ -118,6 +119,10 @@ public:
                         f->Setup();
                         updateFeatureJson(f);
                 }
+
+#if ENABLE_WEBSERVER
+                ActionRegistryInstance->WireRestEndpoints();
+#endif
         }
 
         void LoopFeatures()

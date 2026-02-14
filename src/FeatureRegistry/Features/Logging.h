@@ -1,17 +1,9 @@
 #pragma once
-#include <AsyncJson.h>
+#include <ArduinoJson.h>
 #include "../../config.h"
 #include "../Feature.h"
 #include "./Time.h"
-#include "../../CommandInterpreter/CustomCommand.h"
-#include "../../CommandInterpreter/CommandInterpreter.h"
-
-#if ENABLE_WEBSERVER
-#include <ESPAsyncWebServer.h>
-// forward declare server type and variable; actual definition lives in WebServer.h
-class AsyncWebServer;
-extern AsyncWebServer server;
-#endif
+#include "../../ActionRegistry/FeatureAction.h"
 
 // forward declaration of global logger so circular includes don't break
 class Logger;
@@ -107,11 +99,5 @@ private:
 };
 
 extern Logger *LoggerInstance;
-
-extern CustomCommand *showLogCustomCommand;
-
-#if ENABLE_WEBSERVER
-extern ArRequestHandlerFunction showLogRequestHandler;
-#endif
 
 extern Feature *LoggingFeature;

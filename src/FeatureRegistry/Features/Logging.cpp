@@ -1,31 +1,21 @@
 #include "Logging.h"
+#include "../../ActionRegistry/ActionRegistry.h"
 
 // instantiate globals
 Logger *LoggerInstance = new Logger();
 
-CustomCommand *showLogCustomCommand = new CustomCommand("showLog", [](const String &command)
-                                                        {
-    const JsonDocument &entries = LoggerInstance->getEntries();
-    String output;
-    serializeJson(entries, output);
-    return output; });
-
-#if ENABLE_WEBSERVER
-ArRequestHandlerFunction showLogRequestHandler = [](AsyncWebServerRequest *request)
-{
-    AsyncJsonResponse *resp = new AsyncJsonResponse();
-    const JsonDocument &entries = LoggerInstance->getEntries();
-    resp->setCode(200);
-    resp->getRoot().set(entries);
-    resp->setLength();
-    request->send(resp);
-};
-#endif
+FeatureAction logAction = {
+    .name = "log",
+    .handler = [](const String &command)
+    {
+        const JsonDocument &entries = LoggerInstance->getEntries();
+        String output;
+        serializeJson(entries, output);
+        return output;
+    },
+    .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
 
 Feature *LoggingFeature = new Feature("Logging", []()
                                       {
-    CommandInterpreterInstance->RegisterCommand(showLogCustomCommand);
-#if ENABLE_WEBSERVER
-    server.on("/log", HTTP_GET, showLogRequestHandler);
-#endif
+    ActionRegistryInstance->RegisterAction(&logAction);
     return FeatureState::RUNNING; }, []() {});
