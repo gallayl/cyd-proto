@@ -43,4 +43,5 @@ void setup()
 void loop()
 {
     FeatureRegistryInstance->LoopFeatures();
+    delay(1);
 }

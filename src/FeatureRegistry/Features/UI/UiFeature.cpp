@@ -2,6 +2,7 @@
 
 #if ENABLE_UI
 
+#include <esp_timer.h>
 #include "UiFeature.h"
 #include "../Logging.h"
 #include "ActionQueue.h"
@@ -10,6 +11,9 @@
 
 const int screenWidth = 240;
 const int screenHeight = 320;
+
+static volatile bool frameReady = true;
+static esp_timer_handle_t frameTimer = nullptr;
 
 Feature *UiFeature = new Feature("UI", []()
                                  {
@@ -31,13 +35,18 @@ Feature *UiFeature = new Feature("UI", []()
     CommandInterpreterInstance->RegisterCommand(screenCustomCommand);
     CommandInterpreterInstance->RegisterCommand(pageCustomCommand);
 
+    esp_timer_create_args_t args = {};
+    args.callback = [](void *) { frameReady = true; };
+    args.name = "ui_frame";
+    esp_timer_create(&args, &frameTimer);
+    esp_timer_start_periodic(frameTimer, 33000);
+
     LoggerInstance->Info(F("UI feature initialized (Win95 desktop)"));
 
     return FeatureState::RUNNING; }, []()
                                  {
     static bool prevTouched = false;
     static int prevX = 0, prevY = 0;
-    static unsigned long lastDraw = 0;
     int tx, ty;
     bool touched = tft.getTouch(&tx, &ty);
 
@@ -58,13 +67,16 @@ Feature *UiFeature = new Feature("UI", []()
 
     UI::desktop().tickTimers();
 
-    if (UI::isDirty()) {
-        unsigned long now = millis();
-        if (now - lastDraw >= 33) {
-            UI::desktop().draw();
-            UI::clearDirty();
-            lastDraw = now;
-        }
+    if (UI::isDirty() && frameReady) {
+        frameReady = false;
+        UI::desktop().draw();
+        UI::clearDirty();
+    } }, []()
+                                 {
+    if (frameTimer) {
+        esp_timer_stop(frameTimer);
+        esp_timer_delete(frameTimer);
+        frameTimer = nullptr;
     } });
 
 void uiFeatureInit()

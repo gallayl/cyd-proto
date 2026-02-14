@@ -14,7 +14,7 @@
 #include "apps/DisplaySettingsApp.h"
 #include "apps/FeaturesApp.h"
 #include "apps/PaintApp.h"
-#include <ESP.h>
+#include <Esp.h>
 
 namespace UI
 {

@@ -10,7 +10,7 @@
 #include "../../../registeredFeatures.h"
 #include "../../../FeatureRegistry.h"
 #include <ArduinoJson.h>
-#include <ESP.h>
+#include <Esp.h>
 #include <memory>
 
 namespace UI

@@ -1,8 +1,10 @@
 #pragma once
 
 #include <Arduino.h>
+#include <esp_timer.h>
 #include <functional>
 #include <vector>
+#include <memory>
 #include "elements/container.h"
 
 namespace UI
@@ -11,41 +13,62 @@ namespace UI
     class App
     {
     public:
-        virtual ~App() = default;
+        virtual ~App() { clearTimers(); }
         virtual const char *name() const = 0;
         virtual void setup(Container &content, int w, int h) = 0;
         virtual void teardown() {}
 
         void scheduleTimer(uint32_t intervalMs, std::function<void()> cb)
         {
-            _timers.push_back({intervalMs, millis(), std::move(cb)});
+            auto t = std::make_unique<Timer>();
+            t->fired = false;
+            t->callback = std::move(cb);
+
+            esp_timer_create_args_t args = {};
+            args.callback = [](void *arg) {
+                static_cast<Timer *>(arg)->fired = true;
+            };
+            args.arg = t.get();
+            args.name = "app_timer";
+            esp_timer_create(&args, &t->handle);
+            esp_timer_start_periodic(t->handle, static_cast<uint64_t>(intervalMs) * 1000ULL);
+
+            _timers.push_back(std::move(t));
         }
 
-        // returns true if any timer fired
         bool tickTimers()
         {
             bool fired = false;
-            unsigned long now = millis();
             for (auto &t : _timers)
             {
-                if (now - t.lastTick >= t.intervalMs)
+                if (t->fired)
                 {
-                    t.callback();
-                    t.lastTick = now;
+                    t->fired = false;
+                    t->callback();
                     fired = true;
                 }
             }
             return fired;
         }
 
+        void clearTimers()
+        {
+            for (auto &t : _timers)
+            {
+                esp_timer_stop(t->handle);
+                esp_timer_delete(t->handle);
+            }
+            _timers.clear();
+        }
+
     private:
         struct Timer
         {
-            uint32_t intervalMs;
-            unsigned long lastTick;
+            esp_timer_handle_t handle = nullptr;
+            volatile bool fired = false;
             std::function<void()> callback;
         };
-        std::vector<Timer> _timers;
+        std::vector<std::unique_ptr<Timer>> _timers;
     };
 
     struct AppEntry
