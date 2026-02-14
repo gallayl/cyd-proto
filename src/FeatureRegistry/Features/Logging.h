@@ -1,5 +1,7 @@
 #pragma once
 #include <ArduinoJson.h>
+#include <functional>
+#include <mutex>
 #include "../../config.h"
 #include "../Feature.h"
 #include "./Time.h"
@@ -20,6 +22,12 @@ public:
     const JsonDocument &getEntries() const
     {
         return this->entries;
+    }
+
+    void withEntries(std::function<void(const JsonDocument &)> fn) const
+    {
+        std::lock_guard<std::mutex> lock(entriesMutex);
+        fn(entries);
     }
 
     void Info(const String &message)
@@ -54,6 +62,7 @@ public:
     }
 
 private:
+    mutable std::mutex entriesMutex;
     JsonDocument entries;
     uint16_t entryCount;
 
@@ -94,6 +103,7 @@ private:
 
     void addEntry(const String &severity, const String &message, unsigned long epochTime, const String &utcTime)
     {
+        std::lock_guard<std::mutex> lock(entriesMutex);
         if (this->entryCount >= MAX_LOG_ENTRIES)
         {
             JsonArray arr = this->entries.as<JsonArray>();

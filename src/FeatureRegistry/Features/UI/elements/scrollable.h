@@ -45,7 +45,7 @@ namespace UI
         void autoContentHeightFromChildren()
         {
             int maxBottom = y;
-            for (auto &child : content.getChildren())
+            for (auto *child : content.getChildren())
             {
                 int cx, cy, cw, ch;
                 child->getBounds(cx, cy, cw, ch);
@@ -74,8 +74,8 @@ namespace UI
 
             // temporarily offset children by -scrollOffset so the clip rect
             // hides elements above/below the visible area
-            const auto &children = content.getChildren();
-            for (auto &child : children)
+            auto children = content.getChildren();
+            for (auto *child : children)
             {
                 int cx, cy, cw, ch;
                 child->getBounds(cx, cy, cw, ch);
@@ -86,7 +86,7 @@ namespace UI
             content.draw();
 
             // restore original positions
-            for (auto &child : children)
+            for (auto *child : children)
             {
                 int cx, cy, cw, ch;
                 child->getBounds(cx, cy, cw, ch);

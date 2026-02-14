@@ -2,6 +2,7 @@
 
 #if ENABLE_UI
 
+#include <Esp.h>
 #include <esp_timer.h>
 #include "UiFeature.h"
 #include "../Logging.h"
@@ -249,8 +250,10 @@ Feature *UiFeature = new Feature("UI", []()
 
     readCalibrationData();
 
-    if (!UI::initRenderer()) {
-        LoggerInstance->Error(F("Failed to create sprite back-buffer"));
+    if (!UI::initRenderer())
+    {
+        LoggerInstance->Error(F("Failed to create sprite back-buffer (low memory?)"));
+        LoggerInstance->Error("Free heap: " + String(ESP.getFreeHeap()) + " bytes");
         return FeatureState::ERROR;
     }
 

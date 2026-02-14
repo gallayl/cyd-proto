@@ -53,28 +53,30 @@ namespace UI
 
             int rowH = 12;
             int curY = scrollAreaY + 2;
+            int count = 0;
 
-            const JsonDocument &entries = LoggerInstance->getEntries();
-            JsonArrayConst arr = entries.as<JsonArrayConst>();
-            int count = arr.size();
+            LoggerInstance->withEntries([this, rowH, &curY, &count](const JsonDocument &entries)
+                                       {
+                JsonArrayConst arr = entries.as<JsonArrayConst>();
+                count = arr.size();
 
-            // show last entries (newest at top for readability)
-            int shown = 0;
-            for (int i = count - 1; i >= 0 && shown < 50; i--, shown++)
-            {
-                JsonObjectConst entry = arr[i];
-                const char *sev = entry["severity"] | "?";
-                const char *msg = entry["message"] | "";
-                String line = String("[") + sev + "] " + msg;
+                int shown = 0;
+                for (int i = count - 1; i >= 0 && shown < 50; i--, shown++)
+                {
+                    JsonObjectConst entry = arr[i];
+                    const char *sev = entry["severity"] | "?";
+                    const char *msg = entry["message"] | "";
+                    String line = String("[") + sev + "] " + msg;
 
-                auto lbl = std::make_unique<Label>(line, scrollAreaX + 2, curY, scrollAreaW - 4, 10);
-                lbl->setTextColor(Theme::TextColor, Theme::WindowBg);
-                lbl->setTextSize(1);
-                lbl->setAlign(TextAlign::LEFT);
-                logLabels.push_back(lbl.get());
-                scrollRef->addChild(std::move(lbl));
-                curY += rowH;
-            }
+                    auto lbl = std::make_unique<Label>(line, scrollAreaX + 2, curY, scrollAreaW - 4, 10);
+                    lbl->setTextColor(Theme::TextColor, Theme::WindowBg);
+                    lbl->setTextSize(1);
+                    lbl->setAlign(TextAlign::LEFT);
+                    logLabels.push_back(lbl.get());
+                    scrollRef->addChild(std::move(lbl));
+                    curY += rowH;
+                }
+            });
 
             lastEntryCount = count;
             scrollRef->setContentHeight(curY - scrollAreaY);
@@ -85,9 +87,12 @@ namespace UI
             if (!scrollRef)
                 return;
 
-            const JsonDocument &entries = LoggerInstance->getEntries();
-            JsonArrayConst arr = entries.as<JsonArrayConst>();
-            int count = arr.size();
+            int count = 0;
+            LoggerInstance->withEntries([this, &count](const JsonDocument &entries)
+                                       {
+                JsonArrayConst arr = entries.as<JsonArrayConst>();
+                count = arr.size();
+            });
 
             if (count == lastEntryCount)
                 return;
@@ -98,22 +103,28 @@ namespace UI
 
             int rowH = 12;
             int curY = scrollAreaY + 2;
-            int shown = 0;
-            for (int i = count - 1; i >= 0 && shown < 50; i--, shown++)
-            {
-                JsonObjectConst entry = arr[i];
-                const char *sev = entry["severity"] | "?";
-                const char *msg = entry["message"] | "";
-                String line = String("[") + sev + "] " + msg;
 
-                auto lbl = std::make_unique<Label>(line, scrollAreaX + 2, curY, scrollAreaW - 4, 10);
-                lbl->setTextColor(Theme::TextColor, Theme::WindowBg);
-                lbl->setTextSize(1);
-                lbl->setAlign(TextAlign::LEFT);
-                logLabels.push_back(lbl.get());
-                scrollRef->addChild(std::move(lbl));
-                curY += rowH;
-            }
+            LoggerInstance->withEntries([this, rowH, &curY](const JsonDocument &entries)
+                                       {
+                JsonArrayConst arr = entries.as<JsonArrayConst>();
+
+                int shown = 0;
+                for (int i = arr.size() - 1; i >= 0 && shown < 50; i--, shown++)
+                {
+                    JsonObjectConst entry = arr[i];
+                    const char *sev = entry["severity"] | "?";
+                    const char *msg = entry["message"] | "";
+                    String line = String("[") + sev + "] " + msg;
+
+                    auto lbl = std::make_unique<Label>(line, scrollAreaX + 2, curY, scrollAreaW - 4, 10);
+                    lbl->setTextColor(Theme::TextColor, Theme::WindowBg);
+                    lbl->setTextSize(1);
+                    lbl->setAlign(TextAlign::LEFT);
+                    logLabels.push_back(lbl.get());
+                    scrollRef->addChild(std::move(lbl));
+                    curY += rowH;
+                }
+            });
 
             lastEntryCount = count;
             scrollRef->setContentHeight(curY - scrollAreaY);

@@ -114,10 +114,23 @@ namespace UI
             children.clear();
         }
 
-        // provide access to children for iteration (no allocation)
-        const std::vector<std::unique_ptr<Element>> &getChildren() const
+        // provide access to raw pointers for iteration (returns copy to avoid
+        // reference invalidation if container is modified during draw)
+        std::vector<Element *> getChildren() const
         {
-            return children;
+            std::vector<Element *> out;
+            out.reserve(children.size());
+            for (auto &c : children)
+                out.push_back(c.get());
+            return out;
+        }
+
+        // iteration without allocation; callback must not modify children
+        template <typename Fn>
+        void forEachChild(Fn &&fn) const
+        {
+            for (auto &c : children)
+                fn(c.get());
         }
 
         // drawing -------------------------------------------------------------
