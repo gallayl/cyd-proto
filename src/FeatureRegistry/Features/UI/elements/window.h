@@ -56,7 +56,7 @@ namespace UI
             setupBtn(minBtn);
 
             maxBtn.setCallback([this]()
-                               { toggleMaximize(); });
+                               { cycleWindowState(); });
         }
 
         void setCloseCallback(CloseCallback cb)
@@ -87,29 +87,25 @@ namespace UI
         void setState(WindowState s) { winState = s; }
         bool isMinimized() const { return winState == WindowState::Minimized; }
 
-        void toggleMaximize()
-        {
-            WindowState newState = (winState == WindowState::Maximized)
-                                       ? WindowState::Restored
-                                       : WindowState::Maximized;
-            winState = newState;
-            if (onStateChange)
-            {
-                auto cb = onStateChange;
-                UI::queueAction([cb, newState]()
-                                { cb(newState); });
-            }
-        }
-
-        void cycleHalfScreen()
+        void cycleWindowState()
         {
             WindowState newState;
-            if (winState == WindowState::TopHalf)
-                newState = WindowState::BottomHalf;
-            else if (winState == WindowState::BottomHalf)
-                newState = WindowState::Restored;
-            else
+            switch (winState)
+            {
+            case WindowState::Restored:
+                newState = WindowState::Maximized;
+                break;
+            case WindowState::Maximized:
                 newState = WindowState::TopHalf;
+                break;
+            case WindowState::TopHalf:
+                newState = WindowState::BottomHalf;
+                break;
+            case WindowState::BottomHalf:
+            default:
+                newState = WindowState::Restored;
+                break;
+            }
             winState = newState;
             if (onStateChange)
             {
@@ -286,14 +282,6 @@ namespace UI
             {
                 scrollableContent.onTouch(px, py);
             }
-
-            // long press on title bar for half-screen
-            int tbY = y + Theme::WindowBorderWidth;
-            if (py >= tbY && py < tbY + Theme::TitleBarHeight)
-            {
-                titleTouching = true;
-                titleTouchTime = millis();
-            }
         }
 
         void onTouchEnd(int px, int py) override
@@ -322,17 +310,6 @@ namespace UI
                 menuBar.onTouchEnd(px, py);
 
             scrollableContent.onTouchEnd(px, py);
-
-            // long press on title bar => cycle half screen
-            if (titleTouching)
-            {
-                unsigned long elapsed = millis() - titleTouchTime;
-                if (elapsed > 500)
-                {
-                    cycleHalfScreen();
-                }
-                titleTouching = false;
-            }
         }
 
         int contentX() const { return x + Theme::WindowBorderWidth; }
@@ -368,9 +345,6 @@ namespace UI
 
         MinimizeCallback onMinimize;
         StateChangeCallback onStateChange;
-
-        bool titleTouching{false};
-        unsigned long titleTouchTime{0};
     };
 
 } // namespace UI

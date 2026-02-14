@@ -8,15 +8,13 @@
 #include "../elements/filelistview.h"
 #include "../Theme.h"
 #include "../WindowManager.h"
+#include "../ActionQueue.h"
 #include "../../../../api/list.h"
-#include "../../../../config.h"
+#include "../../../../ActionRegistry/ActionRegistry.h"
+#include "../../../../ActionRegistry/FeatureAction.h"
 #include <ArduinoJson.h>
 #include <LittleFS.h>
 #include <memory>
-
-#if ENABLE_BERRY
-#include "../../Berry/BerryFeature.h"
-#endif
 
 namespace UI
 {
@@ -192,19 +190,15 @@ namespace UI
 
         void executeBerryFile(const String &filename)
         {
-#if ENABLE_BERRY
             String fullPath;
             if (currentPath.endsWith("/"))
                 fullPath = currentPath + filename;
             else
                 fullPath = currentPath + "/" + filename;
 
-            String appName = getBerryAppNameFromPath(fullPath);
-            if (appName.length() > 0)
-            {
-                windowManager().openApp(appName.c_str());
-            }
-#endif
+            String cmd = "berry run " + fullPath;
+            UI::queueAction([cmd]()
+                            { ActionRegistryInstance->Execute(cmd, Transport::SCRIPTING); });
         }
     };
 
