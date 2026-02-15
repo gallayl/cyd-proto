@@ -47,9 +47,12 @@ class WifiApp
     self.scan_gb = ui.groupbox(scroll, 'Networks', 2, y, w - 4, 40)
     var bi = 0
     for v : ui.bounds(self.scan_gb)
-      if bi == 0 self.scan_gb_abs_x = v
-      elif bi == 1 self.scan_gb_abs_y = v
-      elif bi == 2 self.scan_gb_abs_w = v
+      if bi == 0
+        self.scan_gb_abs_x = v
+      elif bi == 1
+        self.scan_gb_abs_y = v
+      elif bi == 2
+        self.scan_gb_abs_w = v
       end
       bi += 1
     end
