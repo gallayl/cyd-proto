@@ -89,6 +89,7 @@ ArUploadHandlerFunction uploadFiles = ([](AsyncWebServerRequest *request, String
     }
     file.write(data, len);
     file.close();
+    yield();
 
     if (final)
     {
