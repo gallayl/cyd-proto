@@ -95,7 +95,7 @@ void openBerryPanel(const String &filePath)
         return;
 
     auto *app = new BerryApp(path, appName);
-    UI::windowManager().openPanel(appName.c_str(), app, 0, UI::Theme::TaskbarY, UI::Theme::ScreenWidth,
+    UI::windowManager().openPanel(appName.c_str(), app, 0, UI::Theme::TaskbarY(), UI::Theme::ScreenWidth(),
                                   UI::Theme::TaskbarHeight);
 }
 #endif

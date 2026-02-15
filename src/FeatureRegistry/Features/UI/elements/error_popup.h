@@ -56,8 +56,8 @@ public:
         int textH = lines.size() * lineH;
 
         int dlgH = titleH + padY + textH + padY + btnH + btnPad;
-        int dlgX = (Theme::ScreenWidth - dlgW) / 2;
-        int dlgY = (Theme::ScreenHeight - dlgH) / 2;
+        int dlgX = (Theme::ScreenWidth() - dlgW) / 2;
+        int dlgY = (Theme::ScreenHeight() - dlgH) / 2;
 
         _bounds[0] = dlgX;
         _bounds[1] = dlgY;

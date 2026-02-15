@@ -101,7 +101,7 @@ public:
         int menuW = Theme::MenuWidth;
         int menuH = calcMenuHeight(menuItems);
         int menuX = 2;
-        int menuY = Theme::TaskbarY - menuH;
+        int menuY = Theme::TaskbarY() - menuH;
 
         drawMenuPanel(c, menuX, menuY, menuW, menuH, menuItems, highlightIndex);
 
@@ -122,8 +122,8 @@ public:
             if (subY < 0)
                 subY = 0;
             // ensure submenu doesn't go below taskbar
-            if (subY + subH > Theme::TaskbarY)
-                subY = Theme::TaskbarY - subH;
+            if (subY + subH > Theme::TaskbarY())
+                subY = Theme::TaskbarY() - subH;
 
             drawMenuPanel(c, subX, subY, subW, subH, sub, subHighlightIndex);
 

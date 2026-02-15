@@ -73,7 +73,7 @@ void WindowManager::openApp(const char *appName, App *appInstance)
 
     int winX = Theme::WindowBorderWidth;
     int winY = Theme::DesktopY + 2;
-    int winW = Theme::ScreenWidth - Theme::WindowBorderWidth * 2;
+    int winW = Theme::ScreenWidth() - Theme::WindowBorderWidth * 2;
     int winH = availableDesktopHeight() - 4;
 
     oa.window = std::make_unique<Window>(appName, winX, winY, winW, winH);
@@ -146,7 +146,7 @@ void WindowManager::handleWindowStateChange(const char *appName, WindowState sta
 
     int winX = Theme::WindowBorderWidth;
     int winY = Theme::DesktopY + 2;
-    int winW = Theme::ScreenWidth - Theme::WindowBorderWidth * 2;
+    int winW = Theme::ScreenWidth() - Theme::WindowBorderWidth * 2;
     int deskH = availableDesktopHeight();
     int winH = deskH - 4;
 
@@ -155,19 +155,19 @@ void WindowManager::handleWindowStateChange(const char *appName, WindowState sta
     case WindowState::Maximized:
         winX = 0;
         winY = Theme::DesktopY;
-        winW = Theme::ScreenWidth;
+        winW = Theme::ScreenWidth();
         winH = deskH;
         break;
     case WindowState::TopHalf:
         winX = 0;
         winY = Theme::DesktopY;
-        winW = Theme::ScreenWidth;
+        winW = Theme::ScreenWidth();
         winH = deskH / 2;
         break;
     case WindowState::BottomHalf:
         winX = 0;
         winY = Theme::DesktopY + deskH / 2;
-        winW = Theme::ScreenWidth;
+        winW = Theme::ScreenWidth();
         winH = deskH / 2;
         break;
     case WindowState::Minimized:
@@ -230,7 +230,7 @@ void WindowManager::draw()
 {
     auto &c = canvas();
     // desktop background
-    c.fillRect(0, Theme::DesktopY, Theme::ScreenWidth, Theme::DesktopHeight, Theme::DesktopBg);
+    c.fillRect(0, Theme::DesktopY, Theme::ScreenWidth(), Theme::DesktopHeight(), Theme::DesktopBg);
 
     // draw windows in z-order (back to front), skip minimized
     for (auto &oa : openApps)
@@ -326,8 +326,8 @@ void WindowManager::tickTimers()
 int WindowManager::availableDesktopHeight() const
 {
     if (keyboardVisible)
-        return Theme::DesktopHeight - Theme::KeyboardHeight;
-    return Theme::DesktopHeight;
+        return Theme::DesktopHeight() - Theme::KeyboardHeight();
+    return Theme::DesktopHeight();
 }
 
 void WindowManager::setKeyboardVisible(bool vis)
@@ -339,11 +339,26 @@ void WindowManager::setKeyboardVisible(bool vis)
     markDirty();
 }
 
+void WindowManager::relayoutAll()
+{
+    relayoutWindows();
+
+    if (panelSlot)
+    {
+        panelSlot->app->teardown();
+        panelSlot->container->unmount();
+        panelSlot->container->setBounds(0, Theme::TaskbarY(), Theme::ScreenWidth(), Theme::TaskbarHeight);
+        panelSlot->container->mount();
+        panelSlot->app->setup(*panelSlot->container, Theme::ScreenWidth(), Theme::TaskbarHeight);
+    }
+    markDirty();
+}
+
 void WindowManager::relayoutWindows()
 {
     int winX = Theme::WindowBorderWidth;
     int winY = Theme::DesktopY + 2;
-    int winW = Theme::ScreenWidth - Theme::WindowBorderWidth * 2;
+    int winW = Theme::ScreenWidth() - Theme::WindowBorderWidth * 2;
     int winH = availableDesktopHeight() - 4;
 
     for (auto &oa : openApps)

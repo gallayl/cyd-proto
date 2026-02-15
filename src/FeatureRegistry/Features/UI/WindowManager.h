@@ -79,6 +79,8 @@ public:
     }
     int availableDesktopHeight() const;
 
+    void relayoutAll();
+
     // panel (frameless, always-visible app slot)
     void openPanel(const char *name, App *appInstance, int x, int y, int w, int h);
     void closePanel(const char *name);

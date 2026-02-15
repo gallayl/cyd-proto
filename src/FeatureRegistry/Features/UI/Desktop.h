@@ -160,8 +160,8 @@ private:
         if (panel)
         {
             auto &c = canvas();
-            c.fillRect(0, Theme::TaskbarY, Theme::ScreenWidth, Theme::TaskbarHeight, Theme::TaskbarBg);
-            c.drawFastHLine(0, Theme::TaskbarY, Theme::ScreenWidth, Theme::ButtonHighlight);
+            c.fillRect(0, Theme::TaskbarY(), Theme::ScreenWidth(), Theme::TaskbarHeight, Theme::TaskbarBg);
+            c.drawFastHLine(0, Theme::TaskbarY(), Theme::ScreenWidth(), Theme::ButtonHighlight);
             panel->container->draw();
         }
         startMenu.draw();
@@ -186,7 +186,7 @@ private:
             return true;
         // panel (taskbar) touch
         auto *panel = windowManager().getPanelSlot();
-        if (panel && py >= Theme::TaskbarY)
+        if (panel && py >= Theme::TaskbarY())
         {
             panel->container->handleTouch(px, py);
             return true;
@@ -215,7 +215,7 @@ private:
         if (keyboard.handleTouchEnd(px, py))
             return true;
         auto *panel = windowManager().getPanelSlot();
-        if (panel && py >= Theme::TaskbarY)
+        if (panel && py >= Theme::TaskbarY())
         {
             panel->container->handleTouchEnd(px, py);
             return true;

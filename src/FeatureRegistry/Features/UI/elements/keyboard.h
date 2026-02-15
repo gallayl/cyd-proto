@@ -46,12 +46,12 @@ namespace UI
                 return;
             auto &c = canvas();
 
-            int kbY = Theme::TaskbarY - Theme::KeyboardHeight;
+            int kbY = Theme::TaskbarY() - Theme::KeyboardHeight();
 
             // keyboard background
-            c.fillRect(0, kbY, Theme::ScreenWidth, Theme::KeyboardHeight, Theme::ButtonFace);
+            c.fillRect(0, kbY, Theme::ScreenWidth(), Theme::KeyboardHeight(), Theme::ButtonFace);
             // top border
-            c.drawFastHLine(0, kbY, Theme::ScreenWidth, Theme::ButtonHighlight);
+            c.drawFastHLine(0, kbY, Theme::ScreenWidth(), Theme::ButtonHighlight);
 
             if (symbolMode)
                 drawSymbolLayout(c, kbY);
@@ -63,8 +63,8 @@ namespace UI
         {
             if (!visible)
                 return false;
-            int kbY = Theme::TaskbarY - Theme::KeyboardHeight;
-            if (py < kbY || py >= Theme::TaskbarY)
+            int kbY = Theme::TaskbarY() - Theme::KeyboardHeight();
+            if (py < kbY || py >= Theme::TaskbarY())
                 return false;
 
             pressedIndex = hitTest(px, py, kbY);
@@ -76,9 +76,9 @@ namespace UI
         {
             if (!visible)
                 return false;
-            int kbY = Theme::TaskbarY - Theme::KeyboardHeight;
+            int kbY = Theme::TaskbarY() - Theme::KeyboardHeight();
             if (pressedIndex < 0)
-                return py >= kbY && py < Theme::TaskbarY;
+                return py >= kbY && py < Theme::TaskbarY();
 
             int released = hitTest(px, py, kbY);
             if (released == pressedIndex)
@@ -101,8 +101,10 @@ namespace UI
         static constexpr int kPad = 2;
         static constexpr int kGap = 2;
         static constexpr int kRows = 4;
-        static constexpr int kRowHeight =
-            (Theme::KeyboardHeight - kPad * 2 - (kRows - 1) * kGap) / kRows;
+        static int kRowHeight()
+        {
+            return (Theme::KeyboardHeight() - kPad * 2 - (kRows - 1) * kGap) / kRows;
+        }
 
         // each key has a flat index across all rows for hit-testing
         // row 0: 10 keys (index 0-9)
@@ -203,7 +205,7 @@ namespace UI
                      int baseIndex) const
         {
             int units = totalUnits(keys, count);
-            int usable = Theme::ScreenWidth - kPad * 2 - (count - 1) * kGap;
+            int usable = Theme::ScreenWidth() - kPad * 2 - (count - 1) * kGap;
             int xOff = kPad;
 
             for (int i = 0; i < count; i++)
@@ -211,7 +213,7 @@ namespace UI
                 int kw = (keys[i].widthUnits * usable) / units;
                 // adjust rounding on last key
                 if (i == count - 1)
-                    kw = Theme::ScreenWidth - kPad - xOff;
+                    kw = Theme::ScreenWidth() - kPad - xOff;
 
                 const char *displayLabel = keys[i].label;
                 // for letter mode, show uppercase label when shifted
@@ -224,7 +226,7 @@ namespace UI
                 }
 
                 bool isPressed = (baseIndex + i == pressedIndex);
-                drawKey(c, xOff, rowY, kw, kRowHeight, displayLabel, isPressed);
+                drawKey(c, xOff, rowY, kw, kRowHeight(), displayLabel, isPressed);
                 xOff += kw + kGap;
             }
         }
@@ -232,44 +234,46 @@ namespace UI
         void drawLetterLayout(LGFX_Sprite &c, int kbY)
         {
             int y0 = kbY + kPad;
+            int rh = kRowHeight();
             int idx = 0;
             drawRow(c, y0, letterRow0, kLetterRow0Count, idx);
             idx += kLetterRow0Count;
-            drawRow(c, y0 + (kRowHeight + kGap), letterRow1, kLetterRow1Count, idx);
+            drawRow(c, y0 + (rh + kGap), letterRow1, kLetterRow1Count, idx);
             idx += kLetterRow1Count;
-            drawRow(c, y0 + 2 * (kRowHeight + kGap), letterRow2, kLetterRow2Count, idx);
+            drawRow(c, y0 + 2 * (rh + kGap), letterRow2, kLetterRow2Count, idx);
             idx += kLetterRow2Count;
-            drawRow(c, y0 + 3 * (kRowHeight + kGap), letterRow3, kLetterRow3Count, idx);
+            drawRow(c, y0 + 3 * (rh + kGap), letterRow3, kLetterRow3Count, idx);
         }
 
         void drawSymbolLayout(LGFX_Sprite &c, int kbY)
         {
             int y0 = kbY + kPad;
+            int rh = kRowHeight();
             int idx = 0;
             drawRow(c, y0, symRow0, kSymRow0Count, idx);
             idx += kSymRow0Count;
-            drawRow(c, y0 + (kRowHeight + kGap), symRow1, kSymRow1Count, idx);
+            drawRow(c, y0 + (rh + kGap), symRow1, kSymRow1Count, idx);
             idx += kSymRow1Count;
-            drawRow(c, y0 + 2 * (kRowHeight + kGap), symRow2, kSymRow2Count, idx);
+            drawRow(c, y0 + 2 * (rh + kGap), symRow2, kSymRow2Count, idx);
             idx += kSymRow2Count;
-            drawRow(c, y0 + 3 * (kRowHeight + kGap), symRow3, kSymRow3Count, idx);
+            drawRow(c, y0 + 3 * (rh + kGap), symRow3, kSymRow3Count, idx);
         }
 
         int hitTestRow(int px, int py, int rowY, const KeyDef *keys, int count,
                        int baseIndex) const
         {
-            if (py < rowY || py >= rowY + kRowHeight)
+            if (py < rowY || py >= rowY + kRowHeight())
                 return -1;
 
             int units = totalUnits(keys, count);
-            int usable = Theme::ScreenWidth - kPad * 2 - (count - 1) * kGap;
+            int usable = Theme::ScreenWidth() - kPad * 2 - (count - 1) * kGap;
             int xOff = kPad;
 
             for (int i = 0; i < count; i++)
             {
                 int kw = (keys[i].widthUnits * usable) / units;
                 if (i == count - 1)
-                    kw = Theme::ScreenWidth - kPad - xOff;
+                    kw = Theme::ScreenWidth() - kPad - xOff;
 
                 if (px >= xOff && px < xOff + kw)
                     return baseIndex + i;
@@ -281,6 +285,7 @@ namespace UI
         int hitTest(int px, int py, int kbY) const
         {
             int y0 = kbY + kPad;
+            int rh = kRowHeight();
             if (symbolMode)
             {
                 int idx = 0;
@@ -288,13 +293,13 @@ namespace UI
                 r = hitTestRow(px, py, y0, symRow0, kSymRow0Count, idx);
                 if (r >= 0) return r;
                 idx += kSymRow0Count;
-                r = hitTestRow(px, py, y0 + (kRowHeight + kGap), symRow1, kSymRow1Count, idx);
+                r = hitTestRow(px, py, y0 + (rh + kGap), symRow1, kSymRow1Count, idx);
                 if (r >= 0) return r;
                 idx += kSymRow1Count;
-                r = hitTestRow(px, py, y0 + 2 * (kRowHeight + kGap), symRow2, kSymRow2Count, idx);
+                r = hitTestRow(px, py, y0 + 2 * (rh + kGap), symRow2, kSymRow2Count, idx);
                 if (r >= 0) return r;
                 idx += kSymRow2Count;
-                r = hitTestRow(px, py, y0 + 3 * (kRowHeight + kGap), symRow3, kSymRow3Count, idx);
+                r = hitTestRow(px, py, y0 + 3 * (rh + kGap), symRow3, kSymRow3Count, idx);
                 return r;
             }
             else
@@ -304,13 +309,13 @@ namespace UI
                 r = hitTestRow(px, py, y0, letterRow0, kLetterRow0Count, idx);
                 if (r >= 0) return r;
                 idx += kLetterRow0Count;
-                r = hitTestRow(px, py, y0 + (kRowHeight + kGap), letterRow1, kLetterRow1Count, idx);
+                r = hitTestRow(px, py, y0 + (rh + kGap), letterRow1, kLetterRow1Count, idx);
                 if (r >= 0) return r;
                 idx += kLetterRow1Count;
-                r = hitTestRow(px, py, y0 + 2 * (kRowHeight + kGap), letterRow2, kLetterRow2Count, idx);
+                r = hitTestRow(px, py, y0 + 2 * (rh + kGap), letterRow2, kLetterRow2Count, idx);
                 if (r >= 0) return r;
                 idx += kLetterRow2Count;
-                r = hitTestRow(px, py, y0 + 3 * (kRowHeight + kGap), letterRow3, kLetterRow3Count, idx);
+                r = hitTestRow(px, py, y0 + 3 * (rh + kGap), letterRow3, kLetterRow3Count, idx);
                 return r;
             }
         }

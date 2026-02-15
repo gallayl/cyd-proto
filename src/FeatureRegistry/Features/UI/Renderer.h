@@ -20,6 +20,14 @@ inline bool initRenderer()
     return c.createSprite(tft.width(), tft.height()) != nullptr;
 }
 
+inline bool reinitRenderer()
+{
+    auto &c = canvas();
+    c.deleteSprite();
+    c.setColorDepth(8);
+    return c.createSprite(tft.width(), tft.height()) != nullptr;
+}
+
 inline void flush()
 {
     canvas().pushSprite(0, 0);

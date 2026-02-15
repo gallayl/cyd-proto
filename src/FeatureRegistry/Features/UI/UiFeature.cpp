@@ -50,6 +50,9 @@ static String screenCommandHandler(const String &command)
             rotate = (uint16_t)strtoul(rotateParam.c_str(), NULL, 0);
         }
         tft.setRotation(rotate);
+        UI::reinitRenderer();
+        readCalibrationData();
+        UI::windowManager().relayoutAll();
         LoggerInstance->Info("Screen rotated to " + String(rotate));
         return String(String("{\"event\":\"rotate\",\"rotation\":") + rotate + String("}"));
     }
