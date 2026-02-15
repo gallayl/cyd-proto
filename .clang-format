@@ -1,0 +1,62 @@
+---
+Language: Cpp
+BasedOnStyle: LLVM
+
+# Indentation
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+AccessModifierOffset: -4
+IndentCaseLabels: false
+NamespaceIndentation: None
+
+# Braces — Allman style (braces on their own line)
+BreakBeforeBraces: Allman
+
+# Line length
+ColumnLimit: 120
+
+# Pointers & references — right-aligned: Type *name
+PointerAlignment: Right
+ReferenceAlignment: Right
+
+# Includes
+SortIncludes: Never
+IncludeBlocks: Preserve
+
+# Alignment
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignTrailingComments: true
+
+# Single-line
+AllowShortBlocksOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortLambdasOnASingleLine: Inline
+
+# Spaces
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyBlock: false
+SpacesInParentheses: false
+SpaceAfterCStyleCast: false
+SpaceBeforeAssignmentOperators: true
+
+# Arguments & parameters
+BinPackArguments: true
+BinPackParameters: true
+AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
+
+# Misc
+FixNamespaceComments: true
+ReflowComments: false
+SeparateDefinitionBlocks: Leave
+
+# Preprocessor
+IndentPPDirectives: None
+
+# Designated initializers — keep on one line when short
+Cpp11BracedListStyle: true
+...

@@ -10,39 +10,43 @@ void initWebSockets()
 {
     webSocket = new AsyncWebSocket(WEBSOCKETS_URL);
 
-    webSocket->onEvent([](AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
-                       {
-        if (type == WS_EVT_CONNECT)
+    webSocket->onEvent(
+        [](AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data,
+           size_t len)
         {
-            String msg(F("WS connected: "));
-            msg += client->remoteIP().toString();
-            LoggerInstance->Info(msg);
-        }
-        else if (type == WS_EVT_DISCONNECT)
-        {
-            String msg(F("WS left: "));
-            msg += client->remoteIP().toString();
-            LoggerInstance->Info(msg);
-        }
-        else if (type == WS_EVT_DATA)
-        {
-            String str;
-            str.concat((const char *)data, len);
-            String response = ActionRegistryInstance->Execute(str, Transport::WS);
-            client->text(response);
-        } });
+            if (type == WS_EVT_CONNECT)
+            {
+                String msg(F("WS connected: "));
+                msg += client->remoteIP().toString();
+                LoggerInstance->Info(msg);
+            }
+            else if (type == WS_EVT_DISCONNECT)
+            {
+                String msg(F("WS left: "));
+                msg += client->remoteIP().toString();
+                LoggerInstance->Info(msg);
+            }
+            else if (type == WS_EVT_DATA)
+            {
+                String str;
+                str.concat((const char *)data, len);
+                String response = ActionRegistryInstance->Execute(str, Transport::WS);
+                client->text(response);
+            }
+        });
 
-    LoggerInstance->AddListener([](const String &scope, const String &message)
-                                {
-        if (!webSocket)
-            return;
-        String buf;
-        buf.reserve(scope.length() + 1 + message.length());
-        buf += scope;
-        buf += ':';
-        buf += message;
-        webSocket->textAll(buf);
-    });
+    LoggerInstance->AddListener(
+        [](const String &scope, const String &message)
+        {
+            if (!webSocket)
+                return;
+            String buf;
+            buf.reserve(scope.length() + 1 + message.length());
+            buf += scope;
+            buf += ':';
+            buf += message;
+            webSocket->textAll(buf);
+        });
 
     server.addHandler(webSocket);
 }

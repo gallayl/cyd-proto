@@ -26,8 +26,14 @@
 
 static BerryApp *s_currentApp = nullptr;
 
-BerryApp *berryCurrentApp() { return s_currentApp; }
-void berrySetCurrentApp(BerryApp *app) { s_currentApp = app; }
+BerryApp *berryCurrentApp()
+{
+    return s_currentApp;
+}
+void berrySetCurrentApp(BerryApp *app)
+{
+    s_currentApp = app;
+}
 
 // --- Canvas element (wraps LGFX_Sprite) ---
 
@@ -63,11 +69,13 @@ public:
             return;
         int lx = px - x;
         int ly = py - y;
-        _touchApp->callBerryCallbackWithArgs(_touchCbId, [lx, ly](bvm *vm) -> int
+        _touchApp->callBerryCallbackWithArgs(_touchCbId,
+                                             [lx, ly](bvm *vm) -> int
                                              {
-            be_pushint(vm, lx);
-            be_pushint(vm, ly);
-            return 2; });
+                                                 be_pushint(vm, lx);
+                                                 be_pushint(vm, ly);
+                                                 return 2;
+                                             });
     }
 
     void onTouchEnd(int px, int py) override
@@ -76,11 +84,13 @@ public:
             return;
         int lx = px - x;
         int ly = py - y;
-        _touchEndApp->callBerryCallbackWithArgs(_touchEndCbId, [lx, ly](bvm *vm) -> int
+        _touchEndApp->callBerryCallbackWithArgs(_touchEndCbId,
+                                                [lx, ly](bvm *vm) -> int
                                                 {
-            be_pushint(vm, lx);
-            be_pushint(vm, ly);
-            return 2; });
+                                                    be_pushint(vm, lx);
+                                                    be_pushint(vm, ly);
+                                                    return 2;
+                                                });
     }
 
     LGFX_Sprite sprite;
@@ -680,10 +690,12 @@ static int ui_on_change(bvm *vm)
         static_cast<UI::Checkbox *>(h->ptr)->setOnChange(
             [appPtr, cbId](bool checked)
             {
-                appPtr->callBerryCallbackWithArgs(cbId, [checked](bvm *v) -> int
+                appPtr->callBerryCallbackWithArgs(cbId,
+                                                  [checked](bvm *v) -> int
                                                   {
-                    be_pushbool(v, checked);
-                    return 1; });
+                                                      be_pushbool(v, checked);
+                                                      return 1;
+                                                  });
             });
     }
     else if (h->type == HandleType::RADIO)
@@ -691,10 +703,12 @@ static int ui_on_change(bvm *vm)
         static_cast<UI::RadioButton *>(h->ptr)->setOnChange(
             [appPtr, cbId](bool selected)
             {
-                appPtr->callBerryCallbackWithArgs(cbId, [selected](bvm *v) -> int
+                appPtr->callBerryCallbackWithArgs(cbId,
+                                                  [selected](bvm *v) -> int
                                                   {
-                    be_pushbool(v, selected);
-                    return 1; });
+                                                      be_pushbool(v, selected);
+                                                      return 1;
+                                                  });
             });
     }
     else if (h->type == HandleType::COMBOBOX)
@@ -702,10 +716,12 @@ static int ui_on_change(bvm *vm)
         static_cast<UI::ComboBox *>(h->ptr)->setOnChange(
             [appPtr, cbId](int idx)
             {
-                appPtr->callBerryCallbackWithArgs(cbId, [idx](bvm *v) -> int
+                appPtr->callBerryCallbackWithArgs(cbId,
+                                                  [idx](bvm *v) -> int
                                                   {
-                    be_pushint(v, idx);
-                    return 1; });
+                                                      be_pushint(v, idx);
+                                                      return 1;
+                                                  });
             });
     }
     else if (h->type == HandleType::TABS)
@@ -713,10 +729,12 @@ static int ui_on_change(bvm *vm)
         static_cast<UI::TabControl *>(h->ptr)->setOnChange(
             [appPtr, cbId](int idx)
             {
-                appPtr->callBerryCallbackWithArgs(cbId, [idx](bvm *v) -> int
+                appPtr->callBerryCallbackWithArgs(cbId,
+                                                  [idx](bvm *v) -> int
                                                   {
-                    be_pushint(v, idx);
-                    return 1; });
+                                                      be_pushint(v, idx);
+                                                      return 1;
+                                                  });
             });
     }
     else if (h->type == HandleType::TEXTFIELD)
@@ -725,10 +743,12 @@ static int ui_on_change(bvm *vm)
             [appPtr, cbId](const String &text)
             {
                 String t = text;
-                appPtr->callBerryCallbackWithArgs(cbId, [t](bvm *v) -> int
+                appPtr->callBerryCallbackWithArgs(cbId,
+                                                  [t](bvm *v) -> int
                                                   {
-                    be_pushstring(v, t.c_str());
-                    return 1; });
+                                                      be_pushstring(v, t.c_str());
+                                                      return 1;
+                                                  });
             });
     }
 
@@ -751,10 +771,12 @@ static int ui_on_item_selected(bvm *vm)
     fl->setOnItemSelected(
         [appPtr, cbId](int idx, const UI::FileItem &item)
         {
-            appPtr->callBerryCallbackWithArgs(cbId, [idx](bvm *v) -> int
+            appPtr->callBerryCallbackWithArgs(cbId,
+                                              [idx](bvm *v) -> int
                                               {
-                be_pushint(v, idx);
-                return 1; });
+                                                  be_pushint(v, idx);
+                                                  return 1;
+                                              });
         });
 
     be_return_nil(vm);
@@ -831,10 +853,18 @@ static int ui_set_text(bvm *vm)
     const char *text = be_tostring(vm, 2);
 
     auto *lbl = asLabel(h);
-    if (lbl) { lbl->setText(text); be_return_nil(vm); }
+    if (lbl)
+    {
+        lbl->setText(text);
+        be_return_nil(vm);
+    }
 
     auto *btn = asButton(h);
-    if (btn) { btn->setLabel(text); be_return_nil(vm); }
+    if (btn)
+    {
+        btn->setLabel(text);
+        be_return_nil(vm);
+    }
 
     be_return_nil(vm);
 }
@@ -851,10 +881,18 @@ static int ui_set_text_color(bvm *vm)
     uint16_t bg = (be_top(vm) >= 3) ? (uint16_t)be_toint(vm, 3) : TFT_BLACK;
 
     auto *lbl = asLabel(h);
-    if (lbl) { lbl->setTextColor(fg, bg); be_return_nil(vm); }
+    if (lbl)
+    {
+        lbl->setTextColor(fg, bg);
+        be_return_nil(vm);
+    }
 
     auto *btn = asButton(h);
-    if (btn) { btn->setTextColor(fg, bg); be_return_nil(vm); }
+    if (btn)
+    {
+        btn->setTextColor(fg, bg);
+        be_return_nil(vm);
+    }
 
     be_return_nil(vm);
 }
@@ -870,10 +908,18 @@ static int ui_set_text_size(bvm *vm)
     uint8_t sz = (uint8_t)be_toint(vm, 2);
 
     auto *lbl = asLabel(h);
-    if (lbl) { lbl->setTextSize(sz); be_return_nil(vm); }
+    if (lbl)
+    {
+        lbl->setTextSize(sz);
+        be_return_nil(vm);
+    }
 
     auto *btn = asButton(h);
-    if (btn) { btn->setTextSize(sz); be_return_nil(vm); }
+    if (btn)
+    {
+        btn->setTextSize(sz);
+        be_return_nil(vm);
+    }
 
     be_return_nil(vm);
 }
@@ -1016,8 +1062,7 @@ static int ui_on_click(bvm *vm)
 
     int cbId = app->storeCallback(vm, 2);
     BerryApp *appPtr = app;
-    btn->setCallback([appPtr, cbId]()
-                     { appPtr->callBerryCallback(cbId); });
+    btn->setCallback([appPtr, cbId]() { appPtr->callBerryCallback(cbId); });
 
     be_return_nil(vm);
 }
@@ -1041,11 +1086,13 @@ static int ui_on_touch(bvm *vm)
         static_cast<UI::Container *>(h->ptr)->setTouchHandler(
             [appPtr, cbId](int px, int py)
             {
-                appPtr->callBerryCallbackWithArgs(cbId, [px, py](bvm *v) -> int
+                appPtr->callBerryCallbackWithArgs(cbId,
+                                                  [px, py](bvm *v) -> int
                                                   {
-                    be_pushint(v, px);
-                    be_pushint(v, py);
-                    return 2; });
+                                                      be_pushint(v, px);
+                                                      be_pushint(v, py);
+                                                      return 2;
+                                                  });
             });
         be_return_nil(vm);
     }
@@ -1080,11 +1127,13 @@ static int ui_on_touch_end(bvm *vm)
         static_cast<UI::Container *>(h->ptr)->setTouchEndHandler(
             [appPtr, cbId](int px, int py)
             {
-                appPtr->callBerryCallbackWithArgs(cbId, [px, py](bvm *v) -> int
+                appPtr->callBerryCallbackWithArgs(cbId,
+                                                  [px, py](bvm *v) -> int
                                                   {
-                    be_pushint(v, px);
-                    be_pushint(v, py);
-                    return 2; });
+                                                      be_pushint(v, px);
+                                                      be_pushint(v, py);
+                                                      return 2;
+                                                  });
             });
         be_return_nil(vm);
     }
@@ -1178,11 +1227,11 @@ static int ui_remove_child(bvm *vm)
 // Canvas drawing
 // =================================================================
 
-#define GET_CANVAS(vm, app, minArgs)                \
-    if (!app || be_top(vm) < minArgs)               \
-        be_return_nil(vm);                          \
-    auto *cv = asCanvas(app->getHandle(be_toint(vm, 1))); \
-    if (!cv || !cv->_spriteOk)                      \
+#define GET_CANVAS(vm, app, minArgs)                                                                                   \
+    if (!app || be_top(vm) < minArgs)                                                                                  \
+        be_return_nil(vm);                                                                                             \
+    auto *cv = asCanvas(app->getHandle(be_toint(vm, 1)));                                                              \
+    if (!cv || !cv->_spriteOk)                                                                                         \
         be_return_nil(vm);
 
 static int ui_canvas_fill(bvm *vm)
@@ -1205,9 +1254,7 @@ static int ui_canvas_draw_line(bvm *vm)
 {
     auto *app = berryCurrentApp();
     GET_CANVAS(vm, app, 6);
-    cv->sprite.drawLine(be_toint(vm, 2), be_toint(vm, 3),
-                        be_toint(vm, 4), be_toint(vm, 5),
-                        (uint16_t)be_toint(vm, 6));
+    cv->sprite.drawLine(be_toint(vm, 2), be_toint(vm, 3), be_toint(vm, 4), be_toint(vm, 5), (uint16_t)be_toint(vm, 6));
     be_return_nil(vm);
 }
 
@@ -1215,9 +1262,7 @@ static int ui_canvas_draw_rect(bvm *vm)
 {
     auto *app = berryCurrentApp();
     GET_CANVAS(vm, app, 6);
-    cv->sprite.drawRect(be_toint(vm, 2), be_toint(vm, 3),
-                        be_toint(vm, 4), be_toint(vm, 5),
-                        (uint16_t)be_toint(vm, 6));
+    cv->sprite.drawRect(be_toint(vm, 2), be_toint(vm, 3), be_toint(vm, 4), be_toint(vm, 5), (uint16_t)be_toint(vm, 6));
     be_return_nil(vm);
 }
 
@@ -1225,9 +1270,7 @@ static int ui_canvas_fill_rect(bvm *vm)
 {
     auto *app = berryCurrentApp();
     GET_CANVAS(vm, app, 6);
-    cv->sprite.fillRect(be_toint(vm, 2), be_toint(vm, 3),
-                        be_toint(vm, 4), be_toint(vm, 5),
-                        (uint16_t)be_toint(vm, 6));
+    cv->sprite.fillRect(be_toint(vm, 2), be_toint(vm, 3), be_toint(vm, 4), be_toint(vm, 5), (uint16_t)be_toint(vm, 6));
     be_return_nil(vm);
 }
 
@@ -1235,8 +1278,7 @@ static int ui_canvas_draw_circle(bvm *vm)
 {
     auto *app = berryCurrentApp();
     GET_CANVAS(vm, app, 5);
-    cv->sprite.drawCircle(be_toint(vm, 2), be_toint(vm, 3),
-                          be_toint(vm, 4), (uint16_t)be_toint(vm, 5));
+    cv->sprite.drawCircle(be_toint(vm, 2), be_toint(vm, 3), be_toint(vm, 4), (uint16_t)be_toint(vm, 5));
     be_return_nil(vm);
 }
 
@@ -1244,8 +1286,7 @@ static int ui_canvas_fill_circle(bvm *vm)
 {
     auto *app = berryCurrentApp();
     GET_CANVAS(vm, app, 5);
-    cv->sprite.fillCircle(be_toint(vm, 2), be_toint(vm, 3),
-                          be_toint(vm, 4), (uint16_t)be_toint(vm, 5));
+    cv->sprite.fillCircle(be_toint(vm, 2), be_toint(vm, 3), be_toint(vm, 4), (uint16_t)be_toint(vm, 5));
     be_return_nil(vm);
 }
 
@@ -1253,8 +1294,7 @@ static int ui_canvas_draw_ellipse(bvm *vm)
 {
     auto *app = berryCurrentApp();
     GET_CANVAS(vm, app, 6);
-    cv->sprite.drawEllipse(be_toint(vm, 2), be_toint(vm, 3),
-                           be_toint(vm, 4), be_toint(vm, 5),
+    cv->sprite.drawEllipse(be_toint(vm, 2), be_toint(vm, 3), be_toint(vm, 4), be_toint(vm, 5),
                            (uint16_t)be_toint(vm, 6));
     be_return_nil(vm);
 }
@@ -1289,24 +1329,34 @@ static int ui_canvas_flood_fill(bvm *vm)
     if (filledColor == targetColor)
         be_return_nil(vm);
 
-    struct Seed { int16_t x, y; };
+    struct Seed
+    {
+        int16_t x, y;
+    };
     std::vector<Seed> stack;
     stack.reserve(256);
 
-    if (fx > 0) stack.push_back({(int16_t)(fx - 1), (int16_t)fy});
-    if (fx < cvW - 1) stack.push_back({(int16_t)(fx + 1), (int16_t)fy});
-    if (fy > 0) stack.push_back({(int16_t)fx, (int16_t)(fy - 1)});
-    if (fy < cvH - 1) stack.push_back({(int16_t)fx, (int16_t)(fy + 1)});
+    if (fx > 0)
+        stack.push_back({(int16_t)(fx - 1), (int16_t)fy});
+    if (fx < cvW - 1)
+        stack.push_back({(int16_t)(fx + 1), (int16_t)fy});
+    if (fy > 0)
+        stack.push_back({(int16_t)fx, (int16_t)(fy - 1)});
+    if (fy < cvH - 1)
+        stack.push_back({(int16_t)fx, (int16_t)(fy + 1)});
 
     while (!stack.empty())
     {
         Seed s = stack.back();
         stack.pop_back();
-        if (s.x < 0 || s.x >= cvW || s.y < 0 || s.y >= cvH) continue;
-        if (cv->sprite.readPixel(s.x, s.y) != targetColor) continue;
+        if (s.x < 0 || s.x >= cvW || s.y < 0 || s.y >= cvH)
+            continue;
+        if (cv->sprite.readPixel(s.x, s.y) != targetColor)
+            continue;
 
         int left = s.x;
-        while (left > 0 && cv->sprite.readPixel(left - 1, s.y) == targetColor) left--;
+        while (left > 0 && cv->sprite.readPixel(left - 1, s.y) == targetColor)
+            left--;
 
         int right = left;
         bool aboveQ = false, belowQ = false;
@@ -1316,18 +1366,29 @@ static int ui_canvas_flood_fill(bvm *vm)
             if (s.y > 0)
             {
                 bool m = (cv->sprite.readPixel(right, s.y - 1) == targetColor);
-                if (m && !aboveQ) { stack.push_back({(int16_t)right, (int16_t)(s.y - 1)}); aboveQ = true; }
-                else if (!m) aboveQ = false;
+                if (m && !aboveQ)
+                {
+                    stack.push_back({(int16_t)right, (int16_t)(s.y - 1)});
+                    aboveQ = true;
+                }
+                else if (!m)
+                    aboveQ = false;
             }
             if (s.y < cvH - 1)
             {
                 bool m = (cv->sprite.readPixel(right, s.y + 1) == targetColor);
-                if (m && !belowQ) { stack.push_back({(int16_t)right, (int16_t)(s.y + 1)}); belowQ = true; }
-                else if (!m) belowQ = false;
+                if (m && !belowQ)
+                {
+                    stack.push_back({(int16_t)right, (int16_t)(s.y + 1)});
+                    belowQ = true;
+                }
+                else if (!m)
+                    belowQ = false;
             }
             right++;
         }
-        if (stack.size() > 2000) break;
+        if (stack.size() > 2000)
+            break;
     }
 
     be_return_nil(vm);
@@ -1337,9 +1398,7 @@ static int ui_canvas_set_palette(bvm *vm)
 {
     auto *app = berryCurrentApp();
     GET_CANVAS(vm, app, 5);
-    cv->sprite.setPaletteColor(be_toint(vm, 2),
-                               (uint8_t)be_toint(vm, 3),
-                               (uint8_t)be_toint(vm, 4),
+    cv->sprite.setPaletteColor(be_toint(vm, 2), (uint8_t)be_toint(vm, 3), (uint8_t)be_toint(vm, 4),
                                (uint8_t)be_toint(vm, 5));
     be_return_nil(vm);
 }

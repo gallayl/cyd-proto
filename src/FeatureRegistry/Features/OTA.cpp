@@ -84,10 +84,6 @@ Feature *OtaUpgrade = new Feature(
         server.on("/update", HTTP_POST, onPostUpdate, onUploadUpdate);
         return FeatureState::RUNNING;
     },
-    []() {},
-    []()
-    {
-        LoggerInstance->Info(F("OTA feature stopped"));
-    });
+    []() {}, []() { LoggerInstance->Info(F("OTA feature stopped")); });
 
 #endif

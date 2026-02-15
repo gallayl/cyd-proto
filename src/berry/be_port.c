@@ -11,14 +11,14 @@ BERRY_API void be_writebuffer(const char *buffer, size_t length)
     be_fwrite(stdout, buffer, length);
 }
 
-BERRY_API char* be_readstring(char *buffer, size_t size)
+BERRY_API char *be_readstring(char *buffer, size_t size)
 {
     return be_fgets(stdin, buffer, (int)size);
 }
 
 /* Basic file I/O using standard C - works on ESP32 via VFS */
 
-void* be_fopen(const char *filename, const char *modes)
+void *be_fopen(const char *filename, const char *modes)
 {
     return fopen(filename, modes);
 }
@@ -38,7 +38,7 @@ size_t be_fread(void *hfile, void *buffer, size_t length)
     return fread(buffer, 1, length, hfile);
 }
 
-char* be_fgets(void *hfile, void *buffer, int size)
+char *be_fgets(void *hfile, void *buffer, int size)
 {
     return fgets(buffer, size, hfile);
 }

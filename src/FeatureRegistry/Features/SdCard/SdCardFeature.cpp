@@ -69,7 +69,8 @@ static String doMount()
     String output;
     serializeJson(response, output);
 
-    LoggerInstance->Info("SD card mounted (" + String(cardTypeName(cardType)) + ", " + String(SD.totalBytes() / (1024 * 1024)) + " MB)");
+    LoggerInstance->Info("SD card mounted (" + String(cardTypeName(cardType)) + ", " +
+                         String(SD.totalBytes() / (1024 * 1024)) + " MB)");
     return output;
 }
 
@@ -122,9 +123,7 @@ static String sdHandler(const String &command)
 }
 
 static FeatureAction sdAction = {
-    .name = "sd",
-    .handler = sdHandler,
-    .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
+    .name = "sd", .handler = sdHandler, .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
 
 Feature *SdCardFeature = new Feature(
     "SdCard",
@@ -141,7 +140,8 @@ Feature *SdCardFeature = new Feature(
             if (cardType != CARD_NONE)
             {
                 sdMounted = true;
-                LoggerInstance->Info("SD card detected (" + String(cardTypeName(cardType)) + ", " + String(SD.totalBytes() / (1024 * 1024)) + " MB)");
+                LoggerInstance->Info("SD card detected (" + String(cardTypeName(cardType)) + ", " +
+                                     String(SD.totalBytes() / (1024 * 1024)) + " MB)");
             }
             else
             {

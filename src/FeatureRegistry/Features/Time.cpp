@@ -23,11 +23,15 @@ String getUtcTime()
 }
 
 // instantiate feature
-Feature *TimeFeature = new Feature("Time", []()
-                                   {
-    /* ESP32 version of configTime uses GMT and daylight offsets.  */
-    configTime(0, 0, MY_NTP_SERVER);
-    /* set the TZ environment variable so localtime() works with our string */
-    setenv("TZ", MY_TZ, 1);
-    tzset();
-    return FeatureState::RUNNING; }, []() {});
+Feature *TimeFeature = new Feature(
+    "Time",
+    []()
+    {
+        /* ESP32 version of configTime uses GMT and daylight offsets.  */
+        configTime(0, 0, MY_NTP_SERVER);
+        /* set the TZ environment variable so localtime() works with our string */
+        setenv("TZ", MY_TZ, 1);
+        tzset();
+        return FeatureState::RUNNING;
+    },
+    []() {});

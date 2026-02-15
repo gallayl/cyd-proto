@@ -10,74 +10,95 @@
 
 namespace UI
 {
-    struct OpenApp
+struct OpenApp
+{
+    std::unique_ptr<Window> window;
+    std::unique_ptr<App> app;
+    String name;
+};
+
+struct PanelSlot
+{
+    std::unique_ptr<Container> container;
+    std::unique_ptr<App> app;
+    String name;
+};
+
+class WindowManager
+{
+public:
+    WindowManager() = default;
+
+    void openApp(const char *appName);
+    void openApp(const char *appName, App *appInstance);
+    void closeApp(const char *appName);
+    void focusApp(const char *appName);
+    void minimizeApp(const char *appName);
+    void restoreApp(const char *appName);
+    void handleWindowStateChange(const char *appName, WindowState state);
+    bool isAppOpen(const char *appName) const;
+    OpenApp *getFocused();
+    std::vector<OpenApp> &getOpenApps()
     {
-        std::unique_ptr<Window> window;
-        std::unique_ptr<App> app;
-        String name;
-    };
-
-    struct PanelSlot
+        return openApps;
+    }
+    const std::vector<OpenApp> &getOpenApps() const
     {
-        std::unique_ptr<Container> container;
-        std::unique_ptr<App> app;
-        String name;
-    };
+        return openApps;
+    }
 
-    class WindowManager
+    void draw();
+    void handleTouch(int px, int py);
+    void handleTouchEnd(int px, int py);
+
+    // taskbar/start menu need to draw on top, so they call back
+    using OverlayDrawFn = std::function<void()>;
+    void setOverlayDraw(OverlayDrawFn fn)
     {
-    public:
-        WindowManager() = default;
+        overlayDraw = std::move(fn);
+    }
 
-        void openApp(const char *appName);
-        void openApp(const char *appName, App *appInstance);
-        void closeApp(const char *appName);
-        void focusApp(const char *appName);
-        void minimizeApp(const char *appName);
-        void restoreApp(const char *appName);
-        void handleWindowStateChange(const char *appName, WindowState state);
-        bool isAppOpen(const char *appName) const;
-        OpenApp *getFocused();
-        std::vector<OpenApp> &getOpenApps() { return openApps; }
-        const std::vector<OpenApp> &getOpenApps() const { return openApps; }
+    using OverlayTouchFn = std::function<bool(int, int)>;
+    void setOverlayTouch(OverlayTouchFn fn)
+    {
+        overlayTouch = std::move(fn);
+    }
 
-        void draw();
-        void handleTouch(int px, int py);
-        void handleTouchEnd(int px, int py);
+    using OverlayTouchEndFn = std::function<bool(int, int)>;
+    void setOverlayTouchEnd(OverlayTouchEndFn fn)
+    {
+        overlayTouchEnd = std::move(fn);
+    }
 
-        // taskbar/start menu need to draw on top, so they call back
-        using OverlayDrawFn = std::function<void()>;
-        void setOverlayDraw(OverlayDrawFn fn) { overlayDraw = std::move(fn); }
+    void tickTimers();
 
-        using OverlayTouchFn = std::function<bool(int, int)>;
-        void setOverlayTouch(OverlayTouchFn fn) { overlayTouch = std::move(fn); }
+    void setKeyboardVisible(bool vis);
+    bool isKeyboardVisible() const
+    {
+        return keyboardVisible;
+    }
+    int availableDesktopHeight() const;
 
-        using OverlayTouchEndFn = std::function<bool(int, int)>;
-        void setOverlayTouchEnd(OverlayTouchEndFn fn) { overlayTouchEnd = std::move(fn); }
+    // panel (frameless, always-visible app slot)
+    void openPanel(const char *name, App *appInstance, int x, int y, int w, int h);
+    void closePanel(const char *name);
+    PanelSlot *getPanelSlot()
+    {
+        return panelSlot ? panelSlot.get() : nullptr;
+    }
 
-        void tickTimers();
+private:
+    std::vector<OpenApp> openApps;
+    std::unique_ptr<PanelSlot> panelSlot;
+    OverlayDrawFn overlayDraw;
+    OverlayTouchFn overlayTouch;
+    OverlayTouchEndFn overlayTouchEnd;
+    bool keyboardVisible{false};
 
-        void setKeyboardVisible(bool vis);
-        bool isKeyboardVisible() const { return keyboardVisible; }
-        int availableDesktopHeight() const;
+    void updateActiveStates();
+    void relayoutWindows();
+};
 
-        // panel (frameless, always-visible app slot)
-        void openPanel(const char *name, App *appInstance, int x, int y, int w, int h);
-        void closePanel(const char *name);
-        PanelSlot *getPanelSlot() { return panelSlot ? panelSlot.get() : nullptr; }
-
-    private:
-        std::vector<OpenApp> openApps;
-        std::unique_ptr<PanelSlot> panelSlot;
-        OverlayDrawFn overlayDraw;
-        OverlayTouchFn overlayTouch;
-        OverlayTouchEndFn overlayTouchEnd;
-        bool keyboardVisible{false};
-
-        void updateActiveStates();
-        void relayoutWindows();
-    };
-
-    WindowManager &windowManager();
+WindowManager &windowManager();
 
 } // namespace UI

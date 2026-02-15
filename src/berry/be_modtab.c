@@ -9,7 +9,7 @@ be_extern_native_module(gc);
 be_extern_native_module(introspect);
 be_extern_native_module(undefined);
 
-BERRY_LOCAL const bntvmodule_t* const be_module_table[] = {
+BERRY_LOCAL const bntvmodule_t *const be_module_table[] = {
 #if BE_USE_STRING_MODULE
     &be_native_module(string),
 #endif
@@ -28,8 +28,7 @@ BERRY_LOCAL const bntvmodule_t* const be_module_table[] = {
 #if BE_USE_INTROSPECT_MODULE
     &be_native_module(introspect),
 #endif
-    &be_native_module(undefined),
-    NULL /* do not remove */
+    &be_native_module(undefined),  NULL /* do not remove */
 };
 
 BERRY_LOCAL bclass_array be_class_table = {

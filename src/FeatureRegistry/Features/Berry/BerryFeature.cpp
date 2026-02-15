@@ -6,7 +6,8 @@
 #include "../../../fs/VirtualFS.h"
 #include <LittleFS.h>
 
-extern "C" {
+extern "C"
+{
 #include "berry.h"
 }
 
@@ -23,7 +24,10 @@ extern "C" {
 static bvm *berry_vm = nullptr;
 
 #if ENABLE_BERRY
-bvm *getBerryVM() { return berry_vm; }
+bvm *getBerryVM()
+{
+    return berry_vm;
+}
 
 // Parse app name from "# app: <Name>" in first 5 lines of a .be file
 static String parseAppNameFromFile(const String &path)
@@ -91,13 +95,13 @@ void openBerryPanel(const String &filePath)
         return;
 
     auto *app = new BerryApp(path, appName);
-    UI::windowManager().openPanel(
-        appName.c_str(), app,
-        0, UI::Theme::TaskbarY, UI::Theme::ScreenWidth, UI::Theme::TaskbarHeight);
+    UI::windowManager().openPanel(appName.c_str(), app, 0, UI::Theme::TaskbarY, UI::Theme::ScreenWidth,
+                                  UI::Theme::TaskbarHeight);
 }
 #endif
 
-static std::vector<BerryScriptInfo> scanBerryScriptsOnFs(fs::FS &filesystem, const char *localDir, const String &virtualPrefix)
+static std::vector<BerryScriptInfo> scanBerryScriptsOnFs(fs::FS &filesystem, const char *localDir,
+                                                         const String &virtualPrefix)
 {
     std::vector<BerryScriptInfo> result;
 
@@ -338,15 +342,15 @@ static String berryHandler(const String &command)
     }
 #endif
 
-    return String(F("{\"error\": \"Usage: berry eval <code> | berry run <path> | berry open <appname> | berry panel <appname>\"}"));
+    return String(F(
+        "{\"error\": \"Usage: berry eval <code> | berry run <path> | berry open <appname> | berry panel <appname>\"}"));
 }
 
 // --- Action definition ---
 
-static FeatureAction berryAction = {
-    .name = "berry",
-    .handler = berryHandler,
-    .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
+static FeatureAction berryAction = {.name = "berry",
+                                    .handler = berryHandler,
+                                    .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
 
 // --- Feature ---
 

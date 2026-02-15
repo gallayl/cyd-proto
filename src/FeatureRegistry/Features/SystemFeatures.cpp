@@ -163,120 +163,125 @@ static String wifiHandler(const String &command)
         WiFi.begin();
         return String("{\"event\": \"disconnecting\"}");
     }
-    return String("{\"event\": \"Unknown WiFi operation command. The available commands are: info, list, connect <ssid> <password>, startSTA <ssid> <passphrase>, stopSTA\"}");
+    return String("{\"event\": \"Unknown WiFi operation command. The available commands are: info, list, connect "
+                  "<ssid> <password>, startSTA <ssid> <passphrase>, stopSTA\"}");
 }
 #endif
 
 // --- Action definitions ---
 
-FeatureAction restartAction = {
-    .name = "restart",
-    .type = "POST",
-    .handler = [](const String &command)
-    {
-        delay(100);
-        ESP.restart();
-        return String("{\"event\": \"restart\"}");
-    },
-    .transports = {.cli = true, .rest = true, .ws = false, .scripting = true}};
+FeatureAction restartAction = {.name = "restart",
+                               .type = "POST",
+                               .handler =
+                                   [](const String &command)
+                               {
+                                   delay(100);
+                                   ESP.restart();
+                                   return String("{\"event\": \"restart\"}");
+                               },
+                               .transports = {.cli = true, .rest = true, .ws = false, .scripting = true}};
 
-FeatureAction featuresAction = {
-    .name = "features",
-    .handler = [](const String &command)
-    {
-        String output;
-        serializeJson(registeredFeatures, output);
-        return output;
-    },
-    .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
+FeatureAction featuresAction = {.name = "features",
+                                .handler =
+                                    [](const String &command)
+                                {
+                                    String output;
+                                    serializeJson(registeredFeatures, output);
+                                    return output;
+                                },
+                                .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
 
-FeatureAction infoAction = {
-    .name = "info",
-    .handler = [](const String &command)
-    {
-        JsonDocument response = getInfo();
-        String output;
-        serializeJson(response, output);
-        return output;
-    },
-    .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
+FeatureAction infoAction = {.name = "info",
+                            .handler =
+                                [](const String &command)
+                            {
+                                JsonDocument response = getInfo();
+                                String output;
+                                serializeJson(response, output);
+                                return output;
+                            },
+                            .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
 
-FeatureAction rgbLedAction = {
-    .name = "rgbLed",
-    .handler = [](const String &command)
-    {
-        const String sub = CommandParser::GetCommandParameter(command, 1);
-        if (sub == "setColor")
-        {
-            int r = CommandParser::GetCommandParameter(command, 2).toInt();
-            int g = CommandParser::GetCommandParameter(command, 3).toInt();
-            int b = CommandParser::GetCommandParameter(command, 4).toInt();
-            setRgbLedColor(r, g, b);
-            char logBuf[48];
-            snprintf(logBuf, sizeof(logBuf), "Set RGB LED color to %d,%d,%d", r, g, b);
-            LoggerInstance->Info(logBuf);
-        }
-        else if (sub == "off")
-        {
-            setRgbLedColor(0, 0, 0);
-            LoggerInstance->Info(F("Turned off RGB LED"));
-        }
-        else
-        {
-            LoggerInstance->Error("Unknown rgbLed subcommand: " + sub);
-        }
-        return String("{\"event\": \"rgbLedCommandExecuted\"}");
-    },
-    .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
+FeatureAction rgbLedAction = {.name = "rgbLed",
+                              .handler =
+                                  [](const String &command)
+                              {
+                                  const String sub = CommandParser::GetCommandParameter(command, 1);
+                                  if (sub == "setColor")
+                                  {
+                                      int r = CommandParser::GetCommandParameter(command, 2).toInt();
+                                      int g = CommandParser::GetCommandParameter(command, 3).toInt();
+                                      int b = CommandParser::GetCommandParameter(command, 4).toInt();
+                                      setRgbLedColor(r, g, b);
+                                      char logBuf[48];
+                                      snprintf(logBuf, sizeof(logBuf), "Set RGB LED color to %d,%d,%d", r, g, b);
+                                      LoggerInstance->Info(logBuf);
+                                  }
+                                  else if (sub == "off")
+                                  {
+                                      setRgbLedColor(0, 0, 0);
+                                      LoggerInstance->Info(F("Turned off RGB LED"));
+                                  }
+                                  else
+                                  {
+                                      LoggerInstance->Error("Unknown rgbLed subcommand: " + sub);
+                                  }
+                                  return String("{\"event\": \"rgbLedCommandExecuted\"}");
+                              },
+                              .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
 
-FeatureAction lightSensorAction = {
-    .name = "getLightSensorValue",
-    .handler = [](const String &command)
-    {
-        uint16_t value = readLightSensor();
-        char buf[80];
-        snprintf(buf, sizeof(buf), "Read light sensor value: %u", value);
-        LoggerInstance->Info(buf);
-        snprintf(buf, sizeof(buf), "{\"event\": \"getLightSensorValue\", \"value\": %u}", value);
-        return String(buf);
-    },
-    .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
+FeatureAction lightSensorAction = {.name = "getLightSensorValue",
+                                   .handler =
+                                       [](const String &command)
+                                   {
+                                       uint16_t value = readLightSensor();
+                                       char buf[80];
+                                       snprintf(buf, sizeof(buf), "Read light sensor value: %u", value);
+                                       LoggerInstance->Info(buf);
+                                       snprintf(buf, sizeof(buf), "{\"event\": \"getLightSensorValue\", \"value\": %u}",
+                                                value);
+                                       return String(buf);
+                                   },
+                                   .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
 
-FeatureAction hallSensorAction = {
-    .name = "getHallSensorValue",
-    .handler = [](const String &command)
-    {
-        uint16_t value = hallRead();
-        char buf[80];
-        snprintf(buf, sizeof(buf), "Read hall sensor value: %u", value);
-        LoggerInstance->Info(buf);
-        snprintf(buf, sizeof(buf), "{\"event\": \"getHallSensorValue\", \"value\": %u}", value);
-        return String(buf);
-    },
-    .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
+FeatureAction hallSensorAction = {.name = "getHallSensorValue",
+                                  .handler =
+                                      [](const String &command)
+                                  {
+                                      uint16_t value = hallRead();
+                                      char buf[80];
+                                      snprintf(buf, sizeof(buf), "Read hall sensor value: %u", value);
+                                      LoggerInstance->Info(buf);
+                                      snprintf(buf, sizeof(buf), "{\"event\": \"getHallSensorValue\", \"value\": %u}",
+                                               value);
+                                      return String(buf);
+                                  },
+                                  .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
 
 #if ENABLE_WIFI
 FeatureAction wifiAction = {
-    .name = "wifi",
-    .handler = wifiHandler,
-    .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
+    .name = "wifi", .handler = wifiHandler, .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
 #endif
 
 // --- Feature ---
 
-Feature *SystemFeatures = new Feature("SystemFeatures", []()
-                                      {
+Feature *SystemFeatures = new Feature(
+    "SystemFeatures",
+    []()
+    {
 #if ENABLE_WIFI
-    ActionRegistryInstance->RegisterAction(&wifiAction);
+        ActionRegistryInstance->RegisterAction(&wifiAction);
 #endif
-    ActionRegistryInstance->RegisterAction(&restartAction);
-    ActionRegistryInstance->RegisterAction(&featuresAction);
-    ActionRegistryInstance->RegisterAction(&infoAction);
+        ActionRegistryInstance->RegisterAction(&restartAction);
+        ActionRegistryInstance->RegisterAction(&featuresAction);
+        ActionRegistryInstance->RegisterAction(&infoAction);
 
-    initRgbLed();
-    initLightSensor();
-    ActionRegistryInstance->RegisterAction(&rgbLedAction);
-    ActionRegistryInstance->RegisterAction(&lightSensorAction);
-    ActionRegistryInstance->RegisterAction(&hallSensorAction);
+        initRgbLed();
+        initLightSensor();
+        ActionRegistryInstance->RegisterAction(&rgbLedAction);
+        ActionRegistryInstance->RegisterAction(&lightSensorAction);
+        ActionRegistryInstance->RegisterAction(&hallSensorAction);
 
-    return FeatureState::RUNNING; }, []() {});
+        return FeatureState::RUNNING;
+    },
+    []() {});

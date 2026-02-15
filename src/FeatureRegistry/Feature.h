@@ -20,14 +20,12 @@ typedef void (*FeatureTeardownFunction)();
 class Feature
 {
 public:
-    Feature(const String &name = "featureName",
-            FeatureSetupFunction setupCallback = []()
-            { return FeatureState::PENDING; },
-            FeatureLoopFunction loopCallback = []() {},
-            FeatureTeardownFunction teardownCallback = nullptr,
-            bool autoStart = true)
-        : _featureName(name), _onSetup(setupCallback), _onLoop(loopCallback),
-          _onTeardown(teardownCallback), _autoStart(autoStart) {};
+    Feature(
+        const String &name = "featureName", FeatureSetupFunction setupCallback = []() { return FeatureState::PENDING; },
+        FeatureLoopFunction loopCallback = []() {}, FeatureTeardownFunction teardownCallback = nullptr,
+        bool autoStart = true)
+        : _featureName(name), _onSetup(setupCallback), _onLoop(loopCallback), _onTeardown(teardownCallback),
+          _autoStart(autoStart) {};
 
     FeatureState Setup()
     {

@@ -46,7 +46,8 @@ inline void calibrateScreen()
     tft.println("Calibration complete!");
 
     Serial.println("Your Screen Calibration");
-    Serial.printf("uint16_t calData[8] = { %d, %d, %d, %d, %d, %d, %d, %d };\n", calData[0], calData[1], calData[2], calData[3], calData[4], calData[5], calData[6], calData[7]);
+    Serial.printf("uint16_t calData[8] = { %d, %d, %d, %d, %d, %d, %d, %d };\n", calData[0], calData[1], calData[2],
+                  calData[3], calData[4], calData[5], calData[6], calData[7]);
 
     File f = LittleFS.open(CALIBRATION_FILE, "w");
     if (f)

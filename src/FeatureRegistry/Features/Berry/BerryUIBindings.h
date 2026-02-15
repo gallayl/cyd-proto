@@ -4,7 +4,8 @@
 
 #if ENABLE_BERRY
 
-extern "C" {
+extern "C"
+{
 #include "berry.h"
 }
 

@@ -13,7 +13,8 @@
 #include "../../../fs/VirtualFS.h"
 #include <vector>
 
-extern "C" {
+extern "C"
+{
 #include "berry.h"
 }
 
@@ -42,10 +43,12 @@ struct HandleEntry
 class BerryApp : public UI::App
 {
 public:
-    BerryApp(const String &scriptPath, const String &appName)
-        : _scriptPath(scriptPath), _name(appName) {}
+    BerryApp(const String &scriptPath, const String &appName) : _scriptPath(scriptPath), _name(appName) {}
 
-    const char *name() const override { return _name.c_str(); }
+    const char *name() const override
+    {
+        return _name.c_str();
+    }
 
     void setup(UI::Container &content, int w, int h) override
     {
@@ -131,12 +134,14 @@ public:
         be_pop(vm, 1);
 
         // call instance.setup(content_handle, w, h)
-        callMethod("setup", [&](bvm *v)
+        callMethod("setup",
+                   [&](bvm *v)
                    {
-            be_pushint(v, 0); // content handle
-            be_pushint(v, w);
-            be_pushint(v, h);
-            return 3; });
+                       be_pushint(v, 0); // content handle
+                       be_pushint(v, w);
+                       be_pushint(v, h);
+                       return 3;
+                   });
 
         berrySetCurrentApp(nullptr);
     }
@@ -251,8 +256,7 @@ public:
 
     void addBerryTimer(uint32_t ms, int cbId)
     {
-        scheduleTimer(ms, [this, cbId]()
-                      { callBerryCallback(cbId); });
+        scheduleTimer(ms, [this, cbId]() { callBerryCallback(cbId); });
     }
 
 private:
