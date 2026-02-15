@@ -17,6 +17,13 @@ namespace UI
         String name;
     };
 
+    struct PanelSlot
+    {
+        std::unique_ptr<Container> container;
+        std::unique_ptr<App> app;
+        String name;
+    };
+
     class WindowManager
     {
     public:
@@ -54,8 +61,14 @@ namespace UI
         bool isKeyboardVisible() const { return keyboardVisible; }
         int availableDesktopHeight() const;
 
+        // panel (frameless, always-visible app slot)
+        void openPanel(const char *name, App *appInstance, int x, int y, int w, int h);
+        void closePanel(const char *name);
+        PanelSlot *getPanelSlot() { return panelSlot ? panelSlot.get() : nullptr; }
+
     private:
         std::vector<OpenApp> openApps;
+        std::unique_ptr<PanelSlot> panelSlot;
         OverlayDrawFn overlayDraw;
         OverlayTouchFn overlayTouch;
         OverlayTouchEndFn overlayTouchEnd;

@@ -304,6 +304,34 @@ namespace UI
             focused->window->onTouchEnd(px, py);
     }
 
+    void WindowManager::openPanel(const char *name, App *appInstance, int x, int y, int w, int h)
+    {
+        if (!appInstance)
+            return;
+
+        auto slot = std::make_unique<PanelSlot>();
+        slot->name = name;
+        slot->app.reset(appInstance);
+        slot->container = std::make_unique<Container>();
+        slot->container->setBounds(x, y, w, h);
+        slot->container->mount();
+        slot->app->setup(*slot->container, w, h);
+
+        panelSlot = std::move(slot);
+        markDirty();
+    }
+
+    void WindowManager::closePanel(const char *name)
+    {
+        if (panelSlot && panelSlot->name == name)
+        {
+            panelSlot->app->teardown();
+            panelSlot->container->unmount();
+            panelSlot.reset();
+            markDirty();
+        }
+    }
+
     void WindowManager::tickTimers()
     {
         for (auto &oa : openApps)
@@ -311,6 +339,8 @@ namespace UI
             if (oa.app->tickTimers())
                 markDirty();
         }
+        if (panelSlot && panelSlot->app->tickTimers())
+            markDirty();
     }
 
     int WindowManager::availableDesktopHeight() const

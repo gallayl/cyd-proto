@@ -1,7 +1,6 @@
 #pragma once
 
 #include "WindowManager.h"
-#include "elements/taskbar.h"
 #include "elements/startmenu.h"
 #include "elements/keyboard.h"
 #include "elements/textfield.h"
@@ -76,18 +75,6 @@ namespace UI
 
             startMenu.setMenuItems(std::move(menuItems));
 
-            taskbar.setStartClickCallback([this]()
-                                          { startMenu.toggle(); });
-
-            taskbar.setAppClickCallback([](const char *name)
-                                        { windowManager().restoreApp(name); });
-
-            taskbar.setKeyboardToggleCallback([this]()
-                                              {
-                                                  keyboard.toggle();
-                                                  windowManager().setKeyboardVisible(keyboard.isVisible());
-                                              });
-
             // keyboard focus routing for TextFields
             setKeyboardFocusHandler([this](std::function<void(char)> consumer)
                                     {
@@ -126,7 +113,6 @@ namespace UI
 
         void draw()
         {
-            updateTaskbarApps();
             windowManager().draw();
             flush();
         }
@@ -146,29 +132,30 @@ namespace UI
             windowManager().tickTimers();
         }
 
+        void toggleStartMenu() { startMenu.toggle(); }
+
+        void toggleKeyboard()
+        {
+            keyboard.toggle();
+            windowManager().setKeyboardVisible(keyboard.isVisible());
+        }
+
     private:
-        Taskbar taskbar;
         StartMenu startMenu;
         Keyboard keyboard;
         std::function<void(char)> keyConsumer;
 
-        void updateTaskbarApps()
-        {
-            std::vector<Taskbar::TaskbarApp> apps;
-            auto *focused = windowManager().getFocused();
-            for (auto &oa : windowManager().getOpenApps())
-            {
-                bool isFocused = (focused && &oa == focused);
-                apps.push_back({oa.name, isFocused});
-            }
-            taskbar.setApps(apps);
-            taskbar.setStartMenuOpen(startMenu.isVisible());
-        }
-
         void drawOverlays()
         {
             keyboard.draw();
-            taskbar.draw();
+            auto *panel = windowManager().getPanelSlot();
+            if (panel)
+            {
+                auto &c = canvas();
+                c.fillRect(0, Theme::TaskbarY, Theme::ScreenWidth, Theme::TaskbarHeight, Theme::TaskbarBg);
+                c.drawFastHLine(0, Theme::TaskbarY, Theme::ScreenWidth, Theme::ButtonHighlight);
+                panel->container->draw();
+            }
             startMenu.draw();
             errorPopup().draw();
         }
@@ -189,8 +176,13 @@ namespace UI
             }
             if (keyboard.handleTouch(px, py))
                 return true;
-            if (taskbar.handleTouch(px, py))
+            // panel (taskbar) touch
+            auto *panel = windowManager().getPanelSlot();
+            if (panel && py >= Theme::TaskbarY)
+            {
+                panel->container->handleTouch(px, py);
                 return true;
+            }
             // touch outside start menu closes it
             if (startMenu.isVisible())
             {
@@ -214,8 +206,12 @@ namespace UI
             }
             if (keyboard.handleTouchEnd(px, py))
                 return true;
-            if (taskbar.handleTouchEnd(px, py))
+            auto *panel = windowManager().getPanelSlot();
+            if (panel && py >= Theme::TaskbarY)
+            {
+                panel->container->handleTouchEnd(px, py);
                 return true;
+            }
             return false;
         }
     };

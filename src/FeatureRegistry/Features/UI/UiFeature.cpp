@@ -226,7 +226,67 @@ static String pageCommandHandler(const String &command)
     return String(String("{\"event\":\"page\",\"error\":\"unknown\",\"sub\":\"") + sub + String("\"}"));
 }
 
+// --- Window manager command handler ---
+
+static String wmCommandHandler(const String &command)
+{
+    String sub = CommandParser::GetCommandParameter(command, 1);
+
+    if (sub == "list")
+    {
+        auto &apps = UI::windowManager().getOpenApps();
+        auto *focused = UI::windowManager().getFocused();
+        String json = "{\"apps\":[";
+        for (size_t i = 0; i < apps.size(); i++)
+        {
+            if (i > 0)
+                json += ",";
+            bool isFocused = (focused && &apps[i] == focused);
+            json += "{\"name\":\"" + apps[i].name + "\",\"focused\":" + (isFocused ? "true" : "false") + "}";
+        }
+        json += "]}";
+        return json;
+    }
+
+    if (sub == "focus")
+    {
+        String name = CommandParser::GetCommandParameter(command, 2);
+        if (name.length() == 0)
+            return String(F("{\"error\":\"No app name\"}"));
+        UI::windowManager().restoreApp(name.c_str());
+        return String(F("{\"status\":\"ok\"}"));
+    }
+
+    if (sub == "close")
+    {
+        String name = CommandParser::GetCommandParameter(command, 2);
+        if (name.length() == 0)
+            return String(F("{\"error\":\"No app name\"}"));
+        UI::windowManager().closeApp(name.c_str());
+        return String(F("{\"status\":\"ok\"}"));
+    }
+
+    if (sub == "start_menu")
+    {
+        UI::desktop().toggleStartMenu();
+        return String(F("{\"status\":\"ok\"}"));
+    }
+
+    if (sub == "keyboard")
+    {
+        UI::desktop().toggleKeyboard();
+        return String(F("{\"status\":\"ok\"}"));
+    }
+
+    return String(F("{\"error\":\"Usage: wm list | wm focus <name> | wm close <name> | wm start_menu | wm keyboard\"}"));
+}
+
 // --- Action definitions ---
+
+FeatureAction wmAction = {
+    .name = "wm",
+    .handler = wmCommandHandler,
+    .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
 
 FeatureAction screenAction = {
     .name = "screen",
@@ -261,6 +321,7 @@ Feature *UiFeature = new Feature("UI", []()
 
     ActionRegistryInstance->RegisterAction(&screenAction);
     ActionRegistryInstance->RegisterAction(&pageAction);
+    ActionRegistryInstance->RegisterAction(&wmAction);
 
     esp_timer_create_args_t args = {};
     args.callback = [](void *) { frameReady = true; };

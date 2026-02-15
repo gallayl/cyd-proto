@@ -16,6 +16,7 @@ extern "C" {
 #include "../UI/App.h"
 #if ENABLE_UI
 #include "../UI/WindowManager.h"
+#include "../UI/Theme.h"
 #endif
 #endif
 
@@ -77,6 +78,22 @@ void openBerryScript(const String &filePath)
 
     auto *app = new BerryApp(path, appName);
     UI::windowManager().openApp(appName.c_str(), app);
+}
+
+void openBerryPanel(const String &filePath)
+{
+    String path = filePath;
+    if (path.length() > 0 && path[0] != '/')
+        path = "/" + path;
+
+    String appName = parseAppNameFromFile(path);
+    if (appName.isEmpty())
+        return;
+
+    auto *app = new BerryApp(path, appName);
+    UI::windowManager().openPanel(
+        appName.c_str(), app,
+        0, UI::Theme::TaskbarY, UI::Theme::ScreenWidth, UI::Theme::TaskbarHeight);
 }
 #endif
 
@@ -299,9 +316,29 @@ static String berryHandler(const String &command)
         }
         return "{\"error\": \"Unknown Berry app: " + appName + "\"}";
     }
+
+    if (operation == "panel")
+    {
+        String appName = CommandParser::GetCommandParameter(command, 2);
+        if (appName.length() == 0)
+        {
+            return String(F("{\"error\": \"No app name provided\"}"));
+        }
+        auto scripts = scanBerryScripts("/berry/apps");
+        for (auto &s : scripts)
+        {
+            if (s.name.equalsIgnoreCase(appName))
+            {
+                openBerryPanel(s.path);
+                LoggerInstance->Info("Berry: opened panel " + s.name);
+                return "{\"event\":\"berry\", \"status\":\"panel_opened\", \"app\":\"" + s.name + "\"}";
+            }
+        }
+        return "{\"error\": \"Unknown Berry app: " + appName + "\"}";
+    }
 #endif
 
-    return String(F("{\"error\": \"Usage: berry eval <code> | berry run <path> | berry open <appname>\"}"));
+    return String(F("{\"error\": \"Usage: berry eval <code> | berry run <path> | berry open <appname> | berry panel <appname>\"}"));
 }
 
 // --- Action definition ---

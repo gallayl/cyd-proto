@@ -24,5 +24,6 @@ struct BerryScriptInfo
 bvm *getBerryVM();
 std::vector<BerryScriptInfo> scanBerryScripts(const char *dir = "/berry/apps");
 void openBerryScript(const String &filePath);
+void openBerryPanel(const String &filePath);
 
 #endif // ENABLE_BERRY
