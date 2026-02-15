@@ -10,6 +10,8 @@ class WifiApp
   var rssi_lbl
   var scan_gb
   var scan_gb_y
+  var scan_gb_x
+  var scan_gb_w
   var scan_labels
   var app_w
 
@@ -40,7 +42,9 @@ class WifiApp
     y += 78
 
     # Scan group box
+    self.scan_gb_x = 2
     self.scan_gb_y = y
+    self.scan_gb_w = w - 4
     self.scan_gb = ui.groupbox(scroll, 'Networks', 2, y, w - 4, 40)
 
     var btn = ui.button(self.scan_gb, 'Scan', 2, 14, 60, 18)
@@ -91,20 +95,19 @@ class WifiApp
       self.scan_labels.push(self.add_row_label(self.scan_gb, ry, w - 16, 'No networks found'))
       ry += row_h
     else
-      var count = size(networks)
-      if count > 10 count = 10 end
-      for i : 0 .. count - 1
-        var n = networks[i]
+      var count = 0
+      for n : networks
+        if count >= 10 break end
         var line = str(n['ssid']) + ' (' + str(n['rssi']) + ' dBm)'
         self.scan_labels.push(self.add_row_label(self.scan_gb, ry, w - 16, line))
         ry += row_h
+        count += 1
       end
     end
 
     # resize the groupbox to fit its content
-    var gb_bounds = ui.bounds(self.scan_gb)
     var new_h = ry + 18
-    ui.set_bounds(self.scan_gb, gb_bounds[0], gb_bounds[1], gb_bounds[2], new_h)
+    ui.set_bounds(self.scan_gb, self.scan_gb_x, self.scan_gb_y, self.scan_gb_w, new_h)
 
     ui.set_content_height(self.scroll, self.scan_gb_y + new_h + 4)
   end
