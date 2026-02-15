@@ -16,7 +16,7 @@ ESP32 firmware for a CYD (Cheap Yellow Display) device featuring a touchscreen U
 
 - [PlatformIO CLI](https://docs.platformio.org/en/latest/core/installation/index.html) or [PlatformIO IDE extension](https://platformio.org/install/ide?install=vscode)
 - Python 3 (for Berry code generation)
-- GNU Make *(optional, for Makefile targets)*
+- GNU Make _(optional, for Makefile targets)_
   - Windows: `choco install make`, `winget install GnuWin32.Make`, or `scoop install make`
 
 ## Getting Started
@@ -33,17 +33,17 @@ ESP32 firmware for a CYD (Cheap Yellow Display) device featuring a touchscreen U
 
 ## Build Commands
 
-| Command              | Description                                  |
-| -------------------- | -------------------------------------------- |
-| `make build`         | Compile firmware                             |
-| `make upload`        | Flash firmware to device                     |
-| `make uploadfs`      | Upload LittleFS filesystem to device         |
-| `make monitor`       | Open serial monitor                          |
-| `make upload-monitor`| Flash firmware + open serial monitor         |
-| `make clean`         | Clean build artifacts                        |
-| `make check`         | Run clang-tidy static analysis               |
-| `make berry-clean`   | Force Berry table regeneration on next build |
-| `make help`          | List all available targets                   |
+| Command               | Description                                  |
+| --------------------- | -------------------------------------------- |
+| `make build`          | Compile firmware                             |
+| `make upload`         | Flash firmware to device                     |
+| `make uploadfs`       | Upload LittleFS filesystem to device         |
+| `make monitor`        | Open serial monitor                          |
+| `make upload-monitor` | Flash firmware + open serial monitor         |
+| `make clean`          | Clean build artifacts                        |
+| `make check`          | Run clang-tidy static analysis               |
+| `make berry-clean`    | Force Berry table regeneration on next build |
+| `make help`           | List all available targets                   |
 
 ## Project Structure
 
