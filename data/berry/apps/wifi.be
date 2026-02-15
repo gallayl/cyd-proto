@@ -8,7 +8,8 @@ class WifiApp
   var ip_lbl
   var ssid_lbl
   var rssi_lbl
-  var scan_start_y
+  var scan_gb
+  var scan_gb_y
   var scan_labels
   var app_w
 
@@ -39,13 +40,13 @@ class WifiApp
     y += 78
 
     # Scan group box
-    var scan_gb = ui.groupbox(scroll, 'Networks', 2, y, w - 4, 28)
+    self.scan_gb_y = y
+    self.scan_gb = ui.groupbox(scroll, 'Networks', 2, y, w - 4, 40)
 
-    var btn = ui.button(scan_gb, 'Scan', 2, 14, 60, 18)
+    var btn = ui.button(self.scan_gb, 'Scan', 2, 14, 60, 18)
     ui.on_click(btn, / -> self.do_scan())
 
-    y += 34
-    self.scan_start_y = y
+    y += 46
     ui.set_content_height(scroll, y)
 
     self.refresh_info()
@@ -76,31 +77,36 @@ class WifiApp
     var scan_str = action('wifi list')
     var networks = json.load(scan_str)
 
-    # remove old scan labels
+    # remove old scan labels from the groupbox
     for lbl : self.scan_labels
-      ui.remove_child(self.scroll, lbl)
+      ui.remove_child(self.scan_gb, lbl)
     end
     self.scan_labels = []
 
-    var y = self.scan_start_y
     var w = self.app_w
     var row_h = 14
+    var ry = 36
 
     if networks == nil || size(networks) == 0
-      self.scan_labels.push(self.add_row_label(self.scroll, y, w, 'No networks found'))
-      y += row_h
+      self.scan_labels.push(self.add_row_label(self.scan_gb, ry, w - 16, 'No networks found'))
+      ry += row_h
     else
       var count = size(networks)
       if count > 10 count = 10 end
       for i : 0 .. count - 1
         var n = networks[i]
         var line = str(n['ssid']) + ' (' + str(n['rssi']) + ' dBm)'
-        self.scan_labels.push(self.add_row_label(self.scroll, y, w, line))
-        y += row_h
+        self.scan_labels.push(self.add_row_label(self.scan_gb, ry, w - 16, line))
+        ry += row_h
       end
     end
 
-    ui.set_content_height(self.scroll, y)
+    # resize the groupbox to fit its content
+    var gb_bounds = ui.bounds(self.scan_gb)
+    var new_h = ry + 18
+    ui.set_bounds(self.scan_gb, gb_bounds[0], gb_bounds[1], gb_bounds[2], new_h)
+
+    ui.set_content_height(self.scroll, self.scan_gb_y + new_h + 4)
   end
 
   def add_row_label(parent, y, w, text)

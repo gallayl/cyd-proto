@@ -979,6 +979,26 @@ static int ui_bounds(bvm *vm)
     be_return(vm);
 }
 
+// ui.set_bounds(handle, x, y, w, h)
+static int ui_set_bounds(bvm *vm)
+{
+    auto *app = berryCurrentApp();
+    if (!app || be_top(vm) < 5)
+        be_return_nil(vm);
+
+    auto *h = app->getHandle(be_toint(vm, 1));
+    if (!h || !h->ptr)
+        be_return_nil(vm);
+
+    int bx = be_toint(vm, 2);
+    int by = be_toint(vm, 3);
+    int bw = be_toint(vm, 4);
+    int bh = be_toint(vm, 5);
+    h->ptr->setBounds(bx, by, bw, bh);
+
+    be_return_nil(vm);
+}
+
 // =================================================================
 // Callbacks & timers
 // =================================================================
@@ -1390,6 +1410,7 @@ void registerBerryUIModule(bvm *vm)
     reg("get_checked", ui_get_checked);
     reg("get_text", ui_get_text);
     reg("bounds", ui_bounds);
+    reg("set_bounds", ui_set_bounds);
 
     // combobox & tabs helpers
     reg("combobox_add_item", ui_combobox_add_item);

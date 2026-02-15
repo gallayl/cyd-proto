@@ -90,9 +90,12 @@ class FeaturesApp
       end
     end
 
-    # resize group box height based on content
-    # (groupbox doesn't auto-resize, so we set a large enough initial height)
-    y += fy + 6
+    # resize group box to fit its content
+    var feat_gb_h = fy + 18
+    var gb_bounds = ui.bounds(feat_gb)
+    ui.set_bounds(feat_gb, gb_bounds[0], gb_bounds[1], gb_bounds[2], feat_gb_h)
+
+    y += feat_gb_h + 6
     ui.set_content_height(scroll, y)
   end
 
