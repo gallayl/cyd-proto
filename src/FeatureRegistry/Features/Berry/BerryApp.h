@@ -6,6 +6,7 @@
 
 #include "../UI/App.h"
 #include "../UI/elements/container.h"
+#include "../UI/elements/error_popup.h"
 #include "../UI/Renderer.h"
 #include "BerryUIBindings.h"
 #include "../Logging.h"
@@ -73,6 +74,7 @@ public:
         if (!f)
         {
             LoggerInstance->Error("BerryApp: cannot open " + _scriptPath);
+            UI::errorPopup().show(("Cannot open " + _scriptPath).c_str());
             berrySetCurrentApp(nullptr);
             return;
         }
@@ -83,7 +85,9 @@ public:
         int res = be_loadbuffer(vm, _scriptPath.c_str(), code.c_str(), code.length());
         if (res != 0)
         {
-            LoggerInstance->Error("BerryApp compile: " + String(be_tostring(vm, -1)));
+            String err = be_tostring(vm, -1);
+            LoggerInstance->Error("BerryApp compile: " + err);
+            UI::errorPopup().show(("Compile error:\n" + err).c_str());
             be_pop(vm, 1);
             berrySetCurrentApp(nullptr);
             return;
@@ -93,7 +97,9 @@ public:
         res = be_pcall(vm, 0);
         if (res != 0)
         {
-            LoggerInstance->Error("BerryApp exec: " + String(be_tostring(vm, -1)));
+            String err = be_tostring(vm, -1);
+            LoggerInstance->Error("BerryApp exec: " + err);
+            UI::errorPopup().show(("Script error:\n" + err).c_str());
             be_pop(vm, 1);
             berrySetCurrentApp(nullptr);
             return;
@@ -102,6 +108,7 @@ public:
         if (!be_isclass(vm, -1))
         {
             LoggerInstance->Error("BerryApp: script must return a class");
+            UI::errorPopup().show("Script must return a class");
             be_pop(vm, 1);
             berrySetCurrentApp(nullptr);
             return;
@@ -111,7 +118,9 @@ public:
         res = be_pcall(vm, 0);
         if (res != 0)
         {
-            LoggerInstance->Error("BerryApp init: " + String(be_tostring(vm, -1)));
+            String err = be_tostring(vm, -1);
+            LoggerInstance->Error("BerryApp init: " + err);
+            UI::errorPopup().show(("Init error:\n" + err).c_str());
             be_pop(vm, 1);
             berrySetCurrentApp(nullptr);
             return;

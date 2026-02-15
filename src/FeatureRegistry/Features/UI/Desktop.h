@@ -5,17 +5,10 @@
 #include "elements/startmenu.h"
 #include "elements/keyboard.h"
 #include "elements/textfield.h"
+#include "elements/error_popup.h"
 #include "App.h"
-#include "apps/RgbLedApp.h"
-#include "apps/InfoApp.h"
-#include "apps/WifiApp.h"
-#include "apps/SensorsApp.h"
-#include "apps/LogViewerApp.h"
-#include "apps/FileManagerApp.h"
-#include "apps/DisplaySettingsApp.h"
-#include "apps/FeaturesApp.h"
-#include "apps/PaintApp.h"
 #include <Esp.h>
+#include <map>
 
 #include "../../../../config.h"
 #if ENABLE_BERRY
@@ -30,71 +23,52 @@ namespace UI
     public:
         void init()
         {
-            // register all apps
-            registerApp("RGB LED", []() -> App *
-                        { return new RgbLedApp(); });
-            registerApp("Sensors", []() -> App *
-                        { return new SensorsApp(); });
-            registerApp("Info", []() -> App *
-                        { return new InfoApp(); });
-            registerApp("WiFi", []() -> App *
-                        { return new WifiApp(); });
-            registerApp("Display", []() -> App *
-                        { return new DisplaySettingsApp(); });
-            registerApp("Features", []() -> App *
-                        { return new FeaturesApp(); });
-            registerApp("Log Viewer", []() -> App *
-                        { return new LogViewerApp(); });
-            registerApp("File Manager", []() -> App *
-                        { return new FileManagerApp(); });
-            registerApp("Paint", []() -> App *
-                        { return new PaintApp(); });
+            // build Berry app name-to-path map and create launcher helper
+#if ENABLE_BERRY
+            auto scripts = scanBerryScripts();
+            std::map<String, String> berryApps;
+            for (auto &s : scripts)
+                berryApps[s.name] = s.path;
 
-            // build hierarchical menu
-            auto openApp = [this](const char *name)
+            auto openBerryApp = [berryApps](const char *name)
             {
-                return [this, name]()
+                return [berryApps, n = String(name)]()
                 {
-                    if (onAppSelected)
-                        onAppSelected(name);
+                    auto it = berryApps.find(n);
+                    if (it != berryApps.end())
+                        openBerryScript(it->second);
+                    else
+                        errorPopup().show(("App '" + n + "' not found").c_str());
                 };
             };
+#else
+            auto openBerryApp = [](const char *name)
+            {
+                return [n = String(name)]()
+                {
+                    errorPopup().show("Berry is not enabled");
+                };
+            };
+#endif
 
+            // build hierarchical menu
             std::vector<MenuItem> menuItems = {
                 MenuItem::Submenu("Programs", {
-                                                  MenuItem::Leaf("RGB LED", openApp("RGB LED")),
-                                                  MenuItem::Leaf("Sensors", openApp("Sensors")),
-                                                  MenuItem::Leaf("Paint", openApp("Paint")),
+                                                  MenuItem::Leaf("RGB LED", openBerryApp("RGB LED")),
+                                                  MenuItem::Leaf("Sensors", openBerryApp("Sensors")),
+                                                  MenuItem::Leaf("Paint", openBerryApp("Paint")),
                                               }),
                 MenuItem::Submenu("Settings", {
-                                                  MenuItem::Leaf("WiFi", openApp("WiFi")),
-                                                  MenuItem::Leaf("Display", openApp("Display")),
+                                                  MenuItem::Leaf("WiFi", openBerryApp("WiFi")),
+                                                  MenuItem::Leaf("Display", openBerryApp("Display")),
                                               }),
                 MenuItem::Submenu("System", {
-                                                MenuItem::Leaf("Info", openApp("Info")),
-                                                MenuItem::Leaf("Features", openApp("Features")),
-                                                MenuItem::Leaf("Log Viewer", openApp("Log Viewer")),
-                                                MenuItem::Leaf("File Manager", openApp("File Manager")),
+                                                MenuItem::Leaf("Info", openBerryApp("Info")),
+                                                MenuItem::Leaf("Features", openBerryApp("Features")),
+                                                MenuItem::Leaf("Log Viewer", openBerryApp("Log Viewer")),
+                                                MenuItem::Leaf("File Manager", openBerryApp("File Manager")),
                                             }),
             };
-
-#if ENABLE_BERRY
-            {
-                auto scripts = scanBerryScripts();
-                if (!scripts.empty())
-                {
-                    std::vector<MenuItem> scriptItems;
-                    for (auto &s : scripts)
-                    {
-                        String path = s.path;
-                        scriptItems.push_back(MenuItem::Leaf(s.name.c_str(),
-                                                             [path]()
-                                                             { openBerryScript(path); }));
-                    }
-                    menuItems.push_back(MenuItem::Submenu("Scripts", std::move(scriptItems)));
-                }
-            }
-#endif
 
             menuItems.push_back(MenuItem::Separator());
             menuItems.push_back(MenuItem::Leaf("Restart", []()
@@ -113,9 +87,6 @@ namespace UI
                                                   keyboard.toggle();
                                                   windowManager().setKeyboardVisible(keyboard.isVisible());
                                               });
-
-            onAppSelected = [](const char *name)
-            { windowManager().openApp(name); };
 
             // keyboard focus routing for TextFields
             setKeyboardFocusHandler([this](std::function<void(char)> consumer)
@@ -179,7 +150,6 @@ namespace UI
         Taskbar taskbar;
         StartMenu startMenu;
         Keyboard keyboard;
-        std::function<void(const char *)> onAppSelected;
         std::function<void(char)> keyConsumer;
 
         void updateTaskbarApps()
@@ -200,10 +170,17 @@ namespace UI
             keyboard.draw();
             taskbar.draw();
             startMenu.draw();
+            errorPopup().draw();
         }
 
         bool handleOverlayTouch(int px, int py)
         {
+            // error popup gets highest priority
+            if (errorPopup().isVisible())
+            {
+                if (errorPopup().handleTouch(px, py))
+                    return true;
+            }
             // start menu gets priority if visible
             if (startMenu.isVisible())
             {
@@ -225,6 +202,11 @@ namespace UI
 
         bool handleOverlayTouchEnd(int px, int py)
         {
+            if (errorPopup().isVisible())
+            {
+                if (errorPopup().handleTouchEnd(px, py))
+                    return true;
+            }
             if (startMenu.isVisible())
             {
                 if (startMenu.handleTouchEnd(px, py))
