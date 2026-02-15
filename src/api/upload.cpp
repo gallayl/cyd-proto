@@ -1,6 +1,8 @@
 #include "upload.h"
 #include "../mime.h"
 #include "../fs/VirtualFS.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 ArRequestHandlerFunction onPostUploadFiles = ([](AsyncWebServerRequest *request) {});
 
@@ -77,6 +79,7 @@ ArUploadHandlerFunction uploadFiles = ([](AsyncWebServerRequest *request, String
 
     if (index == 0) {
         mkdirs(*resolved.fs, resolved.localPath);
+        vTaskDelay(1);
     }
 
     fs::File file = resolved.fs->open(resolved.localPath, index == 0 ? "w" : "a");
@@ -87,9 +90,14 @@ ArUploadHandlerFunction uploadFiles = ([](AsyncWebServerRequest *request, String
         request->send(500, MIME_json, "{\"error\":\"Failed to open file for writing\"}");
         return;
     }
-    file.write(data, len);
+    constexpr size_t CHUNK_SIZE = 512;
+    for (size_t offset = 0; offset < len; offset += CHUNK_SIZE)
+    {
+        size_t toWrite = (len - offset) > CHUNK_SIZE ? CHUNK_SIZE : (len - offset);
+        file.write(data + offset, toWrite);
+        vTaskDelay(1);
+    }
     file.close();
-    yield();
 
     if (final)
     {
