@@ -51,7 +51,7 @@ class TaskbarApp
     var app_x = 56
     var kb_x = self.w - 26
     var avail = kb_x - app_x - 2
-    var count = #apps
+    var count = apps.size()
     if count == 0 return end
 
     var btn_w = avail / count
