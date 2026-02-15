@@ -2,7 +2,7 @@
 # Environment name from platformio.ini
 ENV = cyd
 
-.PHONY: build upload uploadfs monitor upload-monitor clean check berry-clean
+.PHONY: build upload uploadfs monitor upload-monitor clean check berry-clean compiledb
 
 ## Build firmware
 build:
@@ -38,6 +38,10 @@ berry-clean:
 	pio run -e $(ENV) -t clean
 	@echo Berry tables will regenerate on next build.
 
+## Rebuild IntelliSense index (compile_commands.json)
+compiledb:
+	pio run -e $(ENV) -t compiledb
+
 ## Show available targets
 help:
 	@echo Available targets:
@@ -49,4 +53,5 @@ help:
 	@echo   clean          - Clean build artifacts
 	@echo   check          - Run clang-tidy static analysis
 	@echo   berry-clean    - Force Berry table regeneration on next build
+	@echo   compiledb      - Rebuild IntelliSense index
 	@echo   help           - Show this help

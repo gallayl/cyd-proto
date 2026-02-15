@@ -55,7 +55,19 @@ static bool mkdirs(fs::FS &fs, const String &filePath)
 
 ArUploadHandlerFunction uploadFiles = ([](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
                                        {
-    String safePath = sanitizePath(filename);
+    // The full target path is sent as the form field name (key),
+    // since multipart filenames cannot reliably contain path separators
+    String targetPath = filename;
+    int params = request->params();
+    for (int i = 0; i < params; i++) {
+        const AsyncWebParameter *p = request->getParam(i);
+        if (p->isFile() && p->value() == filename) {
+            targetPath = p->name();
+            break;
+        }
+    }
+
+    String safePath = sanitizePath(targetPath);
 
     if (safePath.isEmpty())
     {
