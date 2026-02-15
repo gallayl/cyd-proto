@@ -21,6 +21,8 @@
 
 #include <ArduinoJson.h>
 #include <LovyanGFX.hpp>
+#include <new>
+#include <Esp.h>
 
 // --- Current app context ---
 
@@ -225,6 +227,21 @@ static void getParentBounds(BerryApp *app, int parentHandle, int &px, int &py, i
 }
 
 // =================================================================
+// Safe allocation helper — avoids abort() on OOM
+// =================================================================
+
+static constexpr size_t BERRY_MIN_FREE_HEAP = 4096;
+
+template <typename T, typename... Args>
+static std::unique_ptr<T> safeAlloc(Args &&...args)
+{
+    if (ESP.getFreeHeap() < BERRY_MIN_FREE_HEAP)
+        return nullptr;
+    auto *raw = new (std::nothrow) T(std::forward<Args>(args)...);
+    return std::unique_ptr<T>(raw);
+}
+
+// =================================================================
 // Native UI functions
 // =================================================================
 
@@ -245,7 +262,9 @@ static int ui_label(bvm *vm)
     int px, py, pw, ph;
     getParentBounds(app, parentH, px, py, pw, ph);
 
-    auto lbl = std::make_unique<UI::Label>(text, px + rx, py + ry, w, h);
+    auto lbl = safeAlloc<UI::Label>(text, px + rx, py + ry, w, h);
+    if (!lbl)
+        be_return_nil(vm);
     lbl->setTextColor(UI::Theme::TextColor, UI::Theme::WindowBg);
     lbl->setTextSize(1);
     lbl->setAlign(UI::TextAlign::LEFT);
@@ -276,7 +295,9 @@ static int ui_button(bvm *vm)
     int px, py, pw, ph;
     getParentBounds(app, parentH, px, py, pw, ph);
 
-    auto btn = std::make_unique<UI::Button>(text, px + rx, py + ry, w, h);
+    auto btn = safeAlloc<UI::Button>(text, px + rx, py + ry, w, h);
+    if (!btn)
+        be_return_nil(vm);
     btn->setBackgroundColor(UI::Theme::ButtonFace);
     btn->setTextColor(UI::Theme::TextColor, UI::Theme::ButtonFace);
 
@@ -301,7 +322,9 @@ static int ui_scrollable(bvm *vm)
     int px, py, pw, ph;
     getParentBounds(app, parentH, px, py, pw, ph);
 
-    auto sc = std::make_unique<UI::ScrollableContainer>();
+    auto sc = safeAlloc<UI::ScrollableContainer>();
+    if (!sc)
+        be_return_nil(vm);
 
     if (be_top(vm) >= 5)
     {
@@ -342,7 +365,9 @@ static int ui_canvas(bvm *vm)
     int px, py, pw, ph;
     getParentBounds(app, parentH, px, py, pw, ph);
 
-    auto cv = std::make_unique<BerryCanvasElement>(w, h, depth);
+    auto cv = safeAlloc<BerryCanvasElement>(w, h, depth);
+    if (!cv)
+        be_return_nil(vm);
     cv->setBounds(px + rx, py + ry, w, h);
 
     BerryCanvasElement *ptr = cv.get();
@@ -371,7 +396,9 @@ static int ui_checkbox(bvm *vm)
     int px, py, pw, ph;
     getParentBounds(app, parentH, px, py, pw, ph);
 
-    auto cb = std::make_unique<UI::Checkbox>(text, px + rx, py + ry, w, h);
+    auto cb = safeAlloc<UI::Checkbox>(text, px + rx, py + ry, w, h);
+    if (!cb)
+        be_return_nil(vm);
     cb->setTextColor(UI::Theme::TextColor);
 
     UI::Checkbox *ptr = cb.get();
@@ -400,7 +427,9 @@ static int ui_radio(bvm *vm)
     int px, py, pw, ph;
     getParentBounds(app, parentH, px, py, pw, ph);
 
-    auto rb = std::make_unique<UI::RadioButton>(text, px + rx, py + ry, w, h);
+    auto rb = safeAlloc<UI::RadioButton>(text, px + rx, py + ry, w, h);
+    if (!rb)
+        be_return_nil(vm);
     rb->setTextColor(UI::Theme::TextColor);
 
     UI::RadioButton *ptr = rb.get();
@@ -429,7 +458,9 @@ static int ui_textfield(bvm *vm)
     int px, py, pw, ph;
     getParentBounds(app, parentH, px, py, pw, ph);
 
-    auto tf = std::make_unique<UI::TextField>(text, px + rx, py + ry, w, h);
+    auto tf = safeAlloc<UI::TextField>(text, px + rx, py + ry, w, h);
+    if (!tf)
+        be_return_nil(vm);
 
     UI::TextField *ptr = tf.get();
     if (!addChildToParent(app, parentH, std::move(tf)))
@@ -456,7 +487,9 @@ static int ui_combobox(bvm *vm)
     int px, py, pw, ph;
     getParentBounds(app, parentH, px, py, pw, ph);
 
-    auto combo = std::make_unique<UI::ComboBox>(px + rx, py + ry, w, h);
+    auto combo = safeAlloc<UI::ComboBox>(px + rx, py + ry, w, h);
+    if (!combo)
+        be_return_nil(vm);
 
     UI::ComboBox *ptr = combo.get();
     if (!addChildToParent(app, parentH, std::move(combo)))
@@ -512,7 +545,9 @@ static int ui_groupbox(bvm *vm)
     int px, py, pw, ph;
     getParentBounds(app, parentH, px, py, pw, ph);
 
-    auto gb = std::make_unique<UI::GroupBox>(label, px + rx, py + ry, w, h);
+    auto gb = safeAlloc<UI::GroupBox>(label, px + rx, py + ry, w, h);
+    if (!gb)
+        be_return_nil(vm);
 
     UI::GroupBox *ptr = gb.get();
     if (!addChildToParent(app, parentH, std::move(gb)))
@@ -539,7 +574,9 @@ static int ui_tabs(bvm *vm)
     int px, py, pw, ph;
     getParentBounds(app, parentH, px, py, pw, ph);
 
-    auto tc = std::make_unique<UI::TabControl>(px + rx, py + ry, w, h);
+    auto tc = safeAlloc<UI::TabControl>(px + rx, py + ry, w, h);
+    if (!tc)
+        be_return_nil(vm);
 
     UI::TabControl *ptr = tc.get();
     if (!addChildToParent(app, parentH, std::move(tc)))
@@ -601,7 +638,9 @@ static int ui_filelist(bvm *vm)
     int px, py, pw, ph;
     getParentBounds(app, parentH, px, py, pw, ph);
 
-    auto fl = std::make_unique<UI::FileListView>(px + rx, py + ry, w, h);
+    auto fl = safeAlloc<UI::FileListView>(px + rx, py + ry, w, h);
+    if (!fl)
+        be_return_nil(vm);
 
     UI::FileListView *ptr = fl.get();
     if (!addChildToParent(app, parentH, std::move(fl)))
@@ -769,6 +808,33 @@ static int ui_on_item_selected(bvm *vm)
     int cbId = app->storeCallback(vm, 2);
     BerryApp *appPtr = app;
     fl->setOnItemSelected(
+        [appPtr, cbId](int idx, const UI::FileItem &item)
+        {
+            appPtr->callBerryCallbackWithArgs(cbId,
+                                              [idx](bvm *v) -> int
+                                              {
+                                                  be_pushint(v, idx);
+                                                  return 1;
+                                              });
+        });
+
+    be_return_nil(vm);
+}
+
+// ui.on_item_activated(handle, callback(index))
+static int ui_on_item_activated(bvm *vm)
+{
+    auto *app = berryCurrentApp();
+    if (!app || be_top(vm) < 2)
+        be_return_nil(vm);
+
+    auto *fl = asFileListView(app->getHandle(be_toint(vm, 1)));
+    if (!fl)
+        be_return_nil(vm);
+
+    int cbId = app->storeCallback(vm, 2);
+    BerryApp *appPtr = app;
+    fl->setOnItemActivated(
         [appPtr, cbId](int idx, const UI::FileItem &item)
         {
             appPtr->callBerryCallbackWithArgs(cbId,
@@ -1485,6 +1551,7 @@ void registerBerryUIModule(bvm *vm)
     reg("on_click", ui_on_click);
     reg("on_change", ui_on_change);
     reg("on_item_selected", ui_on_item_selected);
+    reg("on_item_activated", ui_on_item_activated);
     reg("on_touch", ui_on_touch);
     reg("on_touch_end", ui_on_touch_end);
     reg("timer", ui_timer);

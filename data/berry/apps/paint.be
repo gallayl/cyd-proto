@@ -52,23 +52,38 @@ class PaintApp
       ui.on_click(btn, def ()
         self.tool = idx
         self.update_tool_visual()
-        ui.mark_dirty()
       end)
     end
     self.update_tool_visual()
 
-    # canvas (16-bit for reliable colors)
-    self.cv = ui.canvas(content, 0, toolbar_h, w, cv_h)
-    ui.canvas_fill(self.cv, 0xFFFF)
+    # canvas (4-bit palette for memory savings)
+    self.cv = ui.canvas(content, 0, toolbar_h, w, cv_h, 4)
 
-    # palette canvas
+    # set up palette colors
+    for i : 0 .. size(self.palette) - 1
+      var c = self.palette[i]
+      var r = ((c >> 11) & 0x1F) << 3
+      var g = ((c >> 5) & 0x3F) << 2
+      var b = (c & 0x1F) << 3
+      ui.canvas_set_palette(self.cv, i, r, g, b)
+    end
+    for i : size(self.palette) .. 15
+      ui.canvas_set_palette(self.cv, i, 255, 255, 255)
+    end
+
+    # fill white (palette index 1)
+    ui.canvas_fill(self.cv, 1)
+
+    # palette display canvas (16-bit)
     self.pal_cv = ui.canvas(content, 0, toolbar_h + cv_h, w, pal_h)
     self.draw_palette(self.pal_cv, w, pal_h)
 
-    # touch handlers on canvas/palette for correct local coordinates
+    # canvas touch: gives correct local coordinates via BerryCanvasElement::onTouch
     ui.on_touch(self.cv, / lx ly -> self.on_canvas_touch(lx, ly))
-    ui.on_touch_end(self.cv, / lx ly -> self.on_canvas_touch_end(lx, ly))
+    # palette touch: gives correct local coordinates
     ui.on_touch(self.pal_cv, / lx ly -> self.on_palette_touch(lx, ly))
+    # content touch_end: always fires (even if finger lifts outside canvas)
+    ui.on_touch_end(content, / x y -> self.on_touch_end())
   end
 
   def update_tool_visual()
@@ -105,47 +120,21 @@ class PaintApp
       self.last_y = ly
 
       if self.tool == 0
-        ui.canvas_fill_circle(self.cv, lx, ly, 1, self.palette[self.color_idx])
+        ui.canvas_fill_circle(self.cv, lx, ly, 1, self.color_idx)
       elif self.tool == 1
-        ui.canvas_fill_circle(self.cv, lx, ly, 3, 0xFFFF)
+        ui.canvas_fill_circle(self.cv, lx, ly, 3, 1)
       elif self.tool == 4
-        ui.canvas_flood_fill(self.cv, lx, ly, self.palette[self.color_idx])
+        ui.canvas_flood_fill(self.cv, lx, ly, self.color_idx)
       end
     else
       if self.tool == 0
-        self.draw_thick_line(self.last_x, self.last_y, lx, ly, self.palette[self.color_idx], 1)
+        self.draw_thick_line(self.last_x, self.last_y, lx, ly, self.color_idx, 1)
       elif self.tool == 1
-        self.draw_thick_line(self.last_x, self.last_y, lx, ly, 0xFFFF, 3)
+        self.draw_thick_line(self.last_x, self.last_y, lx, ly, 1, 3)
       end
       self.last_x = lx
       self.last_y = ly
     end
-    ui.mark_dirty()
-  end
-
-  def on_canvas_touch_end(lx, ly)
-    if !self.touching return end
-
-    if lx < 0 lx = 0 end
-    if ly < 0 ly = 0 end
-
-    if self.tool == 2
-      var rx = (self.start_x < lx) ? self.start_x : lx
-      var ry = (self.start_y < ly) ? self.start_y : ly
-      var rw = self.abs(lx - self.start_x) + 1
-      var rh = self.abs(ly - self.start_y) + 1
-      ui.canvas_draw_rect(self.cv, rx, ry, rw, rh, self.palette[self.color_idx])
-    elif self.tool == 3
-      var cx = (self.start_x + lx) / 2
-      var cy = (self.start_y + ly) / 2
-      var erx = self.abs(lx - self.start_x) / 2
-      var ery = self.abs(ly - self.start_y) / 2
-      if erx > 0 && ery > 0
-        ui.canvas_draw_ellipse(self.cv, cx, cy, erx, ery, self.palette[self.color_idx])
-      end
-    end
-    ui.mark_dirty()
-    self.touching = false
   end
 
   def on_palette_touch(lx, ly)
@@ -158,6 +147,34 @@ class PaintApp
       self.draw_palette(self.pal_cv, self.pal_w, self.palette_h)
       ui.mark_dirty()
     end
+  end
+
+  def on_touch_end()
+    if !self.touching return end
+
+    if self.tool == 2
+      # rect: use last known canvas position
+      var lx = self.last_x
+      var ly = self.last_y
+      var rx = (self.start_x < lx) ? self.start_x : lx
+      var ry = (self.start_y < ly) ? self.start_y : ly
+      var rw = self.abs(lx - self.start_x) + 1
+      var rh = self.abs(ly - self.start_y) + 1
+      ui.canvas_draw_rect(self.cv, rx, ry, rw, rh, self.color_idx)
+    elif self.tool == 3
+      # ellipse: use last known canvas position
+      var lx = self.last_x
+      var ly = self.last_y
+      var cx = (self.start_x + lx) / 2
+      var cy = (self.start_y + ly) / 2
+      var erx = self.abs(lx - self.start_x) / 2
+      var ery = self.abs(ly - self.start_y) / 2
+      if erx > 0 && ery > 0
+        ui.canvas_draw_ellipse(self.cv, cx, cy, erx, ery, self.color_idx)
+      end
+    end
+
+    self.touching = false
   end
 
   def draw_thick_line(x0, y0, x1, y1, col, r)

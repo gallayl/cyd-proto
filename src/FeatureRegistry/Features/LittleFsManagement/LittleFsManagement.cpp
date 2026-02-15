@@ -22,11 +22,32 @@ FeatureAction listFilesAction = {
     .handler = [](const String &command)
     {
         String path = CommandParser::GetCommandParameter(command, 1);
-
-        JsonDocument response;
         if (path.isEmpty())
         {
-            response = getFileList(LittleFS, "/");
+            path = "/";
+        }
+
+        JsonDocument response;
+        JsonArray fileList = response.to<JsonArray>();
+
+        if (path == "/")
+        {
+            JsonObject flash = fileList.add<JsonObject>();
+            flash["name"] = "flash";
+            flash["size"] = 0;
+            flash["isDir"] = true;
+            flash["lastWrite"] = 0;
+
+#if ENABLE_SD_CARD
+            if (isSdMounted())
+            {
+                JsonObject sd = fileList.add<JsonObject>();
+                sd["name"] = "sd";
+                sd["size"] = 0;
+                sd["isDir"] = true;
+                sd["lastWrite"] = 0;
+            }
+#endif
         }
         else
         {

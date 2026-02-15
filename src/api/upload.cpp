@@ -90,12 +90,12 @@ ArUploadHandlerFunction uploadFiles = ([](AsyncWebServerRequest *request, String
         request->send(500, MIME_json, "{\"error\":\"Failed to open file for writing\"}");
         return;
     }
-    constexpr size_t CHUNK_SIZE = 512;
+    constexpr size_t CHUNK_SIZE = 128;
     for (size_t offset = 0; offset < len; offset += CHUNK_SIZE)
     {
         size_t toWrite = (len - offset) > CHUNK_SIZE ? CHUNK_SIZE : (len - offset);
         file.write(data + offset, toWrite);
-        vTaskDelay(1);
+        vTaskDelay(pdMS_TO_TICKS(5));
     }
     file.close();
 

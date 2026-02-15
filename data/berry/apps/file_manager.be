@@ -8,10 +8,12 @@ class FileManagerApp
   var current_path
   var app_w
   var app_h
+  var last_list
 
   def init()
     self.name = 'File Manager'
     self.current_path = '/'
+    self.last_list = []
   end
 
   def setup(content, w, h)
@@ -76,15 +78,18 @@ class FileManagerApp
     ui.filelist_set_view(self.filelist, 'list')
 
     ui.on_item_selected(self.filelist, / idx -> self.on_select(idx))
+    ui.on_item_activated(self.filelist, / idx -> self.on_activate(idx))
 
     self.refresh()
   end
 
   def refresh()
-    var list_str = action('list')
+    var list_str = action('list ' + self.current_path)
     if list_str == nil return end
 
-    # pass JSON string directly to filelist_set_items
+    self.last_list = json.load(list_str)
+    if self.last_list == nil self.last_list = [] end
+
     ui.filelist_set_items(self.filelist, list_str)
     ui.set_text(self.path_lbl, self.current_path)
     ui.mark_dirty()
@@ -94,9 +99,37 @@ class FileManagerApp
     ui.mark_dirty()
   end
 
+  def on_activate(idx)
+    if self.last_list == nil || idx < 0 || idx >= size(self.last_list) return end
+    var item = self.last_list[idx]
+    if item == nil return end
+    if item.find('isDir') != nil && item['isDir']
+      var name = item['name']
+      if name != nil
+        if self.current_path == '/'
+          self.current_path = '/' + name
+        else
+          self.current_path = self.current_path + '/' + name
+        end
+        self.refresh()
+      end
+    end
+    ui.mark_dirty()
+  end
+
   def navigate_up()
     if self.current_path == '/' return end
-    self.current_path = '/'
+    var last_slash = -1
+    var len = bytes(self.current_path)
+    for i : 0 .. len - 1
+      if self.current_path[i] == '/' last_slash = i end
+    end
+    if last_slash <= 0
+      self.current_path = '/'
+    else
+      self.current_path = self.current_path[0..last_slash - 1]
+      if self.current_path == '' self.current_path = '/' end
+    end
     self.refresh()
   end
 
