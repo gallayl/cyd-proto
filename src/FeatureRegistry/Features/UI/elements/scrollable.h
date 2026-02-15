@@ -161,8 +161,20 @@ namespace UI
 
             if (needsScroll)
             {
-                draggingContent = true;
-                lastTouchY = py;
+                bool touchOnChild = false;
+                for (auto *child : content.getChildren())
+                {
+                    if (child->contains(px, adjY))
+                    {
+                        touchOnChild = true;
+                        break;
+                    }
+                }
+                if (!touchOnChild)
+                {
+                    draggingContent = true;
+                    lastTouchY = py;
+                }
             }
         }
 
