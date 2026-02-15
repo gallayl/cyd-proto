@@ -48,7 +48,14 @@ public:
         sprite.setColorDepth(depth);
         _spriteOk = sprite.createSprite(w, h) != nullptr;
         if (_spriteOk)
+        {
             sprite.fillSprite(depth <= 8 ? 0 : TFT_WHITE);
+        }
+        else
+        {
+            LoggerInstance->Error("BerryCanvas: createSprite(" + String(w) + "x" + String(h) + " @" + String(depth) +
+                                 "bpp) failed — free heap: " + String(ESP.getFreeHeap()));
+        }
     }
 
     ~BerryCanvasElement() override
@@ -1283,6 +1290,13 @@ static int ui_remove_child(bvm *vm)
     if (ph->type == HandleType::CONTAINER)
     {
         static_cast<UI::Container *>(ph->ptr)->removeChild(ch->ptr);
+        app->invalidateHandle(childIdx);
+        be_return_nil(vm);
+    }
+
+    if (ph->type == HandleType::GROUPBOX)
+    {
+        static_cast<UI::GroupBox *>(ph->ptr)->getContent().removeChild(ch->ptr);
         app->invalidateHandle(childIdx);
     }
 
