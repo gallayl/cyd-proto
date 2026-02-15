@@ -1,5 +1,6 @@
 #include "list.h"
 #include <LittleFS.h>
+#include "../fs/VirtualFS.h"
 
 JsonDocument getFileList()
 {
@@ -49,8 +50,23 @@ JsonDocument getFileList(fs::FS &filesystem, const char *path)
 
 ArRequestHandlerFunction listFiles = ([](AsyncWebServerRequest *request)
                                       {
-                                        JsonDocument response = getFileList();  
+    JsonDocument response;
 
-                                          String responseStr;
-                                          serializeJson(response, responseStr);
-                                          request->send(200, MIME_json, responseStr); });
+    if (request->hasParam("path"))
+    {
+        String path = request->getParam("path")->value();
+        ResolvedPath resolved = resolveVirtualPath(path);
+        if (resolved.valid && resolved.fs) {
+            response = getFileList(*resolved.fs, resolved.localPath.c_str());
+        } else {
+            response = getFileList(LittleFS, path.c_str());
+        }
+    }
+    else
+    {
+        response = getFileList();
+    }
+
+    String responseStr;
+    serializeJson(response, responseStr);
+    request->send(200, MIME_json, responseStr); });
