@@ -1,4 +1,3 @@
-#include <Wire.h>
 #include "./config.h"
 
 #if ENABLE_WEBSERVER

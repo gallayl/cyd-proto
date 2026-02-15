@@ -96,12 +96,7 @@ class FileManagerApp
 
   def navigate_up()
     if self.current_path == '/' return end
-    var last = self.current_path.find('/')
-    if last <= 0
-      self.current_path = '/'
-    else
-      self.current_path = '/'
-    end
+    self.current_path = '/'
     self.refresh()
   end
 

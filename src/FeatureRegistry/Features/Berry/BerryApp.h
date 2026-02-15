@@ -30,8 +30,7 @@ enum class HandleType
     COMBOBOX,
     GROUPBOX,
     TABS,
-    FILELIST,
-    MENUBAR
+    FILELIST
 };
 
 struct HandleEntry

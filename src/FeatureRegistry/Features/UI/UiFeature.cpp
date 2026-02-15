@@ -12,9 +12,6 @@
 #include "Desktop.h"
 #include "WindowManager.h"
 
-const int screenWidth = 240;
-const int screenHeight = 320;
-
 static volatile bool frameReady = true;
 static esp_timer_handle_t frameTimer = nullptr;
 
@@ -162,64 +159,36 @@ static String screenCommandHandler(const String &command)
 
 // --- Page command handler ---
 
+struct PageEntry
+{
+    const char *cmd;
+    const char *appName;
+};
+
+static const PageEntry pageTable[] = {
+    {"rgb", "RGB LED"},
+    {"rgbled", "RGB LED"},
+    {"info", "Info"},
+    {"wifi", "WiFi"},
+    {"sensors", "Sensors"},
+    {"display", "Display"},
+    {"features", "Features"},
+    {"log", "Log Viewer"},
+    {"files", "File Manager"},
+};
+
 static String pageCommandHandler(const String &command)
 {
     String sub = CommandParser::GetCommandParameter(command, 1);
 
-    if (sub == "rgb" || sub == "rgbled")
+    for (auto &entry : pageTable)
     {
-        UI::windowManager().openApp("RGB LED");
-        LoggerInstance->Info("Opening RGB LED app");
-        return String("{\"event\":\"page\", \"status\":\"success\", \"page\":\"rgb\"}");
-    }
-
-    if (sub == "info")
-    {
-        UI::windowManager().openApp("Info");
-        LoggerInstance->Info("Opening Info app");
-        return String("{\"event\":\"page\", \"status\":\"success\", \"page\":\"info\"}");
-    }
-
-    if (sub == "wifi")
-    {
-        UI::windowManager().openApp("WiFi");
-        LoggerInstance->Info("Opening WiFi app");
-        return String("{\"event\":\"page\", \"status\":\"success\", \"page\":\"wifi\"}");
-    }
-
-    if (sub == "sensors")
-    {
-        UI::windowManager().openApp("Sensors");
-        LoggerInstance->Info("Opening Sensors app");
-        return String("{\"event\":\"page\", \"status\":\"success\", \"page\":\"sensors\"}");
-    }
-
-    if (sub == "display")
-    {
-        UI::windowManager().openApp("Display");
-        LoggerInstance->Info("Opening Display app");
-        return String("{\"event\":\"page\", \"status\":\"success\", \"page\":\"display\"}");
-    }
-
-    if (sub == "features")
-    {
-        UI::windowManager().openApp("Features");
-        LoggerInstance->Info("Opening Features app");
-        return String("{\"event\":\"page\", \"status\":\"success\", \"page\":\"features\"}");
-    }
-
-    if (sub == "log")
-    {
-        UI::windowManager().openApp("Log Viewer");
-        LoggerInstance->Info("Opening Log Viewer app");
-        return String("{\"event\":\"page\", \"status\":\"success\", \"page\":\"log\"}");
-    }
-
-    if (sub == "files")
-    {
-        UI::windowManager().openApp("File Manager");
-        LoggerInstance->Info("Opening File Manager app");
-        return String("{\"event\":\"page\", \"status\":\"success\", \"page\":\"files\"}");
+        if (sub == entry.cmd)
+        {
+            UI::windowManager().openApp(entry.appName);
+            LoggerInstance->Info(String("Opening ") + entry.appName + " app");
+            return String("{\"event\":\"page\", \"status\":\"success\", \"page\":\"") + sub + "\"}";
+        }
     }
 
     LoggerInstance->Info("Unknown page subcommand: " + sub);
@@ -366,9 +335,5 @@ Feature *UiFeature = new Feature("UI", []()
         esp_timer_delete(frameTimer);
         frameTimer = nullptr;
     } });
-
-void uiFeatureInit()
-{
-}
 
 #endif

@@ -16,10 +16,6 @@
 #include "./Features/LittleFsManagement/LittleFsManagement.h"
 #endif
 
-#if ENABLE_PIR_SENSOR
-#include "./Features/Pir.h"
-#endif
-
 #if ENABLE_I2C
 #include "./Features/i2c.h"
 
@@ -79,10 +75,6 @@ public:
 
 #if ENABLE_SD_CARD
                 this->RegisterFeature(SdCardFeature);
-#endif
-
-#if ENABLE_PIR_SENSOR
-                this->RegisterFeature(PirFeature);
 #endif
 
 #if ENABLE_I2C

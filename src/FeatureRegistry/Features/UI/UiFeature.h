@@ -12,11 +12,6 @@
 #include "../Logging.h"
 #include "./Calibration.h"
 
-extern const int screenWidth;
-extern const int screenHeight;
-
 extern Feature *UiFeature;
-
-void uiFeatureInit();
 
 #endif
