@@ -74,7 +74,15 @@ public:
 
     void drawIcon(LGFX_Sprite &canvas, int x, int y, int size) override
     {
-        if (_iconType == "builtin" && !_iconValue.isEmpty())
+        if (_iconType == "procedural")
+        {
+            // TODO: implement procedural icon via Berry VM callback (icon() method on instance)
+            const char *fallback = !_startMenu.isEmpty()
+                                       ? UI::getDefaultIconForCategory(_startMenu)
+                                       : "generic_file";
+            UI::drawBuiltinIcon(canvas, fallback, x, y, size);
+        }
+        else if (_iconType == "builtin" && !_iconValue.isEmpty())
         {
             UI::drawBuiltinIcon(canvas, _iconValue.c_str(), x, y, size);
         }

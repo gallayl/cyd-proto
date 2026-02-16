@@ -103,6 +103,17 @@ class TaskbarApp
     return 'generic_file'
   end
 
+  def get_app_icon(app_name)
+    for cat : self.categories
+      for app : self.cat_apps[cat]
+        if app['label'] == app_name
+          return self.get_icon_name(app)
+        end
+      end
+    end
+    return 'generic_file'
+  end
+
   def get_category_icon(cat)
     if cat == 'System'
       return 'computer'
@@ -299,10 +310,15 @@ class TaskbarApp
     var btn_w = avail / count
     if btn_w > 80 btn_w = 80 end
 
+    var icon_sz = 14
     for i : 0 .. count - 1
       var app = windowed[i]
       var bx = app_x + i * btn_w
-      var btn = ui.button(self.content, app['name'], bx, 2, btn_w - 2, self.h - 4)
+      var icon_name = self.get_app_icon(app['name'])
+      var icon_y = 2 + (self.h - 4 - icon_sz) / 2
+      var ic = ui.icon(self.content, icon_name, bx + 2, icon_y, icon_sz)
+      self.app_buttons.push(ic)
+      var btn = ui.button(self.content, app['name'], bx + icon_sz + 2, 2, btn_w - icon_sz - 4, self.h - 4)
       if app['focused']
         ui.set_border_colors(btn, ui.BUTTON_SHADOW, ui.BUTTON_HIGHLIGHT)
       end
