@@ -3,7 +3,6 @@
 #include <string>
 #include <LovyanGFX.hpp>
 #include "../../../hw/Screen.h"
-#include <Esp.h>
 #include "../Logging.h"
 
 extern LGFX tft;

@@ -8,6 +8,9 @@
 #include "./Logging.h"
 #include "../../services/WebServer.h"
 #include "../../utils/System.h"
+#ifdef USE_ESP_IDF
+#include "esp_log.h"
+#endif
 
 // redundant extern in this translation unit to satisfy IntelliSense
 
@@ -29,41 +32,57 @@ ArRequestHandlerFunction onPostUpdate = ([](AsyncWebServerRequest *request)
 
 ArUploadHandlerFunction onUploadUpdate = ([](AsyncWebServerRequest *request, const String&  /*filename*/, size_t index, uint8_t *data, size_t len, bool final)
                                           {
-                                              // ESP32 Update library does not support runAsync
-                                              if (Update.hasError())
-                                              {
-                                                  Update.printError(Serial);
-                                                  request->send(500, MIME_PLAIN_TEXT, "Update error");
-                                                  return;
-                                              }
+                              // ESP32 Update library does not support runAsync
+                              if (Update.hasError())
+                              {
+#ifdef USE_ESP_IDF
+                                  ESP_LOGE("OTA", "Update error");
+#else
+                                  Update.printError(Serial);
+#endif
+                                  request->send(500, MIME_PLAIN_TEXT, "Update error");
+                                  return;
+                              }
                                               if (!index)
                                               {
                                                   loggerInstance->Info("Starting OTA update...");
                                                   if (webSocket) {
                                                       webSocket->textAll(R"({"type":"otaUpdateStarted"})");
 }
-                                                  if (!Update.begin(request->contentLength(), U_FLASH))
-                                                  {
-                                                      Update.printError(Serial);
-                                                  }
+                                  if (!Update.begin(request->contentLength(), U_FLASH))
+                                  {
+#ifdef USE_ESP_IDF
+                                      ESP_LOGE("OTA", "Update begin failed");
+#else
+                                      Update.printError(Serial);
+#endif
+                                  }
                                               }
-                                              if (!Update.hasError())
-                                              {
-                                                  if (Update.write(data, len) != len)
-                                                  {
-                                                      Update.printError(Serial);
-                                                  }
-                                              }
-                                              else
-                                              {
-                                                  Update.printError(Serial);
-                                              }
+                              if (!Update.hasError())
+                              {
+                                  if (Update.write(data, len) != len)
+                                  {
+#ifdef USE_ESP_IDF
+                                      ESP_LOGE("OTA", "Update write failed");
+#else
+                                      Update.printError(Serial);
+#endif
+                                  }
+                              }
+                              else
+                              {
+#ifdef USE_ESP_IDF
+                                  ESP_LOGE("OTA", "Update error during write");
+#else
+                                  Update.printError(Serial);
+#endif
+                              }
                                               if (final)
                                               {
                                                   if (Update.end(true))
                                                   {
                                                       getRedirectPage(request);
-                                                      delay(1000);
+                                                      vTaskDelay(pdMS_TO_TICKS(1000));
                                                       if (webSocket) {
                                                           webSocket->textAll(R"({"type":"otaUpdateFinished"})");
 }
@@ -76,11 +95,15 @@ ArUploadHandlerFunction onUploadUpdate = ([](AsyncWebServerRequest *request, con
                                                       systemRestart();
                                                       return;
                                                   }
-                                                  else
-                                                  {
-                                                      Update.printError(Serial);
-                                                  }
-                                              } });
+                                  else
+                                  {
+#ifdef USE_ESP_IDF
+                                      ESP_LOGE("OTA", "Update end failed");
+#else
+                                      Update.printError(Serial);
+#endif
+                                  }
+                              } });
 
 Feature *otaUpgrade = new Feature(
     "OTA",

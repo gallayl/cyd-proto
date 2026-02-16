@@ -8,7 +8,16 @@
 #include "../../utils/System.h"
 #include <LittleFS.h>
 #include <ArduinoJson.h>
+#ifdef USE_ESP_IDF
+#include "esp_system.h"
+#include "esp_chip_info.h"
+#include "esp_flash.h"
+#include "esp_heap_caps.h"
+#include "esp_ota_ops.h"
+#include "spi_flash_mmap.h"
+#else
 #include <Esp.h>
+#endif
 #include <string>
 
 #if ENABLE_SD_CARD
@@ -27,18 +36,35 @@
 JsonDocument getInfo()
 {
     JsonDocument response;
-    JsonObject esp = response["esp"].to<JsonObject>();
+    JsonObject espObj = response["esp"].to<JsonObject>();
 
-    esp["sdkVersion"] = ESP.getSdkVersion();
-    esp["cpuFreqMhz"] = ESP.getCpuFreqMHz();
-    esp["freeHeap"] = getFreeHeap();
-    esp["freeSkSpace"] = ESP.getFreeSketchSpace();
+#ifdef USE_ESP_IDF
+    espObj["sdkVersion"] = esp_get_idf_version();
+    espObj["cpuFreqMhz"] = CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ;
+    espObj["freeHeap"] = getFreeHeap();
+    const esp_partition_t *running = esp_ota_get_running_partition();
+    if (running)
+        espObj["freeSkSpace"] = running->size;
+    else
+        espObj["freeSkSpace"] = 0;
+#else
+    espObj["sdkVersion"] = ESP.getSdkVersion();
+    espObj["cpuFreqMhz"] = ESP.getCpuFreqMHz();
+    espObj["freeHeap"] = getFreeHeap();
+    espObj["freeSkSpace"] = ESP.getFreeSketchSpace();
+#endif
 
     JsonObject flash = response["flash"].to<JsonObject>();
 
+#ifdef USE_ESP_IDF
+    uint32_t flashSize = 0;
+    esp_flash_get_size(NULL, &flashSize);
+    flash["size"] = flashSize;
+#else
     flash["mode"] = ESP.getFlashChipMode();
     flash["size"] = ESP.getFlashChipSize();
     flash["speed"] = ESP.getFlashChipSpeed();
+#endif
 
     JsonObject fs = response["fs"].to<JsonObject>();
     fs["totalBytes"] = LittleFS.totalBytes();
@@ -179,7 +205,7 @@ static FeatureAction restartAction = {.name = "restart",
                                       .handler =
                                           [](const std::string & /*command*/)
                                       {
-                                          delay(100);
+                                          vTaskDelay(pdMS_TO_TICKS(100));
                                           systemRestart();
                                           return std::string("{\"event\": \"restart\"}");
                                       },
@@ -310,9 +336,15 @@ static std::string memoryHandler(const std::string & /*command*/)
 {
     JsonDocument doc;
     doc["freeHeap"] = getFreeHeap();
+#ifdef USE_ESP_IDF
+    doc["minFreeHeap"] = esp_get_minimum_free_heap_size();
+    doc["heapSize"] = heap_caps_get_total_size(MALLOC_CAP_DEFAULT);
+    doc["maxAllocHeap"] = heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT);
+#else
     doc["minFreeHeap"] = ESP.getMinFreeHeap();
     doc["heapSize"] = ESP.getHeapSize();
     doc["maxAllocHeap"] = ESP.getMaxAllocHeap();
+#endif
 
     JsonArray tasks = doc["tasks"].to<JsonArray>();
     for (uint8_t i = 0; i < featureRegistryInstance->getFeatureCount(); i++)

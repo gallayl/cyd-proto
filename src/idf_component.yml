@@ -1,0 +1,9 @@
+dependencies:
+  # LittleFS filesystem component (replaces Arduino LittleFS)
+  joltwallet/littlefs: "^1.20.4"
+
+  # cJSON is built into ESP-IDF (json component) — no entry needed here.
+  # Add "json" to REQUIRES in CMakeLists.txt when code starts using cJSON.
+
+  # LovyanGFX: managed via PlatformIO lib_deps (supports ESP-IDF natively)
+  # Berry: managed via PlatformIO lib_deps (git source)

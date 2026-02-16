@@ -4,7 +4,6 @@
 
 #include <string>
 #include <cstdlib>
-#include <Esp.h>
 #include <esp_timer.h>
 #include "../Logging.h"
 #include "../../../ActionRegistry/ActionRegistry.h"
@@ -34,7 +33,7 @@ static std::string screenCommandHandlerImpl(const std::string &command)
     if (sub == "calibrate")
     {
         calibrateScreen();
-        delay(1000); // Let user see "Calibration complete!" message
+        vTaskDelay(pdMS_TO_TICKS(1000)); // Let user see "Calibration complete!" message
         tft.fillScreen(TFT_BLACK);
         tft.waitDisplay(); // Wait for fillScreen to complete
         if (!UI::reinitRenderer())

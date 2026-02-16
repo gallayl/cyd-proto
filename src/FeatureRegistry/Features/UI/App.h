@@ -1,6 +1,10 @@
 #pragma once
 
+#ifdef USE_ESP_IDF
+#include <cstdint>
+#else
 #include <Arduino.h>
+#endif
 #include <esp_timer.h>
 #include <functional>
 #include <vector>

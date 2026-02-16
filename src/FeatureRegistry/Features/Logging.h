@@ -3,6 +3,9 @@
 #include <functional>
 #include <mutex>
 #include <string>
+#ifdef USE_ESP_IDF
+#include "esp_log.h"
+#endif
 #include "../../config.h"
 #include "../Feature.h"
 #include "./Time.h"
@@ -77,12 +80,21 @@ private:
         std::string utcTime(getUtcTime().c_str());
 
         this->addEntry(severity, message, epochTime, utcTime);
+#ifdef USE_ESP_IDF
+        if (severity == "E")
+            ESP_LOGE("Logger", "[%s] %s - %s", severity.c_str(), utcTime.c_str(), message.c_str());
+        else if (severity == "D")
+            ESP_LOGD("Logger", "[%s] %s - %s", severity.c_str(), utcTime.c_str(), message.c_str());
+        else
+            ESP_LOGI("Logger", "[%s] %s - %s", severity.c_str(), utcTime.c_str(), message.c_str());
+#else
         Serial.print("[");
         Serial.print(severity.c_str());
         Serial.print("] ");
         Serial.print(utcTime.c_str());
         Serial.print(" - ");
         Serial.println(message.c_str());
+#endif
 
         LogListener listenersCopy[LOG_LISTENERS_COUNT];
         byte count;

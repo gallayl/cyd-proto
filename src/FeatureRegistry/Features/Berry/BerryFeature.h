@@ -14,7 +14,6 @@ extern "C"
 
 #include <vector>
 #include <string>
-#include <Arduino.h>
 
 struct BerryScriptInfo
 {

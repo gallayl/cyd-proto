@@ -4,6 +4,9 @@
 #include "../../../hw/LovyanGFX_ILI9341_Settings.h"
 #include <LittleFS.h>
 #include "../Logging.h"
+#ifdef USE_ESP_IDF
+#include "esp_log.h"
+#endif
 
 extern LGFX tft;
 
@@ -74,9 +77,15 @@ inline void calibrateScreen()
 
     tft.waitDisplay(); // Wait for all calibration drawing to complete
 
+#ifdef USE_ESP_IDF
+    ESP_LOGI("Calibration", "Screen Calibration (rotation %d)", rotation);
+    ESP_LOGI("Calibration", "uint16_t calData[8] = { %d, %d, %d, %d, %d, %d, %d, %d }", calData[0], calData[1],
+             calData[2], calData[3], calData[4], calData[5], calData[6], calData[7]);
+#else
     Serial.printf("Screen Calibration (rotation %d)\n", rotation);
     Serial.printf("uint16_t calData[8] = { %d, %d, %d, %d, %d, %d, %d, %d };\n", calData[0], calData[1], calData[2],
                   calData[3], calData[4], calData[5], calData[6], calData[7]);
+#endif
 
     // Save to rotation-specific file
     std::string rotationFile = getCalibrationFileForRotation(rotation);

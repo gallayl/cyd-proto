@@ -27,7 +27,6 @@
 #include <LovyanGFX.hpp>
 #include <new>
 #include <string>
-#include <Esp.h>
 #include "../../../utils/System.h"
 
 // --- Current app context ---
