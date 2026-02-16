@@ -115,7 +115,7 @@ ArUploadHandlerFunction uploadFiles = ([](AsyncWebServerRequest *request, const 
 
     if (!file)
     {
-        LoggerInstance->Error(F("Failed to open file for writing"));
+        loggerInstance->Error(F("Failed to open file for writing"));
         request->_tempObject = new String("{\"error\":\"Failed to open file for writing\"}");
         return;
     }
@@ -125,5 +125,5 @@ ArUploadHandlerFunction uploadFiles = ([](AsyncWebServerRequest *request, const 
 
     if (final)
     {
-        LoggerInstance->Info(String(F("Upload finished: ")) + safePath);
+        loggerInstance->Info(String(F("Upload finished: ")) + safePath);
     } });

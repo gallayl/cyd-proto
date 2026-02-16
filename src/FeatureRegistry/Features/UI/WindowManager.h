@@ -2,12 +2,9 @@
 
 #include <vector>
 #include <memory>
-#include <algorithm>
 #include "elements/window.h"
 #include "elements/popup.h"
 #include "App.h"
-#include "Renderer.h"
-#include "Theme.h"
 
 namespace UI
 {
@@ -47,11 +44,11 @@ public:
     OpenApp *getFocused();
     std::vector<OpenApp> &getOpenApps()
     {
-        return openApps;
+        return _openApps;
     }
     const std::vector<OpenApp> &getOpenApps() const
     {
-        return openApps;
+        return _openApps;
     }
 
     void draw();
@@ -62,19 +59,19 @@ public:
     using OverlayDrawFn = std::function<void()>;
     void setOverlayDraw(OverlayDrawFn fn)
     {
-        overlayDraw = std::move(fn);
+        _overlayDraw = std::move(fn);
     }
 
     using OverlayTouchFn = std::function<bool(int, int)>;
     void setOverlayTouch(OverlayTouchFn fn)
     {
-        overlayTouch = std::move(fn);
+        _overlayTouch = std::move(fn);
     }
 
     using OverlayTouchEndFn = std::function<bool(int, int)>;
     void setOverlayTouchEnd(OverlayTouchEndFn fn)
     {
-        overlayTouchEnd = std::move(fn);
+        _overlayTouchEnd = std::move(fn);
     }
 
     void tickTimers();
@@ -82,7 +79,7 @@ public:
     void setKeyboardVisible(bool vis);
     bool isKeyboardVisible() const
     {
-        return keyboardVisible;
+        return _keyboardVisible;
     }
     int availableDesktopHeight() const;
 
@@ -93,7 +90,7 @@ public:
     void closePanel(const char *name);
     PanelSlot *getPanelSlot()
     {
-        return panelSlot ? panelSlot.get() : nullptr;
+        return _panelSlot ? _panelSlot.get() : nullptr;
     }
 
     // popup overlays
@@ -107,13 +104,13 @@ public:
     bool handlePopupTouchEnd(int px, int py);
 
 private:
-    std::vector<OpenApp> openApps;
-    std::unique_ptr<PanelSlot> panelSlot;
-    std::vector<PopupSlot> popupSlots;
-    OverlayDrawFn overlayDraw;
-    OverlayTouchFn overlayTouch;
-    OverlayTouchEndFn overlayTouchEnd;
-    bool keyboardVisible{false};
+    std::vector<OpenApp> _openApps;
+    std::unique_ptr<PanelSlot> _panelSlot;
+    std::vector<PopupSlot> _popupSlots;
+    OverlayDrawFn _overlayDraw;
+    OverlayTouchFn _overlayTouch;
+    OverlayTouchEndFn _overlayTouchEnd;
+    bool _keyboardVisible{false};
 
     void updateActiveStates();
     void relayoutWindows();

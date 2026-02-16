@@ -31,13 +31,13 @@ static String screenCommandHandlerImpl(const String &command)
         tft.waitDisplay(); // Wait for fillScreen to complete
         if (!UI::reinitRenderer())
         {
-            LoggerInstance->Error(F("Failed to reinit renderer after calibration"));
+            loggerInstance->Error(F("Failed to reinit renderer after calibration"));
             return String("{\"event\":\"calibrate\", \"status\":\"error\", \"message\":\"renderer_init_failed\"}");
         }
         UI::windowManager().relayoutAll();
         frameReady = true; // Ensure next frame will render
         UI::markDirty();   // Ensure UI knows it needs redraw
-        LoggerInstance->Info(F("Calibrated touch screen"));
+        loggerInstance->Info(F("Calibrated touch screen"));
         return String("{\"event\":\"calibrate\", \"status\":\"success\"}");
     }
     else if (sub == "demo")
@@ -51,7 +51,7 @@ static String screenCommandHandlerImpl(const String &command)
         tft.drawCircle(120, 160, 50, TFT_MAGENTA);
         tft.drawEllipse(200, 160, 60, 40, TFT_GOLD);
 
-        LoggerInstance->Info(F("Displayed hello world demo"));
+        loggerInstance->Info(F("Displayed hello world demo"));
         return String("{\"event\":\"helloDemo\"}");
     }
     else if (sub == "rotate")
@@ -67,7 +67,7 @@ static String screenCommandHandlerImpl(const String &command)
         tft.waitDisplay(); // Wait for fillScreen to complete
         if (!UI::reinitRenderer())
         {
-            LoggerInstance->Error(F("Failed to reinit renderer after rotation"));
+            loggerInstance->Error(F("Failed to reinit renderer after rotation"));
             return String(String("{\"event\":\"rotate\",\"rotation\":") + rotate +
                           String(",\"error\":\"renderer_init_failed\"}"));
         }
@@ -75,7 +75,7 @@ static String screenCommandHandlerImpl(const String &command)
         UI::windowManager().relayoutAll();
         frameReady = true; // Ensure next frame will render
         UI::markDirty();   // Ensure UI knows it needs redraw
-        LoggerInstance->Info("Screen rotated to " + String(rotate));
+        loggerInstance->Info("Screen rotated to " + String(rotate));
         return String(String("{\"event\":\"rotate\",\"rotation\":") + rotate + String("}"));
     }
     else if (sub == "clear")
@@ -87,7 +87,7 @@ static String screenCommandHandlerImpl(const String &command)
             color = (uint16_t)strtoul(colorParam.c_str(), NULL, 0);
         }
         tft.fillScreen(color);
-        LoggerInstance->Info(F("Screen cleared"));
+        loggerInstance->Info(F("Screen cleared"));
         return String(String("{\"event\":\"clear\",\"color\":\"") + colorParam + String("\"}"));
     }
     else if (sub == "text")
@@ -115,7 +115,7 @@ static String screenCommandHandlerImpl(const String &command)
         tft.setTextColor(fg, bg);
         tft.setTextSize(sz);
         tft.print(msg);
-        LoggerInstance->Info("Drew text: " + msg);
+        loggerInstance->Info("Drew text: " + msg);
         return String("{\"event\":\"text\"}");
     }
     else if (sub == "pixel")
@@ -124,7 +124,7 @@ static String screenCommandHandlerImpl(const String &command)
         int y = CommandParser::getCommandParameter(command, 3).toInt();
         uint16_t color = (uint16_t)strtoul(CommandParser::getCommandParameter(command, 4).c_str(), NULL, 0);
         tft.drawPixel(x, y, color);
-        LoggerInstance->Info("Drew pixel at " + String(x) + "," + String(y));
+        loggerInstance->Info("Drew pixel at " + String(x) + "," + String(y));
         return String("{\"event\":\"pixel\"}");
     }
     else if (sub == "rect")
@@ -135,7 +135,7 @@ static String screenCommandHandlerImpl(const String &command)
         int h = CommandParser::getCommandParameter(command, 5).toInt();
         uint16_t color = (uint16_t)strtoul(CommandParser::getCommandParameter(command, 6).c_str(), NULL, 0);
         tft.drawRect(x, y, w, h, color);
-        LoggerInstance->Info("Drew rect at " + String(x) + "," + String(y));
+        loggerInstance->Info("Drew rect at " + String(x) + "," + String(y));
         return String("{\"event\":\"rect\"}");
     }
     else if (sub == "fillrect")
@@ -146,7 +146,7 @@ static String screenCommandHandlerImpl(const String &command)
         int h = CommandParser::getCommandParameter(command, 5).toInt();
         uint16_t color = (uint16_t)strtoul(CommandParser::getCommandParameter(command, 6).c_str(), NULL, 0);
         tft.fillRect(x, y, w, h, color);
-        LoggerInstance->Info("Drew filled rect at " + String(x) + "," + String(y));
+        loggerInstance->Info("Drew filled rect at " + String(x) + "," + String(y));
         return String("{\"event\":\"fillrect\"}");
     }
     else if (sub == "circle")
@@ -156,7 +156,7 @@ static String screenCommandHandlerImpl(const String &command)
         int r = CommandParser::getCommandParameter(command, 4).toInt();
         uint16_t color = (uint16_t)strtoul(CommandParser::getCommandParameter(command, 5).c_str(), NULL, 0);
         tft.drawCircle(x, y, r, color);
-        LoggerInstance->Info("Drew circle at " + String(x) + "," + String(y));
+        loggerInstance->Info("Drew circle at " + String(x) + "," + String(y));
         return String("{\"event\":\"circle\"}");
     }
     else if (sub == "fillcircle")
@@ -166,7 +166,7 @@ static String screenCommandHandlerImpl(const String &command)
         int r = CommandParser::getCommandParameter(command, 4).toInt();
         uint16_t color = (uint16_t)strtoul(CommandParser::getCommandParameter(command, 5).c_str(), NULL, 0);
         tft.fillCircle(x, y, r, color);
-        LoggerInstance->Info("Drew filled circle at " + String(x) + "," + String(y));
+        loggerInstance->Info("Drew filled circle at " + String(x) + "," + String(y));
         return String("{\"event\":\"fillcircle\"}");
     }
     else if (sub == "brightness")
@@ -174,11 +174,11 @@ static String screenCommandHandlerImpl(const String &command)
         String val = CommandParser::getCommandParameter(command, 2);
         uint8_t b = (uint8_t)strtoul(val.c_str(), NULL, 0);
         tft.setBrightness(b);
-        LoggerInstance->Info("Brightness set to " + String(b));
+        loggerInstance->Info("Brightness set to " + String(b));
         return String(String("{\"event\":\"brightness\",\"value\":") + b + String("}"));
     }
 
-    LoggerInstance->Info("Unknown screen subcommand: " + sub);
+    loggerInstance->Info("Unknown screen subcommand: " + sub);
     return String(String("{\"event\":\"screen\",\"error\":\"unknown\",\"sub\":\"") + sub + String("\"}"));
 }
 
@@ -210,12 +210,12 @@ static String pageCommandHandlerImpl(const String &command)
         if (sub == entry.cmd)
         {
             UI::windowManager().openApp(entry.appName);
-            LoggerInstance->Info(String("Opening ") + entry.appName + " app");
+            loggerInstance->Info(String("Opening ") + entry.appName + " app");
             return String("{\"event\":\"page\", \"status\":\"success\", \"page\":\"") + sub + "\"}";
         }
     }
 
-    LoggerInstance->Info("Unknown page subcommand: " + sub);
+    loggerInstance->Info("Unknown page subcommand: " + sub);
     return String(String("{\"event\":\"page\",\"error\":\"unknown\",\"sub\":\"") + sub + String("\"}"));
 }
 
@@ -321,7 +321,7 @@ static Feature *createUiFeature()
 
             if (!UI::initRenderer())
             {
-                LoggerInstance->Error(F("Failed to initialize renderer"));
+                loggerInstance->Error(F("Failed to initialize renderer"));
                 return FeatureState::ERROR;
             }
 
@@ -340,7 +340,7 @@ static Feature *createUiFeature()
             esp_timer_create(&args, &frameTimer);
             esp_timer_start_periodic(frameTimer, 33000);
 
-            LoggerInstance->Info(F("UI feature initialized (Win95 desktop)"));
+            loggerInstance->Info(F("UI feature initialized (Win95 desktop)"));
 
             return FeatureState::RUNNING;
         },

@@ -82,7 +82,7 @@ inline void initWifi()
 
     if (!hasStoredCredentials())
     {
-        LoggerInstance->Info(F("No WiFi credentials saved, starting in AP mode only"));
+        loggerInstance->Info(F("No WiFi credentials saved, starting in AP mode only"));
         startStaMode(STA_SSID, STA_PASSPHRASE);
         return;
     }
@@ -92,11 +92,11 @@ inline void initWifi()
 
     if (state != WL_CONNECTED)
     {
-        LoggerInstance->Error(F("Failed to connect to access point"));
+        loggerInstance->Error(F("Failed to connect to access point"));
         startStaMode(STA_SSID, STA_PASSPHRASE);
     }
     else
     {
-        LoggerInstance->Info(F("Connected to access point"));
+        loggerInstance->Info(F("Connected to access point"));
     }
 }

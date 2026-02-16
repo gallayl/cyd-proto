@@ -14,7 +14,7 @@ void initWebServer()
 {
     server.reset();
 
-    LoggerInstance->Info(F("Starting WEB server"));
+    loggerInstance->Info(F("Starting WEB server"));
 
     server.on("/heap", HTTP_GET,
               [](AsyncWebServerRequest *request) { request->send(200, MIME_PLAIN_TEXT, String(ESP.getFreeHeap())); });
@@ -27,13 +27,13 @@ void initWebServer()
     server.onNotFound(
         [](AsyncWebServerRequest *req)
         {
-            LoggerInstance->Info("Not found: " + req->url());
+            loggerInstance->Info("Not found: " + req->url());
             req->send(404);
         });
 
     server.begin();
 
-    LoggerInstance->Info(F("Server setup done."));
+    loggerInstance->Info(F("Server setup done."));
 }
 
 #endif

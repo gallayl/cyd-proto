@@ -218,16 +218,16 @@ static FeatureAction rgbLedAction = {.name = "rgbLed",
                                              setRgbLedColor(r, g, b);
                                              char logBuf[48];
                                              snprintf(logBuf, sizeof(logBuf), "Set RGB LED color to %d,%d,%d", r, g, b);
-                                             LoggerInstance->Info(logBuf);
+                                             loggerInstance->Info(logBuf);
                                          }
                                          else if (SUB == "off")
                                          {
                                              setRgbLedColor(0, 0, 0);
-                                             LoggerInstance->Info(F("Turned off RGB LED"));
+                                             loggerInstance->Info(F("Turned off RGB LED"));
                                          }
                                          else
                                          {
-                                             LoggerInstance->Error("Unknown rgbLed subcommand: " + SUB);
+                                             loggerInstance->Error("Unknown rgbLed subcommand: " + SUB);
                                          }
                                          return String("{\"event\": \"rgbLedCommandexecuted\"}");
                                      },
@@ -240,7 +240,7 @@ static FeatureAction lightSensorAction = {.name = "getLightSensorValue",
                                               uint16_t value = readLightSensor();
                                               char buf[80];
                                               snprintf(buf, sizeof(buf), "Read light sensor value: %u", value);
-                                              LoggerInstance->Info(buf);
+                                              loggerInstance->Info(buf);
                                               snprintf(buf, sizeof(buf),
                                                        "{\"event\": \"getLightSensorValue\", \"value\": %u}", value);
                                               return String(buf);
@@ -254,7 +254,7 @@ static FeatureAction hallSensorAction = {.name = "getHallSensorValue",
                                              uint16_t value = hallRead();
                                              char buf[80];
                                              snprintf(buf, sizeof(buf), "Read hall sensor value: %u", value);
-                                             LoggerInstance->Info(buf);
+                                             loggerInstance->Info(buf);
                                              snprintf(buf, sizeof(buf),
                                                       "{\"event\": \"getHallSensorValue\", \"value\": %u}", value);
                                              return String(buf);

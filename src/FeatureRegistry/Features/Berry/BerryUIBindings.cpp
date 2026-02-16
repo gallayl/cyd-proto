@@ -55,7 +55,7 @@ public:
         }
         else
         {
-            LoggerInstance->Error("BerryCanvas: createSprite(" + String(w) + "x" + String(h) + " @" + String(depth) +
+            loggerInstance->Error("BerryCanvas: createSprite(" + String(w) + "x" + String(h) + " @" + String(depth) +
                                   "bpp) failed — free heap: " + String(ESP.getFreeHeap()));
         }
     }
@@ -1525,7 +1525,7 @@ static int ui_popup(bvm *vm)
     int w = be_toint(vm, 3);
     int h = be_toint(vm, 4);
 
-    LoggerInstance->Info("ui.popup: creating at (" + String(x) + "," + String(y) + "," + String(w) + "," + String(h) +
+    loggerInstance->Info("ui.popup: creating at (" + String(x) + "," + String(y) + "," + String(w) + "," + String(h) +
                          ") screen=" + String(UI::Theme::ScreenWidth()) + "x" + String(UI::Theme::ScreenHeight()));
     auto *popup = UI::windowManager().createPopup(x, y, w, h, app);
     if (!popup)
@@ -1542,7 +1542,7 @@ static int ui_show_popup(bvm *vm)
     auto *app = berryCurrentApp();
     if (!app || be_top(vm) < 1)
     {
-        LoggerInstance->Error(F("show_popup: no app or missing arg"));
+        loggerInstance->Error(F("show_popup: no app or missing arg"));
         be_return_nil(vm);
     }
 
@@ -1550,21 +1550,21 @@ static int ui_show_popup(bvm *vm)
     auto *entry = app->getHandle(h);
     if (!entry)
     {
-        LoggerInstance->Error("show_popup: invalid handle " + String(h));
+        loggerInstance->Error("show_popup: invalid handle " + String(h));
         be_return_nil(vm);
     }
 
     auto *popup = asPopup(entry);
     if (!popup)
     {
-        LoggerInstance->Error("show_popup: handle " + String(h) + " is not a POPUP (type=" + String((int)entry->type) +
+        loggerInstance->Error("show_popup: handle " + String(h) + " is not a POPUP (type=" + String((int)entry->type) +
                               ")");
         be_return_nil(vm);
     }
 
     int bx, by, bw, bh;
     popup->getBounds(bx, by, bw, bh);
-    LoggerInstance->Info("show_popup: handle=" + String(h) + " bounds=(" + String(bx) + "," + String(by) + "," +
+    loggerInstance->Info("show_popup: handle=" + String(h) + " bounds=(" + String(bx) + "," + String(by) + "," +
                          String(bw) + "," + String(bh) + ") children=" + String(popup->getChildren().size()));
     popup->show();
     UI::markDirty();

@@ -1,9 +1,10 @@
 #include "SerialRead.h"
 #include <Arduino.h>
+#include "../../ActionRegistry/ActionRegistry.h"
 
 static constexpr size_t MAX_SERIAL_INPUT = 256;
 
-Feature *SerialReadFeature = new Feature(
+Feature *serialReadFeature = new Feature(
     "SerialRead", []() -> FeatureState { return FeatureState::RUNNING; },
     []()
     {

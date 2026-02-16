@@ -6,15 +6,14 @@
 
 #include "../../config.h"
 #include "../Feature.h"
-#include "../../ActionRegistry/FeatureAction.h"
-#include "../../CommandInterpreter/CommandParser.h"
 
 inline String scanDevices()
 {
     JsonDocument doc;
     JsonArray arr = doc.to<JsonArray>();
 
-    byte error, address;
+    byte error;
+    byte address;
 
     for (address = 1; address < 127; address++)
     {
@@ -39,7 +38,7 @@ inline String readDevice(uint16_t address, uint16_t size)
 
     JsonDocument doc;
     JsonArray arr = doc.to<JsonArray>();
-    while (Wire.available())
+    while (Wire.available() != 0)
     {
         arr.add(Wire.read());
     }
@@ -53,9 +52,9 @@ inline void writeDevice(uint16_t address, const String &data)
 {
     Wire.beginTransmission(address);
 
-    size_t str_len = data.length() + 1;
-    std::vector<char> buf(str_len);
-    data.toCharArray(buf.data(), str_len);
+    size_t strLen = data.length() + 1;
+    std::vector<char> buf(strLen);
+    data.toCharArray(buf.data(), strLen);
     char *p = buf.data();
     char *str;
     while ((str = strtok_r(p, ";", &p)) != NULL)

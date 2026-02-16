@@ -39,8 +39,8 @@ inline bool initRenderer()
     stripBuffer() = (uint8_t *)malloc(bufSize);
     if (!stripBuffer())
     {
-        if (LoggerInstance)
-            LoggerInstance->Error("Failed to allocate strip buffer (" + String(bufSize) + " bytes)");
+        if (loggerInstance)
+            loggerInstance->Error("Failed to allocate strip buffer (" + String(bufSize) + " bytes)");
         return false;
     }
 
@@ -49,8 +49,8 @@ inline bool initRenderer()
     // Set up sprite with max screen width and strip height
     c.setBuffer(stripBuffer(), tft.width(), STRIP_H, 16);
 
-    if (LoggerInstance)
-        LoggerInstance->Info("Renderer: strip " + String(tft.width()) + "x" + String(STRIP_H) +
+    if (loggerInstance)
+        loggerInstance->Info("Renderer: strip " + String(tft.width()) + "x" + String(STRIP_H) +
                              " 16-bit, buffer=" + String(bufSize) + " bytes");
     return true;
 }
@@ -64,8 +64,8 @@ inline bool reinitRenderer()
     // Reconfigure sprite for new screen width after rotation
     c.setBuffer(stripBuffer(), tft.width(), STRIP_H, 16);
 
-    if (LoggerInstance)
-        LoggerInstance->Info("Renderer reinit: strip " + String(tft.width()) + "x" + String(STRIP_H) +
+    if (loggerInstance)
+        loggerInstance->Info("Renderer reinit: strip " + String(tft.width()) + "x" + String(STRIP_H) +
                              " (buffer reused)");
     return true;
 }

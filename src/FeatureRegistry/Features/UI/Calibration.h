@@ -29,7 +29,7 @@ inline void readCalibrationData()
             {
                 tft.setTouchCalibrate(calData);
                 f.close();
-                LoggerInstance->Info("Touch calibration loaded for rotation " + String(rotation));
+                loggerInstance->Info("Touch calibration loaded for rotation " + String(rotation));
                 return;
             }
             f.close();
@@ -45,7 +45,7 @@ inline void readCalibrationData()
             if (f.readBytes((char *)calData, 16) == 16)
                 tft.setTouchCalibrate(calData);
             f.close();
-            LoggerInstance->Info(F("Touch calibration data loaded from legacy file"));
+            loggerInstance->Info(F("Touch calibration data loaded from legacy file"));
         }
     }
 }
@@ -84,6 +84,6 @@ inline void calibrateScreen()
     {
         f.write((const unsigned char *)calData, 16);
         f.close();
-        LoggerInstance->Info("Calibration saved for rotation " + String(rotation));
+        loggerInstance->Info("Calibration saved for rotation " + String(rotation));
     }
 }

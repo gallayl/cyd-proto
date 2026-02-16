@@ -50,7 +50,7 @@ static String doMount()
 
     if (!SD.begin(SD_CS, sdSPI))
     {
-        LoggerInstance->Error(F("SD card mount failed"));
+        loggerInstance->Error(F("SD card mount failed"));
         return String("{\"error\": \"SD card mount failed\"}");
     }
 
@@ -58,7 +58,7 @@ static String doMount()
     if (cardType == CARD_NONE)
     {
         SD.end();
-        LoggerInstance->Error(F("No SD card detected"));
+        loggerInstance->Error(F("No SD card detected"));
         return String("{\"error\": \"No SD card detected\"}");
     }
 
@@ -73,7 +73,7 @@ static String doMount()
     String output;
     serializeJson(response, output);
 
-    LoggerInstance->Info("SD card mounted (" + String(cardTypeName(cardType)) + ", " +
+    loggerInstance->Info("SD card mounted (" + String(cardTypeName(cardType)) + ", " +
                          String(SD.totalBytes() / (1024 * 1024)) + " MB)");
     return output;
 }
@@ -88,7 +88,7 @@ static String doUnmount()
     SD.end();
     sdMounted = false;
 
-    LoggerInstance->Info(F("SD card unmounted"));
+    loggerInstance->Info(F("SD card unmounted"));
     return {"{\"event\": \"sd_unmounted\"}"};
 }
 
@@ -156,18 +156,18 @@ Feature *SdCardFeature = new Feature(
             if (cardType != CARD_NONE)
             {
                 sdMounted = true;
-                LoggerInstance->Info("SD card detected (" + String(cardTypeName(cardType)) + ", " +
+                loggerInstance->Info("SD card detected (" + String(cardTypeName(cardType)) + ", " +
                                      String(SD.totalBytes() / (static_cast<uint64_t>(1024 * 1024))) + " MB)");
             }
             else
             {
                 SD.end();
-                LoggerInstance->Info(F("No SD card inserted"));
+                loggerInstance->Info(F("No SD card inserted"));
             }
         }
         else
         {
-            LoggerInstance->Info(F("SD card not available"));
+            loggerInstance->Info(F("SD card not available"));
         }
 
         return FeatureState::RUNNING;
@@ -179,7 +179,7 @@ Feature *SdCardFeature = new Feature(
         {
             SD.end();
             sdMounted = false;
-            LoggerInstance->Info(F("SD card unmounted"));
+            loggerInstance->Info(F("SD card unmounted"));
         }
     });
 
