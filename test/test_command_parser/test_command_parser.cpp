@@ -1,5 +1,5 @@
 #include <unity.h>
-#include "CommandInterpreter/CommandParser.h"
+#include "../../src/CommandInterpreter/CommandParser.h"
 
 void test_get_command_name_single_word(void)
 {
