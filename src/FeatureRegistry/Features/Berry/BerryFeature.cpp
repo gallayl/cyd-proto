@@ -14,7 +14,6 @@ extern "C"
 #if ENABLE_BERRY
 #include "BerryUIBindings.h"
 #include "BerryApp.h"
-#include "../UI/App.h"
 #if ENABLE_UI
 #include "../UI/WindowManager.h"
 #include "../UI/Theme.h"
@@ -38,14 +37,20 @@ BerryScriptInfo parseAppMetadata(const String &path)
 
     ResolvedPath resolved = resolveVirtualPath(path);
     File f;
-    if (resolved.valid && resolved.fs)
+    if (resolved.valid && resolved.fs != nullptr)
+    {
         f = resolved.fs->open(resolved.localPath, "r");
+    }
     else
+    {
         f = LittleFS.open(path, "r");
+    }
     if (!f)
+    {
         return info;
+    }
 
-    for (int line = 0; line < 10 && f.available(); line++)
+    for (int line = 0; line < 10 && (f.available() != 0); line++)
     {
         String l = f.readStringUntil('\n');
         l.trim();
@@ -60,7 +65,9 @@ BerryScriptInfo parseAppMetadata(const String &path)
             info.startMenu.trim();
         }
         if (!info.name.isEmpty() && !info.startMenu.isEmpty())
+        {
             break;
+        }
     }
     f.close();
 
@@ -69,9 +76,13 @@ BerryScriptInfo parseAppMetadata(const String &path)
         int lastSlash = path.lastIndexOf('/');
         String filename = (lastSlash >= 0) ? path.substring(lastSlash + 1) : path;
         if (filename.endsWith(".be"))
+        {
             filename = filename.substring(0, filename.length() - 3);
+        }
         if (filename.length() > 0)
+        {
             filename.setCharAt(0, toupper(filename.charAt(0)));
+        }
         info.name = filename;
     }
 
@@ -83,11 +94,15 @@ void openBerryScript(const String &filePath)
 {
     String path = filePath;
     if (path.length() > 0 && path[0] != '/')
+    {
         path = "/" + path;
+    }
 
     auto meta = parseAppMetadata(path);
     if (meta.name.isEmpty())
+    {
         return;
+    }
 
     auto *app = new BerryApp(path, meta.name);
     UI::windowManager().openApp(meta.name.c_str(), app);
@@ -97,11 +112,15 @@ void openBerryPanel(const String &filePath)
 {
     String path = filePath;
     if (path.length() > 0 && path[0] != '/')
+    {
         path = "/" + path;
+    }
 
     auto meta = parseAppMetadata(path);
     if (meta.name.isEmpty())
+    {
         return;
+    }
 
     auto *app = new BerryApp(path, meta.name);
     UI::windowManager().openPanel(meta.name.c_str(), app, 0, UI::Theme::TaskbarY(), UI::Theme::ScreenWidth(),
@@ -115,11 +134,15 @@ static std::vector<BerryScriptInfo> scanBerryScriptsOnFs(fs::FS &filesystem, con
     std::vector<BerryScriptInfo> result;
 
     if (!filesystem.exists(localDir))
+    {
         return result;
+    }
 
     File d = filesystem.open(localDir);
     if (!d || !d.isDirectory())
+    {
         return result;
+    }
 
     File entry = d.openNextFile();
     while (entry)
@@ -129,7 +152,9 @@ static std::vector<BerryScriptInfo> scanBerryScriptsOnFs(fs::FS &filesystem, con
         {
             String localPath = String(localDir);
             if (!localPath.endsWith("/"))
+            {
                 localPath += "/";
+            }
             localPath += filename;
 
             String virtualPath = virtualPrefix + localPath;
@@ -190,9 +215,9 @@ static int native_log(bvm *vm)
 
 static String berryEval(const String &code)
 {
-    if (!berry_vm)
+    if (berry_vm == nullptr)
     {
-        return String(F("{\"error\": \"Berry VM not initialized\"}"));
+        return {F("{\"error\": \"Berry VM not initialized\"}")};
     }
 
     int result = be_loadbuffer(berry_vm, "input", code.c_str(), code.length());
@@ -263,11 +288,13 @@ static String berryHandlerImpl(const String &command)
         }
 
         if (path.length() > 0 && path[0] != '/')
+        {
             path = "/" + path;
+        }
 
         ResolvedPath resolved = resolveVirtualPath(path);
         bool fileExists = false;
-        if (resolved.valid && resolved.fs)
+        if (resolved.valid && (resolved.fs != nullptr))
         {
             fileExists = resolved.fs->exists(resolved.localPath);
         }
@@ -275,7 +302,9 @@ static String berryHandlerImpl(const String &command)
         {
             fileExists = LittleFS.exists(path);
             if (fileExists)
+            {
                 path = "/flash" + path;
+            }
         }
 
         if (!fileExists)
@@ -286,10 +315,10 @@ static String berryHandlerImpl(const String &command)
 #if ENABLE_UI
         {
             auto meta = parseAppMetadata(path);
-            String pathCopy = path;
+            const String &pathCopy = path;
             UI::queueAction([pathCopy]() { openBerryScript(pathCopy); });
             LoggerInstance->Info("Berry: opening " + meta.name + " (" + path + ")");
-            return "{\"event\":\"berry\", \"status\":\"queued\", \"app\":\"" + meta.name + "\"}";
+            return R"({"event":"berry", "status":"queued", "app":")" + meta.name + "\"}";
         }
 #else
         ResolvedPath rp = resolveVirtualPath(path);
@@ -325,7 +354,7 @@ static String berryHandlerImpl(const String &command)
                 return "{\"event\":\"berry\", \"status\":\"queued\", \"app\":\"" + s.name + "\"}";
             }
         }
-        return "{\"error\": \"Unknown Berry app: " + appName + "\"}";
+        return R"({"error": "Unknown Berry app: )" + appName + "\"}";
     }
 
     if (operation == "panel")
@@ -342,10 +371,10 @@ static String berryHandlerImpl(const String &command)
             {
                 openBerryPanel(s.path);
                 LoggerInstance->Info("Berry: opened panel " + s.name);
-                return "{\"event\":\"berry\", \"status\":\"panel_opened\", \"app\":\"" + s.name + "\"}";
+                return R"({"event":"berry", "status":"panel_opened", "app":")" + s.name + "\"}";
             }
         }
-        return "{\"error\": \"Unknown Berry app: " + appName + "\"}";
+        return R"({"error": "Unknown Berry app: )" + appName + "\"}";
     }
 #endif
 
@@ -356,10 +385,13 @@ static String berryHandlerImpl(const String &command)
         for (size_t i = 0; i < scripts.size(); i++)
         {
             if (i > 0)
+            {
                 json += ",";
+            }
 
             // parse category and label from startMenu path (e.g. "/Programs/Paint")
-            String category, label;
+            String category;
+            String label;
             const String &sm = scripts[i].startMenu;
             if (sm.length() > 1 && sm[0] == '/')
             {
@@ -382,11 +414,15 @@ static String berryHandlerImpl(const String &command)
     {
         String path = CommandParser::getCommandParameter(command, 2);
         if (path.length() == 0)
-            return String(F("{\"error\": \"No file path provided\"}"));
+        {
+            return {F("{\"error\": \"No file path provided\"}")};
+        }
         if (path.length() > 0 && path[0] != '/')
+        {
             path = "/" + path;
+        }
         auto meta = parseAppMetadata(path);
-        return "{\"app\":\"" + meta.name + "\",\"startMenu\":\"" + meta.startMenu + "\"}";
+        return R"({"app":")" + meta.name + "\",\"startMenu\":\"" + meta.startMenu + "\"}";
     }
 
     return String(F("{\"error\": \"Usage: berry eval <code> | berry run <path> | berry open <appname> | berry panel "

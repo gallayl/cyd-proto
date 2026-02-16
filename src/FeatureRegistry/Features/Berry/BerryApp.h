@@ -8,7 +8,7 @@
 #include "../UI/elements/container.h"
 #include "../UI/elements/error_popup.h"
 #include "../UI/WindowManager.h"
-#include "../UI/Renderer.h"
+
 #include "BerryUIBindings.h"
 #include "../Logging.h"
 #include "../../../fs/VirtualFS.h"
@@ -19,7 +19,7 @@ extern "C"
 #include "berry.h"
 }
 
-enum class HandleType
+enum class HandleType : uint8_t
 {
     CONTAINER,
     LABEL,
@@ -55,8 +55,10 @@ public:
     void setup(UI::Container &content, int w, int h) override
     {
         bvm *vm = getBerryVM();
-        if (!vm)
+        if (vm == nullptr)
+        {
             return;
+        }
 
         berrySetCurrentApp(this);
 
@@ -67,7 +69,7 @@ public:
         // read script (resolve virtual path prefix)
         ResolvedPath resolved = resolveVirtualPath(_scriptPath);
         File f;
-        if (resolved.valid && resolved.fs)
+        if (resolved.valid && resolved.fs != nullptr)
         {
             f = resolved.fs->open(resolved.localPath, "r");
         }
@@ -151,8 +153,10 @@ public:
     void teardown() override
     {
         bvm *vm = getBerryVM();
-        if (!vm || _instanceGlobal.isEmpty())
+        if (vm == nullptr || _instanceGlobal.isEmpty())
+        {
             return;
+        }
 
         berrySetCurrentApp(this);
 
@@ -194,16 +198,22 @@ public:
     HandleEntry *getHandle(int h)
     {
         if (h < 0 || h >= (int)_handles.size())
+        {
             return nullptr;
-        if (!_handles[h].ptr)
+        }
+        if (_handles[h].ptr == nullptr)
+        {
             return nullptr;
+        }
         return &_handles[h];
     }
 
     void invalidateHandle(int h)
     {
         if (h >= 0 && h < (int)_handles.size())
+        {
             _handles[h].ptr = nullptr;
+        }
     }
 
     // --- Callback storage ---
@@ -224,11 +234,13 @@ public:
         callBerryCallbackWithArgs(cbId, nullptr);
     }
 
-    void callBerryCallbackWithArgs(int cbId, std::function<int(bvm *)> pushArgs)
+    void callBerryCallbackWithArgs(int cbId, const std::function<int(bvm *)> &pushArgs)
     {
         bvm *vm = getBerryVM();
-        if (!vm)
+        if (vm == nullptr)
+        {
             return;
+        }
 
         String name = "_cb_" + String((unsigned long)this, HEX) + "_" + String(cbId);
 
@@ -245,7 +257,9 @@ public:
 
         int argc = 0;
         if (pushArgs)
+        {
             argc = pushArgs(vm);
+        }
 
         int res = be_pcall(vm, argc);
         if (res != 0)
@@ -272,11 +286,13 @@ private:
     std::vector<String> _callbackGlobals;
     int _nextCbId{0};
 
-    void callMethod(const char *method, std::function<int(bvm *)> pushArgs)
+    void callMethod(const char *method, const std::function<int(bvm *)> &pushArgs)
     {
         bvm *vm = getBerryVM();
-        if (!vm || _instanceGlobal.isEmpty())
+        if ((vm == nullptr) || _instanceGlobal.isEmpty())
+        {
             return;
+        }
 
         be_getglobal(vm, _instanceGlobal.c_str());
         if (!be_isinstance(vm, -1))
@@ -297,7 +313,9 @@ private:
 
         int argc = 1; // self
         if (pushArgs)
+        {
             argc += pushArgs(vm);
+        }
 
         int res = be_pcall(vm, argc);
         if (res != 0)
