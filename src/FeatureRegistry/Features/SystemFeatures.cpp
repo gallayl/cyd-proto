@@ -6,6 +6,7 @@
 #include "../../hw/lightSensor.h"
 #include <LittleFS.h>
 #include <ArduinoJson.h>
+#include <Esp.h>
 
 #if ENABLE_SD_CARD
 #include <SD.h>
@@ -186,7 +187,9 @@ FeatureAction featuresAction = {.name = "features",
                                     [](const String &command)
                                 {
                                     String output;
-                                    serializeJson(registeredFeatures, output);
+                                    withRegisteredFeatures(
+                                        [&output](const JsonDocument &doc)
+                                        { serializeJson(doc, output); });
                                     return output;
                                 },
                                 .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
@@ -263,6 +266,16 @@ FeatureAction wifiAction = {
     .name = "wifi", .handler = wifiHandler, .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
 #endif
 
+// forward declaration to avoid circular include
+class FeatureRegistry;
+extern FeatureRegistry *FeatureRegistryInstance;
+
+static String memoryHandler(const String &command);
+
+FeatureAction memoryAction = {.name = "memory",
+                              .handler = memoryHandler,
+                              .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
+
 // --- Feature ---
 
 Feature *SystemFeatures = new Feature(
@@ -275,6 +288,7 @@ Feature *SystemFeatures = new Feature(
         ActionRegistryInstance->RegisterAction(&restartAction);
         ActionRegistryInstance->RegisterAction(&featuresAction);
         ActionRegistryInstance->RegisterAction(&infoAction);
+        ActionRegistryInstance->RegisterAction(&memoryAction);
 
         initRgbLed();
         initLightSensor();
@@ -285,3 +299,33 @@ Feature *SystemFeatures = new Feature(
         return FeatureState::RUNNING;
     },
     []() {});
+
+// --- Memory handler (needs FeatureRegistry forward decl above) ---
+
+#include "../FeatureRegistry.h"
+
+static String memoryHandler(const String &command)
+{
+    JsonDocument doc;
+    doc["freeHeap"] = ESP.getFreeHeap();
+    doc["minFreeHeap"] = ESP.getMinFreeHeap();
+    doc["heapSize"] = ESP.getHeapSize();
+    doc["maxAllocHeap"] = ESP.getMaxAllocHeap();
+
+    JsonArray tasks = doc["tasks"].to<JsonArray>();
+    for (uint8_t i = 0; i < FeatureRegistryInstance->GetFeatureCount(); i++)
+    {
+        Feature *f = FeatureRegistryInstance->RegisteredFeatures[i];
+        if (f->IsTaskBased())
+        {
+            JsonObject t = tasks.add<JsonObject>();
+            t["name"] = f->GetFeatureName();
+            t["running"] = f->IsTaskRunning();
+            t["stackHighWaterMark"] = f->GetTaskStackHighWaterMark();
+        }
+    }
+
+    String output;
+    serializeJson(doc, output);
+    return output;
+}

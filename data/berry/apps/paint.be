@@ -2,11 +2,10 @@
 
 class PaintApp
   var name
+  var canvas_h
   var cv
-  var cv_w
-  var cv_h
   var tool_btns
-  var tool
+  var tool       # 0=draw, 1=erase, 2=rect, 3=circle, 4=fill
   var color_idx
   var touching
   var start_x
@@ -14,7 +13,8 @@ class PaintApp
   var last_x
   var last_y
   var palette
-  var pal_btns
+  var palette_h
+  var pal_w
 
   def init()
     self.name = 'Paint'
@@ -22,7 +22,6 @@ class PaintApp
     self.color_idx = 0
     self.touching = false
     self.tool_btns = []
-    self.pal_btns = []
     self.palette = [
       0x0000, 0xFFFF, 0x8410, 0xF800, 0xFD20, 0xFFE0,
       0x07E0, 0x07FF, 0x001F, 0x8010, 0xF81F, 0x8200
@@ -30,11 +29,13 @@ class PaintApp
   end
 
   def setup(content, w, h)
-    var toolbar_h = 18
-    var pal_h = 16
+    var toolbar_h = 20
+    var pal_h = 20
+    self.palette_h = pal_h
+    self.pal_w = w
+
     var cv_h = h - toolbar_h - pal_h
-    self.cv_w = w
-    self.cv_h = cv_h
+    self.canvas_h = cv_h
 
     # toolbar buttons
     var btn_w = w / 5
@@ -54,9 +55,10 @@ class PaintApp
     end
     self.update_tool_visual()
 
-    # canvas — 4-bit palette, uses ~1/4 the memory of 16-bit
+    # canvas (4-bit palette for memory savings)
     self.cv = ui.canvas(content, 0, toolbar_h, w, cv_h, 4)
 
+    # set up palette colors
     for i : 0 .. size(self.palette) - 1
       var c = self.palette[i]
       var r = ((c >> 11) & 0x1F) << 3
@@ -67,29 +69,17 @@ class PaintApp
     for i : size(self.palette) .. 15
       ui.canvas_set_palette(self.cv, i, 255, 255, 255)
     end
+
+    # fill white (palette index 1)
     ui.canvas_fill(self.cv, 1)
 
-    # palette row — small buttons instead of a canvas to save memory
-    var n = size(self.palette)
-    var sw = w / n
-    self.pal_btns = []
-    for i : 0 .. n - 1
-      var bx = i * sw
-      var bw = (i < n - 1) ? sw : (w - i * sw)
-      var btn = ui.button(content, '', bx, toolbar_h + cv_h, bw, pal_h)
-      ui.set_bg_color(btn, self.palette[i])
-      self.pal_btns.push(btn)
-      var idx = i
-      ui.on_click(btn, def ()
-        self.color_idx = idx
-        self.update_pal_visual()
-      end)
-    end
-    self.update_pal_visual()
+    # palette canvas
+    var pal_cv = ui.canvas(content, 0, toolbar_h + cv_h, w, pal_h)
+    self.draw_palette(pal_cv, w, pal_h)
 
-    # canvas touch for drawing; content touch_end for state cleanup
-    ui.on_touch(self.cv, / lx ly -> self.on_canvas_touch(lx, ly))
-    ui.on_touch_end(content, / x y -> self.on_touch_end())
+    # touch handlers on the content container
+    ui.on_touch(content, / x y -> self.on_content_touch(x, y))
+    ui.on_touch_end(content, / x y -> self.on_content_touch_end(x, y))
   end
 
   def update_tool_visual()
@@ -102,60 +92,91 @@ class PaintApp
     end
   end
 
-  def update_pal_visual()
-    for i : 0 .. size(self.palette) - 1
+  def draw_palette(pal_cv, w, h)
+    var n = size(self.palette)
+    var sw = w / n
+    for i : 0 .. n - 1
+      var sx = i * sw
+      var cw = (i < n - 1) ? sw : (w - i * sw)
+      ui.canvas_fill_rect(pal_cv, sx + 1, 1, cw - 2, h - 2, self.palette[i])
       if i == self.color_idx
-        ui.set_border_colors(self.pal_btns[i], ui.BUTTON_SHADOW, ui.BUTTON_HIGHLIGHT)
+        ui.canvas_draw_rect(pal_cv, sx, 0, cw, h, 0xFFFF)
       else
-        ui.set_border_colors(self.pal_btns[i], ui.BUTTON_HIGHLIGHT, ui.BUTTON_SHADOW)
+        ui.canvas_draw_rect(pal_cv, sx, 0, cw, h, ui.BUTTON_SHADOW)
       end
     end
   end
 
-  def on_canvas_touch(lx, ly)
-    if !self.touching
-      self.touching = true
-      self.start_x = lx
-      self.start_y = ly
-      self.last_x = lx
-      self.last_y = ly
+  def on_content_touch(px, py)
+    # account for content-relative coords
+    var toolbar_h = 20
+    var cv_y = toolbar_h
+    var cv_h = self.canvas_h
+    var pal_y = cv_y + cv_h
 
-      if self.tool == 0
-        ui.canvas_fill_circle(self.cv, lx, ly, 1, self.color_idx)
-      elif self.tool == 1
-        ui.canvas_fill_circle(self.cv, lx, ly, 3, 1)
-      elif self.tool == 4
-        ui.canvas_flood_fill(self.cv, lx, ly, self.color_idx)
+    # canvas area
+    if py >= cv_y && py < cv_y + cv_h
+      var lx = px
+      var ly = py - cv_y
+
+      if !self.touching
+        self.touching = true
+        self.start_x = lx
+        self.start_y = ly
+        self.last_x = lx
+        self.last_y = ly
+
+        if self.tool == 0
+          ui.canvas_fill_circle(self.cv, lx, ly, 1, self.color_idx)
+        elif self.tool == 1
+          ui.canvas_fill_circle(self.cv, lx, ly, 3, 1)
+        elif self.tool == 4
+          ui.canvas_flood_fill(self.cv, lx, ly, self.color_idx)
+        end
+      else
+        if self.tool == 0
+          self.draw_thick_line(self.last_x, self.last_y, lx, ly, self.color_idx, 1)
+        elif self.tool == 1
+          self.draw_thick_line(self.last_x, self.last_y, lx, ly, 1, 3)
+        end
+        self.last_x = lx
+        self.last_y = ly
       end
-    else
-      if self.tool == 0
-        self.draw_line(self.last_x, self.last_y, lx, ly, self.color_idx, 1)
-      elif self.tool == 1
-        self.draw_line(self.last_x, self.last_y, lx, ly, 1, 3)
+    end
+
+    # palette area
+    if !self.touching && py >= pal_y
+      var n = size(self.palette)
+      var sw = self.pal_w / n
+      var idx = px / sw
+      if idx >= 0 && idx < n
+        self.color_idx = idx
       end
-      self.last_x = lx
-      self.last_y = ly
     end
   end
 
-  def on_touch_end()
+  def on_content_touch_end(px, py)
     if !self.touching return end
 
+    var cv_y = 20
+    var lx = px
+    var ly = py - cv_y
+    if lx < 0 lx = 0 end
+    if ly < 0 ly = 0 end
+
     if self.tool == 2
-      var lx = self.last_x
-      var ly = self.last_y
+      # rect
       var rx = (self.start_x < lx) ? self.start_x : lx
       var ry = (self.start_y < ly) ? self.start_y : ly
-      var rw = self.iabs(lx - self.start_x) + 1
-      var rh = self.iabs(ly - self.start_y) + 1
+      var rw = self.abs(lx - self.start_x) + 1
+      var rh = self.abs(ly - self.start_y) + 1
       ui.canvas_draw_rect(self.cv, rx, ry, rw, rh, self.color_idx)
     elif self.tool == 3
-      var lx = self.last_x
-      var ly = self.last_y
+      # ellipse
       var cx = (self.start_x + lx) / 2
       var cy = (self.start_y + ly) / 2
-      var erx = self.iabs(lx - self.start_x) / 2
-      var ery = self.iabs(ly - self.start_y) / 2
+      var erx = self.abs(lx - self.start_x) / 2
+      var ery = self.abs(ly - self.start_y) / 2
       if erx > 0 && ery > 0
         ui.canvas_draw_ellipse(self.cv, cx, cy, erx, ery, self.color_idx)
       end
@@ -164,9 +185,9 @@ class PaintApp
     self.touching = false
   end
 
-  def draw_line(x0, y0, x1, y1, col, r)
-    var dx = self.iabs(x1 - x0)
-    var dy = self.iabs(y1 - y0)
+  def draw_thick_line(x0, y0, x1, y1, col, r)
+    var dx = self.abs(x1 - x0)
+    var dy = self.abs(y1 - y0)
     var steps = (dx > dy) ? dx : dy
     if steps == 0
       ui.canvas_fill_circle(self.cv, x0, y0, r, col)
@@ -179,7 +200,7 @@ class PaintApp
     end
   end
 
-  def iabs(v)
+  def abs(v)
     return (v < 0) ? -v : v
   end
 

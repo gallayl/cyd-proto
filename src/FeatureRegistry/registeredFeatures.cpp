@@ -3,3 +3,4 @@
 
 // define the shared JSON document
 JsonDocument registeredFeatures;
+std::mutex registeredFeaturesMutex;

@@ -18,6 +18,7 @@ extern "C"
 #if ENABLE_UI
 #include "../UI/WindowManager.h"
 #include "../UI/Theme.h"
+#include "../UI/UITaskQueue.h"
 #endif
 #endif
 
@@ -232,13 +233,12 @@ static String berryEval(const String &code)
 
 // --- Action handler ---
 
-static String berryHandler(const String &command)
+static String berryHandlerImpl(const String &command)
 {
     String operation = CommandParser::GetCommandParameter(command, 1);
 
     if (operation == "eval")
     {
-        // everything after "berry eval " is the code to evaluate
         int idx = command.indexOf("eval ");
         if (idx < 0)
         {
@@ -259,7 +259,6 @@ static String berryHandler(const String &command)
         if (path.length() > 0 && path[0] != '/')
             path = "/" + path;
 
-        // Resolve virtual path to the correct filesystem
         ResolvedPath resolved = resolveVirtualPath(path);
         bool fileExists = false;
         if (resolved.valid && resolved.fs)
@@ -268,7 +267,6 @@ static String berryHandler(const String &command)
         }
         else
         {
-            // Legacy path without prefix — assume flash
             fileExists = LittleFS.exists(path);
             if (fileExists)
                 path = "/flash" + path;
@@ -307,7 +305,6 @@ static String berryHandler(const String &command)
         {
             return String(F("{\"error\": \"No app name provided\"}"));
         }
-        // scan /berry/apps/ and find matching name
         auto scripts = scanBerryScripts("/berry/apps");
         for (auto &s : scripts)
         {
@@ -344,6 +341,16 @@ static String berryHandler(const String &command)
 
     return String(F(
         "{\"error\": \"Usage: berry eval <code> | berry run <path> | berry open <appname> | berry panel <appname>\"}"));
+}
+
+static String berryHandler(const String &command)
+{
+#if ENABLE_UI
+    return UI::postToUITaskWithResult([&command]() -> String
+                                     { return berryHandlerImpl(command); });
+#else
+    return berryHandlerImpl(command);
+#endif
 }
 
 // --- Action definition ---
@@ -404,8 +411,23 @@ Feature *BerryFeature = new Feature(
     {
         if (berry_vm)
         {
-            be_vm_delete(berry_vm);
-            berry_vm = nullptr;
+            auto doDelete = []()
+            {
+                be_vm_delete(berry_vm);
+                berry_vm = nullptr;
+            };
+#if ENABLE_UI
+            if (UI::isUITaskRunning())
+            {
+                UI::postToUITaskSync(doDelete);
+            }
+            else
+            {
+                doDelete();
+            }
+#else
+            doDelete();
+#endif
             LoggerInstance->Info(F("Berry VM destroyed"));
         }
     });

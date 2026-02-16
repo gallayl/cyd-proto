@@ -36,6 +36,7 @@ void setup()
 
     FeatureRegistryInstance->Init();
     FeatureRegistryInstance->SetupFeatures();
+    FeatureRegistryInstance->StartFeatureTasks();
 }
 
 void loop()

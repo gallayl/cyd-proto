@@ -47,6 +47,7 @@ public:
 
     void AddListener(LogListener listener)
     {
+        std::lock_guard<std::mutex> lock(listenersMutex);
         if (this->listenersCount < LOG_LISTENERS_COUNT)
         {
             this->listeners[this->listenersCount] = listener;
@@ -63,6 +64,7 @@ public:
 
 private:
     mutable std::mutex entriesMutex;
+    std::mutex listenersMutex;
     JsonDocument entries;
     uint16_t entryCount;
 
@@ -81,9 +83,17 @@ private:
         Serial.print(utcTime);
         Serial.print(F(" - "));
         Serial.println(message);
-        for (byte i = 0; i < this->listenersCount; i++)
+
+        LogListener listenersCopy[LOG_LISTENERS_COUNT];
+        byte count;
         {
-            this->listeners[i](severity, message);
+            std::lock_guard<std::mutex> lock(listenersMutex);
+            count = this->listenersCount;
+            memcpy(listenersCopy, this->listeners, sizeof(LogListener) * count);
+        }
+        for (byte i = 0; i < count; i++)
+        {
+            listenersCopy[i](severity, message);
         }
     }
 

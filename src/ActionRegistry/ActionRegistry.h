@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <mutex>
 #include "../config.h"
 #include "FeatureAction.h"
 #include "../CommandInterpreter/CommandParser.h"
@@ -12,6 +13,7 @@ class ActionRegistry
 private:
     uint8_t _registeredActionsCount = 0;
     FeatureAction *_actions[ACTIONS_SIZE] = {};
+    std::mutex _mutex;
 
     bool isTransportEnabled(const FeatureAction *action, Transport transport) const
     {
@@ -32,6 +34,7 @@ private:
 public:
     void RegisterAction(FeatureAction *action)
     {
+        std::lock_guard<std::mutex> lock(_mutex);
         if (_registeredActionsCount >= ACTIONS_SIZE)
         {
             Serial.println(F("Action registry full, cannot register"));
@@ -43,17 +46,26 @@ public:
 
     String Execute(const String &command, Transport transport)
     {
-        for (uint8_t i = 0; i < _registeredActionsCount; i++)
+        ActionHandler handler = nullptr;
         {
-            const String &name = _actions[i]->name;
-            if (command.equals(name) || command.startsWith(name + " "))
+            std::lock_guard<std::mutex> lock(_mutex);
+            for (uint8_t i = 0; i < _registeredActionsCount; i++)
             {
-                if (!isTransportEnabled(_actions[i], transport))
+                const String &name = _actions[i]->name;
+                if (command.equals(name) || command.startsWith(name + " "))
                 {
-                    return String("{\"error\": \"Action '" + name + "' not available on this transport\"}");
+                    if (!isTransportEnabled(_actions[i], transport))
+                    {
+                        return String("{\"error\": \"Action '" + name + "' not available on this transport\"}");
+                    }
+                    handler = _actions[i]->handler;
+                    break;
                 }
-                return _actions[i]->handler(command);
             }
+        }
+        if (handler)
+        {
+            return handler(command);
         }
         return String("{\"message\": \"Unknown action: " + CommandParser::GetCommandName(command) + ".\", \"availableActions\": \"" + GetAvailableActions(transport) + "\"}");
     }

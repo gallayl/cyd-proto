@@ -37,6 +37,8 @@
 #include "./Features/Berry/BerryFeature.h"
 #endif
 
+#include <mutex>
+
 #define FEATURES_SIZE 16
 
 extern Feature *SystemFeatures;
@@ -48,6 +50,7 @@ private:
 
     void updateFeatureJson(Feature *feature)
     {
+        std::lock_guard<std::mutex> lock(registeredFeaturesMutex);
         const String &name = feature->GetFeatureName();
         JsonObject entry = registeredFeatures[name];
         if (!entry.isNull())
@@ -96,6 +99,7 @@ public:
 
     void RegisterFeature(Feature *newFeature)
     {
+        std::lock_guard<std::mutex> lock(registeredFeaturesMutex);
         if (this->_registeredFeaturesCount >= FEATURES_SIZE)
         {
             LoggerInstance->Error(F("Feature registry full, cannot register"));
@@ -133,13 +137,35 @@ public:
 #endif
     }
 
+    void StartFeatureTasks()
+    {
+        for (uint8_t i = 0; i < this->_registeredFeaturesCount; i++)
+        {
+            Feature *f = this->RegisteredFeatures[i];
+            if (f->IsTaskBased() && f->GetFeatureState() == FeatureState::RUNNING)
+            {
+                if (f->StartTask())
+                {
+                    LoggerInstance->Info("Started task for: " + f->GetFeatureName());
+                }
+                else
+                {
+                    LoggerInstance->Error("Failed to start task for: " + f->GetFeatureName());
+                }
+            }
+        }
+    }
+
     void LoopFeatures()
     {
         for (uint8_t i = 0; i < this->_registeredFeaturesCount; i++)
         {
-            if (this->RegisteredFeatures[i]->GetFeatureState() == FeatureState::RUNNING)
+            Feature *f = this->RegisteredFeatures[i];
+            if (f->IsTaskBased())
+                continue;
+            if (f->GetFeatureState() == FeatureState::RUNNING)
             {
-                this->RegisteredFeatures[i]->Loop();
+                f->Loop();
             }
         }
     }
@@ -175,6 +201,12 @@ public:
         LoggerInstance->Info("Setting up feature: " + name);
         FeatureState newState = f->Setup();
         updateFeatureJson(f);
+
+        if (f->IsTaskBased() && newState == FeatureState::RUNNING)
+        {
+            f->StartTask();
+        }
+
         return newState;
     }
 

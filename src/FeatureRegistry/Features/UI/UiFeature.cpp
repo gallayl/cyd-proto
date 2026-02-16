@@ -11,13 +11,15 @@
 #include "Renderer.h"
 #include "Desktop.h"
 #include "WindowManager.h"
+#include "UITaskQueue.h"
 
 static volatile bool frameReady = true;
 static esp_timer_handle_t frameTimer = nullptr;
+static bool uiTaskInitDone = false;
 
 // --- Screen command handler ---
 
-static String screenCommandHandler(const String &command)
+static String screenCommandHandlerImpl(const String &command)
 {
     String sub = CommandParser::GetCommandParameter(command, 1);
 
@@ -180,7 +182,13 @@ static const PageEntry pageTable[] = {
     {"files", "File Manager"},
 };
 
-static String pageCommandHandler(const String &command)
+static String screenCommandHandler(const String &command)
+{
+    return UI::postToUITaskWithResult([&command]() -> String
+                                     { return screenCommandHandlerImpl(command); });
+}
+
+static String pageCommandHandlerImpl(const String &command)
 {
     String sub = CommandParser::GetCommandParameter(command, 1);
 
@@ -200,7 +208,13 @@ static String pageCommandHandler(const String &command)
 
 // --- Window manager command handler ---
 
-static String wmCommandHandler(const String &command)
+static String pageCommandHandler(const String &command)
+{
+    return UI::postToUITaskWithResult([&command]() -> String
+                                     { return pageCommandHandlerImpl(command); });
+}
+
+static String wmCommandHandlerImpl(const String &command)
 {
     String sub = CommandParser::GetCommandParameter(command, 1);
 
@@ -253,6 +267,12 @@ static String wmCommandHandler(const String &command)
     return String(F("{\"error\":\"Usage: wm list | wm focus <name> | wm close <name> | wm start_menu | wm keyboard\"}"));
 }
 
+static String wmCommandHandler(const String &command)
+{
+    return UI::postToUITaskWithResult([&command]() -> String
+                                     { return wmCommandHandlerImpl(command); });
+}
+
 // --- Action definitions ---
 
 FeatureAction wmAction = {
@@ -272,8 +292,12 @@ FeatureAction pageAction = {
 
 // --- Feature ---
 
-Feature *UiFeature = new Feature("UI", []()
-                                 {
+static Feature *createUiFeature()
+{
+    auto *f = new Feature("UI", []()
+                          {
+    UI::initTaskQueue();
+
     tft.fillScreen(TFT_BLACK);
     tft.setTextColor(TFT_WHITE, TFT_BLACK);
     tft.setTextSize(1);
@@ -304,7 +328,14 @@ Feature *UiFeature = new Feature("UI", []()
     LoggerInstance->Info(F("UI feature initialized (Win95 desktop)"));
 
     return FeatureState::RUNNING; }, []()
-                                 {
+                          {
+    if (!uiTaskInitDone) {
+        UI::setUITaskHandle(xTaskGetCurrentTaskHandle());
+        uiTaskInitDone = true;
+    }
+
+    UI::processTaskQueue();
+
     static bool prevTouched = false;
     static int prevX = 0, prevY = 0;
     int tx, ty;
@@ -332,11 +363,20 @@ Feature *UiFeature = new Feature("UI", []()
         UI::desktop().draw();
         UI::clearDirty();
     } }, []()
-                                 {
+                          {
+    UI::setUITaskHandle(nullptr);
+    uiTaskInitDone = false;
+
     if (frameTimer) {
         esp_timer_stop(frameTimer);
         esp_timer_delete(frameTimer);
         frameTimer = nullptr;
     } });
+
+    f->configureTask(8192, 0, 2);
+    return f;
+}
+
+Feature *UiFeature = createUiFeature();
 
 #endif
