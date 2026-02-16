@@ -2,7 +2,7 @@
 # Environment name from platformio.ini
 ENV = cyd
 
-.PHONY: build upload uploadfs monitor upload-monitor clean check format format-check test berry-clean compiledb
+.PHONY: build upload uploadfs monitor upload-monitor clean check check-fix format format-check test berry-clean compiledb
 
 ## Build firmware
 build:
@@ -31,6 +31,10 @@ clean:
 ## Run clang-tidy static analysis
 check:
 	pio check -e $(ENV)
+
+## Run clang-tidy and apply suggested fixes
+check-fix:
+	pio check -e $(ENV) --flags "clangtidy: --fix --fix-errors"
 
 ## Auto-format source files with clang-format
 format:
@@ -64,6 +68,7 @@ help:
 	@echo   upload-monitor - Upload firmware + open serial monitor
 	@echo   clean          - Clean build artifacts
 	@echo   check          - Run clang-tidy static analysis
+	@echo   check-fix      - Run clang-tidy and apply suggested fixes
 	@echo   format         - Auto-format source files with clang-format
 	@echo   format-check   - Check formatting (fails on diff)
 	@echo   test           - Run native unit tests
