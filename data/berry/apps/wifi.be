@@ -1,4 +1,5 @@
 # app: WiFi
+# startMenu: /Settings/WiFi
 import json
 
 class WifiApp

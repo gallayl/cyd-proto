@@ -1,4 +1,5 @@
 # app: Paint
+# startMenu: /Programs/Paint
 
 class PaintApp
   var name

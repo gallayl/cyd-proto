@@ -13,6 +13,8 @@
 #include "../UI/elements/combobox.h"
 #include "../UI/elements/groupbox.h"
 #include "../UI/elements/tabs.h"
+#include "../UI/elements/popup.h"
+#include "../UI/WindowManager.h"
 #include "../UI/elements/filelistview.h"
 #include "../UI/elements/menubar.h"
 #include "../UI/Theme.h"
@@ -198,7 +200,14 @@ static UI::FileListView *asFileListView(HandleEntry *h)
     return static_cast<UI::FileListView *>(h->ptr);
 }
 
-// helper to add child to either Container or ScrollableContainer (or GroupBox)
+static UI::PopupContainer *asPopup(HandleEntry *h)
+{
+    if (!h || h->type != HandleType::POPUP)
+        return nullptr;
+    return static_cast<UI::PopupContainer *>(h->ptr);
+}
+
+// helper to add child to either Container or ScrollableContainer (or GroupBox or Popup)
 static bool addChildToParent(BerryApp *app, int parentHandle, std::unique_ptr<UI::Element> child)
 {
     auto *h = app->getHandle(parentHandle);
@@ -218,6 +227,11 @@ static bool addChildToParent(BerryApp *app, int parentHandle, std::unique_ptr<UI
     if (h->type == HandleType::GROUPBOX)
     {
         static_cast<UI::GroupBox *>(h->ptr)->addChild(std::move(child));
+        return true;
+    }
+    if (h->type == HandleType::POPUP)
+    {
+        static_cast<UI::PopupContainer *>(h->ptr)->addChild(std::move(child));
         return true;
     }
     return false;
@@ -1081,7 +1095,12 @@ static int ui_bounds(bvm *vm)
     int bx, by, bw, bh;
     h->ptr->getBounds(bx, by, bw, bh);
 
-    be_newlist(vm);
+    // Create a list instance (not the list class)
+    be_getbuiltin(vm, "list");
+    be_call(vm, 0);
+    be_pop(vm, 1);
+    
+    // Add elements to the list
     be_pushint(vm, bx);
     be_data_push(vm, -2);
     be_pop(vm, 1);
@@ -1262,6 +1281,11 @@ static int ui_clear(bvm *vm)
         static_cast<UI::Container *>(h->ptr)->clear();
     }
 
+    if (h->type == HandleType::POPUP)
+    {
+        static_cast<UI::PopupContainer *>(h->ptr)->clear();
+    }
+
     be_return_nil(vm);
 }
 
@@ -1297,6 +1321,12 @@ static int ui_remove_child(bvm *vm)
     if (ph->type == HandleType::GROUPBOX)
     {
         static_cast<UI::GroupBox *>(ph->ptr)->getContent().removeChild(ch->ptr);
+        app->invalidateHandle(childIdx);
+    }
+
+    if (ph->type == HandleType::POPUP)
+    {
+        static_cast<UI::PopupContainer *>(ph->ptr)->removeChild(ch->ptr);
         app->invalidateHandle(childIdx);
     }
 
@@ -1486,6 +1516,99 @@ static int ui_canvas_set_palette(bvm *vm)
 #undef GET_CANVAS
 
 // =================================================================
+// Popup overlay
+// =================================================================
+
+// ui.popup(x, y, w, h) -> handle
+static int ui_popup(bvm *vm)
+{
+    auto *app = berryCurrentApp();
+    if (!app || be_top(vm) < 4)
+        be_return_nil(vm);
+
+    int x = be_toint(vm, 1);
+    int y = be_toint(vm, 2);
+    int w = be_toint(vm, 3);
+    int h = be_toint(vm, 4);
+
+    LoggerInstance->Info("ui.popup: creating at (" + String(x) + "," + String(y) + "," + String(w) + "," + String(h) +
+                         ") screen=" + String(UI::Theme::ScreenWidth()) + "x" + String(UI::Theme::ScreenHeight()));
+    auto *popup = UI::windowManager().createPopup(x, y, w, h, app);
+    if (!popup)
+        be_return_nil(vm);
+
+    int handle = app->addHandle(popup, HandleType::POPUP);
+    be_pushint(vm, handle);
+    be_return(vm);
+}
+
+// ui.show_popup(handle)
+static int ui_show_popup(bvm *vm)
+{
+    auto *app = berryCurrentApp();
+    if (!app || be_top(vm) < 1)
+    {
+        LoggerInstance->Error(F("show_popup: no app or missing arg"));
+        be_return_nil(vm);
+    }
+
+    int h = be_toint(vm, 1);
+    auto *entry = app->getHandle(h);
+    if (!entry)
+    {
+        LoggerInstance->Error("show_popup: invalid handle " + String(h));
+        be_return_nil(vm);
+    }
+
+    auto *popup = asPopup(entry);
+    if (!popup)
+    {
+        LoggerInstance->Error("show_popup: handle " + String(h) + " is not a POPUP (type=" + String((int)entry->type) + ")");
+        be_return_nil(vm);
+    }
+
+    int bx, by, bw, bh;
+    popup->getBounds(bx, by, bw, bh);
+    LoggerInstance->Info("show_popup: handle=" + String(h) + " bounds=(" + String(bx) + "," + String(by) + "," + String(bw) + "," + String(bh) + ") children=" + String(popup->getChildren().size()));
+    popup->show();
+    UI::markDirty();
+    be_return_nil(vm);
+}
+
+// ui.hide_popup(handle)
+static int ui_hide_popup(bvm *vm)
+{
+    auto *app = berryCurrentApp();
+    if (!app || be_top(vm) < 1)
+        be_return_nil(vm);
+
+    auto *popup = asPopup(app->getHandle(be_toint(vm, 1)));
+    if (popup)
+    {
+        popup->hide();
+        UI::markDirty();
+    }
+    be_return_nil(vm);
+}
+
+// ui.destroy_popup(handle)
+static int ui_destroy_popup(bvm *vm)
+{
+    auto *app = berryCurrentApp();
+    if (!app || be_top(vm) < 1)
+        be_return_nil(vm);
+
+    int h = be_toint(vm, 1);
+    auto *popup = asPopup(app->getHandle(h));
+    if (popup)
+    {
+        UI::windowManager().destroyPopup(popup);
+        app->invalidateHandle(h);
+    }
+    be_return_nil(vm);
+}
+
+// =================================================================
 // Utility
 // =================================================================
 
@@ -1574,6 +1697,12 @@ void registerBerryUIModule(bvm *vm)
     reg("clear", ui_clear);
     reg("remove_child", ui_remove_child);
 
+    // popup overlay
+    reg("popup", ui_popup);
+    reg("show_popup", ui_show_popup);
+    reg("hide_popup", ui_hide_popup);
+    reg("destroy_popup", ui_destroy_popup);
+
     // canvas drawing
     reg("canvas_fill", ui_canvas_fill);
     reg("canvas_draw_pixel", ui_canvas_draw_pixel);
@@ -1619,8 +1748,21 @@ void registerBerryUIModule(bvm *vm)
     regInt("TASKBAR_BG", UI::Theme::TaskbarBg);
     regInt("MENU_BG", UI::Theme::MenuBg);
     regInt("MENU_HIGHLIGHT", UI::Theme::MenuHighlight);
+    regInt("MENU_HIGHLIGHT_TEXT", UI::Theme::MenuHighlightText);
     regInt("SCROLL_TRACK", UI::Theme::ScrollTrack);
     regInt("SCROLL_THUMB", UI::Theme::ScrollThumb);
+
+    // layout constants
+    regInt("SCREEN_WIDTH", UI::Theme::ScreenWidth());
+    regInt("SCREEN_HEIGHT", UI::Theme::ScreenHeight());
+    regInt("TASKBAR_HEIGHT", UI::Theme::TaskbarHeight);
+    regInt("TASKBAR_Y", UI::Theme::TaskbarY());
+    regInt("MENU_ITEM_HEIGHT", UI::Theme::MenuItemHeight);
+    regInt("MENU_WIDTH", UI::Theme::MenuWidth);
+    regInt("SUB_MENU_WIDTH", UI::Theme::SubMenuWidth);
+    regInt("MENU_SEPARATOR_HEIGHT", UI::Theme::MenuSeparatorHeight);
+    regInt("MENU_SEPARATOR_DARK", UI::Theme::MenuSeparatorDark);
+    regInt("MENU_SEPARATOR_LIGHT", UI::Theme::MenuSeparatorLight);
 
     be_setglobal(vm, "ui");
     be_pop(vm, 1);

@@ -20,7 +20,10 @@ struct BerryScriptInfo
 {
     String name;
     String path;
+    String startMenu;
 };
+
+BerryScriptInfo parseAppMetadata(const String &path);
 
 bvm *getBerryVM();
 std::vector<BerryScriptInfo> scanBerryScripts(const char *dir = "/berry/apps");

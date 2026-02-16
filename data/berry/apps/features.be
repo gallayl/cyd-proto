@@ -1,4 +1,5 @@
 # app: Features
+# startMenu: /System/Features
 import json
 
 class FeaturesApp

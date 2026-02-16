@@ -1,4 +1,5 @@
 # app: Display
+# startMenu: /Settings/Display
 
 class DisplaySettingsApp
   var name

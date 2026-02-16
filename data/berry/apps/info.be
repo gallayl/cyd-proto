@@ -1,4 +1,5 @@
 # app: Info
+# startMenu: /System/Info
 import json
 
 class InfoApp

@@ -4,6 +4,7 @@
 #include <memory>
 #include <algorithm>
 #include "elements/window.h"
+#include "elements/popup.h"
 #include "App.h"
 #include "Renderer.h"
 #include "Theme.h"
@@ -22,6 +23,12 @@ struct PanelSlot
     std::unique_ptr<Container> container;
     std::unique_ptr<App> app;
     String name;
+};
+
+struct PopupSlot
+{
+    std::unique_ptr<PopupContainer> popup;
+    void *owner;
 };
 
 class WindowManager
@@ -89,9 +96,20 @@ public:
         return panelSlot ? panelSlot.get() : nullptr;
     }
 
+    // popup overlays
+    PopupContainer *createPopup(int x, int y, int w, int h, void *owner);
+    void destroyPopup(PopupContainer *p);
+    void destroyPopupsForOwner(void *owner);
+    bool hasVisiblePopups() const;
+    void hideAllPopups();
+    void drawPopups();
+    bool handlePopupTouch(int px, int py);
+    bool handlePopupTouchEnd(int px, int py);
+
 private:
     std::vector<OpenApp> openApps;
     std::unique_ptr<PanelSlot> panelSlot;
+    std::vector<PopupSlot> popupSlots;
     OverlayDrawFn overlayDraw;
     OverlayTouchFn overlayTouch;
     OverlayTouchEndFn overlayTouchEnd;

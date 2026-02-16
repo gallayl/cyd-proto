@@ -1,4 +1,5 @@
 # app: File Manager
+# startMenu: /System/File Manager
 import json
 
 class FileManagerApp

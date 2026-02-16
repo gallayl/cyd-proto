@@ -222,13 +222,22 @@ static String wmCommandHandlerImpl(const String &command)
     {
         auto &apps = UI::windowManager().getOpenApps();
         auto *focused = UI::windowManager().getFocused();
+        auto *panel = UI::windowManager().getPanelSlot();
         String json = "{\"apps\":[";
+        bool first = true;
+        if (panel)
+        {
+            json += "{\"name\":\"" + panel->name + "\",\"focused\":false,\"windowed\":false}";
+            first = false;
+        }
         for (size_t i = 0; i < apps.size(); i++)
         {
-            if (i > 0)
+            if (!first)
                 json += ",";
+            first = false;
             bool isFocused = (focused && &apps[i] == focused);
-            json += "{\"name\":\"" + apps[i].name + "\",\"focused\":" + (isFocused ? "true" : "false") + "}";
+            json += "{\"name\":\"" + apps[i].name + "\",\"focused\":" + (isFocused ? "true" : "false") +
+                    ",\"windowed\":true}";
         }
         json += "]}";
         return json;
@@ -252,19 +261,13 @@ static String wmCommandHandlerImpl(const String &command)
         return String(F("{\"status\":\"ok\"}"));
     }
 
-    if (sub == "start_menu")
-    {
-        UI::desktop().toggleStartMenu();
-        return String(F("{\"status\":\"ok\"}"));
-    }
-
     if (sub == "keyboard")
     {
         UI::desktop().toggleKeyboard();
         return String(F("{\"status\":\"ok\"}"));
     }
 
-    return String(F("{\"error\":\"Usage: wm list | wm focus <name> | wm close <name> | wm start_menu | wm keyboard\"}"));
+    return String(F("{\"error\":\"Usage: wm list | wm focus <name> | wm close <name> | wm keyboard\"}"));
 }
 
 static String wmCommandHandler(const String &command)
@@ -357,6 +360,8 @@ static Feature *createUiFeature()
     }
 
     UI::desktop().tickTimers();
+
+    UI::executeQueuedActions();
 
     if (UI::isDirty() && frameReady) {
         frameReady = false;

@@ -379,6 +379,114 @@ void WindowManager::relayoutWindows()
     updateActiveStates();
 }
 
+// --- Popup overlay methods ---
+
+PopupContainer *WindowManager::createPopup(int x, int y, int w, int h, void *owner)
+{
+    auto p = std::make_unique<PopupContainer>(x, y, w, h);
+    PopupContainer *raw = p.get();
+    popupSlots.push_back({std::move(p), owner});
+    return raw;
+}
+
+void WindowManager::destroyPopup(PopupContainer *p)
+{
+    if (!p)
+        return;
+    auto it = std::find_if(popupSlots.begin(), popupSlots.end(),
+                           [p](const PopupSlot &s) { return s.popup.get() == p; });
+    if (it != popupSlots.end())
+    {
+        popupSlots.erase(it);
+        markDirty();
+    }
+}
+
+void WindowManager::destroyPopupsForOwner(void *owner)
+{
+    popupSlots.erase(std::remove_if(popupSlots.begin(), popupSlots.end(),
+                                    [owner](const PopupSlot &s) { return s.owner == owner; }),
+                     popupSlots.end());
+    markDirty();
+}
+
+bool WindowManager::hasVisiblePopups() const
+{
+    for (auto &s : popupSlots)
+    {
+        if (s.popup->isVisible())
+            return true;
+    }
+    return false;
+}
+
+void WindowManager::hideAllPopups()
+{
+    for (auto &s : popupSlots)
+        s.popup->hide();
+    markDirty();
+}
+
+void WindowManager::drawPopups()
+{
+    static int logCount = 0;
+    for (auto &s : popupSlots)
+    {
+        if (s.popup->isVisible())
+        {
+            if (logCount < 5)
+            {
+                int bx, by, bw, bh;
+                s.popup->getBounds(bx, by, bw, bh);
+                Serial.printf("drawPopups: visible popup at (%d,%d,%d,%d) mounted=%d children=%d\n",
+                              bx, by, bw, bh, s.popup->isMounted(), (int)s.popup->getChildren().size());
+                logCount++;
+            }
+            s.popup->draw();
+        }
+    }
+}
+
+bool WindowManager::handlePopupTouch(int px, int py)
+{
+    bool anyVisible = hasVisiblePopups();
+    if (!anyVisible)
+        return false;
+
+    // check if touch is inside any visible popup (iterate in reverse for z-order)
+    for (int i = (int)popupSlots.size() - 1; i >= 0; i--)
+    {
+        if (popupSlots[i].popup->isVisible() && popupSlots[i].popup->contains(px, py))
+        {
+            popupSlots[i].popup->handleTouch(px, py);
+            return true;
+        }
+    }
+
+    // touch is outside all visible popups — dismiss them
+    hideAllPopups();
+    return true;
+}
+
+bool WindowManager::handlePopupTouchEnd(int px, int py)
+{
+    bool anyVisible = hasVisiblePopups();
+    if (!anyVisible)
+        return false;
+
+    for (int i = (int)popupSlots.size() - 1; i >= 0; i--)
+    {
+        if (popupSlots[i].popup->isVisible() && popupSlots[i].popup->contains(px, py))
+        {
+            popupSlots[i].popup->handleTouchEnd(px, py);
+            return true;
+        }
+    }
+
+    hideAllPopups();
+    return true;
+}
+
 } // namespace UI
 
 #endif

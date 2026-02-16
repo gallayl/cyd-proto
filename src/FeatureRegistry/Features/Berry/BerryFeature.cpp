@@ -19,6 +19,7 @@ extern "C"
 #include "../UI/WindowManager.h"
 #include "../UI/Theme.h"
 #include "../UI/UITaskQueue.h"
+#include "../UI/ActionQueue.h"
 #endif
 #endif
 
@@ -30,9 +31,11 @@ bvm *getBerryVM()
     return berry_vm;
 }
 
-// Parse app name from "# app: <Name>" in first 5 lines of a .be file
-static String parseAppNameFromFile(const String &path)
+BerryScriptInfo parseAppMetadata(const String &path)
 {
+    BerryScriptInfo info;
+    info.path = path;
+
     ResolvedPath resolved = resolveVirtualPath(path);
     File f;
     if (resolved.valid && resolved.fs)
@@ -40,23 +43,28 @@ static String parseAppNameFromFile(const String &path)
     else
         f = LittleFS.open(path, "r");
     if (!f)
-        return String();
+        return info;
 
-    String appName;
-    for (int line = 0; line < 5 && f.available(); line++)
+    for (int line = 0; line < 10 && f.available(); line++)
     {
         String l = f.readStringUntil('\n');
         l.trim();
         if (l.startsWith("# app:"))
         {
-            appName = l.substring(6);
-            appName.trim();
-            break;
+            info.name = l.substring(6);
+            info.name.trim();
         }
+        else if (l.startsWith("# startMenu:"))
+        {
+            info.startMenu = l.substring(12);
+            info.startMenu.trim();
+        }
+        if (!info.name.isEmpty() && !info.startMenu.isEmpty())
+            break;
     }
     f.close();
 
-    if (appName.isEmpty())
+    if (info.name.isEmpty())
     {
         int lastSlash = path.lastIndexOf('/');
         String filename = (lastSlash >= 0) ? path.substring(lastSlash + 1) : path;
@@ -64,10 +72,10 @@ static String parseAppNameFromFile(const String &path)
             filename = filename.substring(0, filename.length() - 3);
         if (filename.length() > 0)
             filename.setCharAt(0, toupper(filename.charAt(0)));
-        appName = filename;
+        info.name = filename;
     }
 
-    return appName;
+    return info;
 }
 
 #if ENABLE_UI
@@ -77,12 +85,12 @@ void openBerryScript(const String &filePath)
     if (path.length() > 0 && path[0] != '/')
         path = "/" + path;
 
-    String appName = parseAppNameFromFile(path);
-    if (appName.isEmpty())
+    auto meta = parseAppMetadata(path);
+    if (meta.name.isEmpty())
         return;
 
-    auto *app = new BerryApp(path, appName);
-    UI::windowManager().openApp(appName.c_str(), app);
+    auto *app = new BerryApp(path, meta.name);
+    UI::windowManager().openApp(meta.name.c_str(), app);
 }
 
 void openBerryPanel(const String &filePath)
@@ -91,12 +99,12 @@ void openBerryPanel(const String &filePath)
     if (path.length() > 0 && path[0] != '/')
         path = "/" + path;
 
-    String appName = parseAppNameFromFile(path);
-    if (appName.isEmpty())
+    auto meta = parseAppMetadata(path);
+    if (meta.name.isEmpty())
         return;
 
-    auto *app = new BerryApp(path, appName);
-    UI::windowManager().openPanel(appName.c_str(), app, 0, UI::Theme::TaskbarY(), UI::Theme::ScreenWidth(),
+    auto *app = new BerryApp(path, meta.name);
+    UI::windowManager().openPanel(meta.name.c_str(), app, 0, UI::Theme::TaskbarY(), UI::Theme::ScreenWidth(),
                                   UI::Theme::TaskbarHeight);
 }
 #endif
@@ -126,9 +134,7 @@ static std::vector<BerryScriptInfo> scanBerryScriptsOnFs(fs::FS &filesystem, con
 
             String virtualPath = virtualPrefix + localPath;
 
-            BerryScriptInfo info;
-            info.name = parseAppNameFromFile(virtualPath);
-            info.path = virtualPath;
+            BerryScriptInfo info = parseAppMetadata(virtualPath);
             result.push_back(std::move(info));
         }
         entry = d.openNextFile();
@@ -278,10 +284,13 @@ static String berryHandlerImpl(const String &command)
         }
 
 #if ENABLE_UI
-        openBerryScript(path);
-        String appName = parseAppNameFromFile(path);
-        LoggerInstance->Info("Berry: opened " + appName + " (" + path + ")");
-        return "{\"event\":\"berry\", \"status\":\"opened\", \"app\":\"" + appName + "\"}";
+        {
+            auto meta = parseAppMetadata(path);
+            String pathCopy = path;
+            UI::queueAction([pathCopy]() { openBerryScript(pathCopy); });
+            LoggerInstance->Info("Berry: opening " + meta.name + " (" + path + ")");
+            return "{\"event\":\"berry\", \"status\":\"queued\", \"app\":\"" + meta.name + "\"}";
+        }
 #else
         ResolvedPath rp = resolveVirtualPath(path);
         File f;
@@ -310,9 +319,10 @@ static String berryHandlerImpl(const String &command)
         {
             if (s.name.equalsIgnoreCase(appName))
             {
-                openBerryScript(s.path);
-                LoggerInstance->Info("Berry: opened app " + s.name);
-                return "{\"event\":\"berry\", \"status\":\"opened\", \"app\":\"" + s.name + "\"}";
+                String scriptPath = s.path;
+                UI::queueAction([scriptPath]() { openBerryScript(scriptPath); });
+                LoggerInstance->Info("Berry: opening app " + s.name);
+                return "{\"event\":\"berry\", \"status\":\"queued\", \"app\":\"" + s.name + "\"}";
             }
         }
         return "{\"error\": \"Unknown Berry app: " + appName + "\"}";
@@ -339,8 +349,48 @@ static String berryHandlerImpl(const String &command)
     }
 #endif
 
+    if (operation == "apps")
+    {
+        auto scripts = scanBerryScripts("/berry/apps");
+        String json = "{\"apps\":[";
+        for (size_t i = 0; i < scripts.size(); i++)
+        {
+            if (i > 0)
+                json += ",";
+
+            // parse category and label from startMenu path (e.g. "/Programs/Paint")
+            String category, label;
+            const String &sm = scripts[i].startMenu;
+            if (sm.length() > 1 && sm[0] == '/')
+            {
+                int sep = sm.indexOf('/', 1);
+                if (sep > 0)
+                {
+                    category = sm.substring(1, sep);
+                    label = sm.substring(sep + 1);
+                }
+            }
+
+            json += "{\"name\":\"" + scripts[i].name + "\",\"path\":\"" + scripts[i].path + "\",\"startMenu\":\"" +
+                    sm + "\",\"category\":\"" + category + "\",\"label\":\"" + label + "\"}";
+        }
+        json += "]}";
+        return json;
+    }
+
+    if (operation == "meta")
+    {
+        String path = CommandParser::GetCommandParameter(command, 2);
+        if (path.length() == 0)
+            return String(F("{\"error\": \"No file path provided\"}"));
+        if (path.length() > 0 && path[0] != '/')
+            path = "/" + path;
+        auto meta = parseAppMetadata(path);
+        return "{\"app\":\"" + meta.name + "\",\"startMenu\":\"" + meta.startMenu + "\"}";
+    }
+
     return String(F(
-        "{\"error\": \"Usage: berry eval <code> | berry run <path> | berry open <appname> | berry panel <appname>\"}"));
+        "{\"error\": \"Usage: berry eval <code> | berry run <path> | berry open <appname> | berry panel <appname> | berry apps | berry meta <path>\"}"));
 }
 
 static String berryHandler(const String &command)

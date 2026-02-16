@@ -7,6 +7,7 @@
 #include "../UI/App.h"
 #include "../UI/elements/container.h"
 #include "../UI/elements/error_popup.h"
+#include "../UI/WindowManager.h"
 #include "../UI/Renderer.h"
 #include "BerryUIBindings.h"
 #include "../Logging.h"
@@ -31,7 +32,8 @@ enum class HandleType
     COMBOBOX,
     GROUPBOX,
     TABS,
-    FILELIST
+    FILELIST,
+    POPUP
 };
 
 struct HandleEntry
@@ -170,6 +172,9 @@ public:
         be_setglobal(vm, _instanceGlobal.c_str());
         be_pop(vm, 1);
         _instanceGlobal = "";
+
+        // destroy any popup overlays created by this app
+        UI::windowManager().destroyPopupsForOwner(this);
 
         _handles.clear();
         _nextCbId = 0;
