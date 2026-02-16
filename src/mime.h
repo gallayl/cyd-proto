@@ -1,6 +1,6 @@
 #pragma once
 
-#define MIME_plainText "text/plain"
-#define MIME_html "text/html"
-#define MIME_jpeg "image/jpeg"
-#define MIME_json "application/json"
+#define MIME_PLAINTEXT "text/plain"
+#define MIME_HTML "text/html"
+#define MIME_JPEG "image/jpeg"
+#define MIME_JSON "application/json"

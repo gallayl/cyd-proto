@@ -14,7 +14,7 @@ void initWebServer()
     LoggerInstance->Info(F("Starting WEB server"));
 
     server.on("/heap", HTTP_GET,
-              [](AsyncWebServerRequest *request) { request->send(200, MIME_plainText, String(ESP.getFreeHeap())); });
+              [](AsyncWebServerRequest *request) { request->send(200, MIME_PLAINTEXT, String(ESP.getFreeHeap())); });
 
     server.on("/uploadFiles", HTTP_POST, onPostUploadFiles, uploadFiles);
     server.on("/listFiles", HTTP_GET, listFiles);
