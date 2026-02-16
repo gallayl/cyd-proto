@@ -51,7 +51,7 @@ inline bool initRenderer()
 
     if (LoggerInstance)
         LoggerInstance->Info("Renderer: strip " + String(tft.width()) + "x" + String(STRIP_H) +
-                            " 16-bit, buffer=" + String(bufSize) + " bytes");
+                             " 16-bit, buffer=" + String(bufSize) + " bytes");
     return true;
 }
 
@@ -66,12 +66,11 @@ inline bool reinitRenderer()
 
     if (LoggerInstance)
         LoggerInstance->Info("Renderer reinit: strip " + String(tft.width()) + "x" + String(STRIP_H) +
-                            " (buffer reused)");
+                             " (buffer reused)");
     return true;
 }
 
-template <typename DrawFn>
-inline void renderStrips(DrawFn drawFn)
+template <typename DrawFn> inline void renderStrips(DrawFn drawFn)
 {
     auto &c = canvas();
     int sw = tft.width();

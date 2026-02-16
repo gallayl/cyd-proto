@@ -371,8 +371,8 @@ static String berryHandlerImpl(const String &command)
                 }
             }
 
-            json += "{\"name\":\"" + scripts[i].name + "\",\"path\":\"" + scripts[i].path + "\",\"startMenu\":\"" +
-                    sm + "\",\"category\":\"" + category + "\",\"label\":\"" + label + "\"}";
+            json += "{\"name\":\"" + scripts[i].name + "\",\"path\":\"" + scripts[i].path + "\",\"startMenu\":\"" + sm +
+                    "\",\"category\":\"" + category + "\",\"label\":\"" + label + "\"}";
         }
         json += "]}";
         return json;
@@ -389,15 +389,14 @@ static String berryHandlerImpl(const String &command)
         return "{\"app\":\"" + meta.name + "\",\"startMenu\":\"" + meta.startMenu + "\"}";
     }
 
-    return String(F(
-        "{\"error\": \"Usage: berry eval <code> | berry run <path> | berry open <appname> | berry panel <appname> | berry apps | berry meta <path>\"}"));
+    return String(F("{\"error\": \"Usage: berry eval <code> | berry run <path> | berry open <appname> | berry panel "
+                    "<appname> | berry apps | berry meta <path>\"}"));
 }
 
 static String berryHandler(const String &command)
 {
 #if ENABLE_UI
-    return UI::postToUITaskWithResult([&command]() -> String
-                                     { return berryHandlerImpl(command); });
+    return UI::postToUITaskWithResult([&command]() -> String { return berryHandlerImpl(command); });
 #else
     return berryHandlerImpl(command);
 #endif

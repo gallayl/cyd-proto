@@ -14,7 +14,8 @@ public:
             auto cfg = _bus_instance.config();
 
             // Select the SPI to use ESP32-S2,C3: SPI2_HOST or SPI3_HOST / ESP32: VSPI_HOST or HSPI_HOST
-            cfg.spi_host = HSPI_HOST; // 使用するSPIを選択  ESP32-S2,C3 : SPI2_HOST or SPI3_HOST / ESP32 : VSPI_HOST or HSPI_HOST
+            cfg.spi_host =
+                HSPI_HOST; // 使用するSPIを選択  ESP32-S2,C3 : SPI2_HOST or SPI3_HOST / ESP32 : VSPI_HOST or HSPI_HOST
             // cfg.spi_host = HSPI_HOST;     // 使用するSPIを選択  ESP32-S2,C3 : SPI2_HOST or SPI3_HOST / ESP32 : VSPI_HOST or HSPI_HOST
             //  * Due to the ESP-IDF version upgrade, the VSPI_HOST and HSPI_HOST descriptions are deprecated, so if an error occurs, please use SPI2_HOST and SPI3_HOST instead.
             //  ※ ESP-IDFバージョンアップに伴い、VSPI_HOST , HSPI_HOSTの記述は非推奨になるため、エラーが出る場合は代わりにSPI2_HOST , SPI3_HOSTを使用してください。
@@ -64,13 +65,15 @@ public:
                   cfg.pin_d7 = 14;              // Pin number to which D7 is connected D7を接続しているピン番号
             //*/
 
-            _bus_instance.config(cfg);              // The setting value is reflected in the bus. 設定値をバスに反映します。
+            _bus_instance.config(cfg); // The setting value is reflected in the bus. 設定値をバスに反映します。
             _panel_instance.setBus(&_bus_instance); // Place the bus on the panel. バスをパネルにセットします。
         }
 
         { // Configure the display panel control settings.
             // 表示パネル制御の設定を行います。
-            auto cfg = _panel_instance.config(); // Gets the structure for display panel settings. 表示パネル設定用の構造体を取得します。
+            auto cfg =
+                _panel_instance
+                    .config(); // Gets the structure for display panel settings. 表示パネル設定用の構造体を取得します。
 
             cfg.pin_cs = 15;   // pin number to which CS is connected (-1 = disable)
             cfg.pin_rst = -1;  // pin number to which RST is connected (-1 = disable) — pin 4 is shared with RGB LED red
@@ -79,17 +82,23 @@ public:
             // * The following settings are set to general default values ​​for each panel, so please try commenting out any items you are unsure about.
             // ※ 以下の設定値はパネル毎に一般的な初期値が設定されていますので、不明な項目はコメントアウトして試してみてください。
 
-            cfg.panel_width = 240;    // actual displayable width
-            cfg.panel_height = 320;   // actual displayable height
-            cfg.offset_x = 0;         // Panel offset in the X direction パネルのX方向オフセット量
-            cfg.offset_y = 0;         // Panel offset in the Y direction パネルのY方向オフセット量
-            cfg.offset_rotation = 6;  // Rotation direction offset 0~7 (4~7 are upside down) 回転方向の値のオフセット 0~7 (4~7は上下反転)
-            cfg.dummy_read_pixel = 8; // Number of dummy read bits before pixel readout ピクセル読出し前のダミーリードのビット数
-            cfg.dummy_read_bits = 1;  // Number of dummy read bits before reading non-pixel data ピクセル以外のデータ読出し前のダミーリードのビット数
-            cfg.readable = true;      // Set to true if data can be read データ読出しが可能な場合 trueに設定
-            cfg.invert = true;        // Set to true if the panel's brightness is reversed パネルの明暗が反転してしまう場合 trueに設定
-            cfg.rgb_order = false;    // Set to true if the red and blue of the panel are swapped. パネルの赤と青が入れ替わってしまう場合 trueに設定
-            cfg.dlen_16bit = false;   // Set to true for panels that transmit data in 16-bit units via 16-bit parallel or SPI. 16bitパラレルやSPIでデータ長を16bit単位で送信するパネルの場合 trueに設定
+            cfg.panel_width = 240;  // actual displayable width
+            cfg.panel_height = 320; // actual displayable height
+            cfg.offset_x = 0;       // Panel offset in the X direction パネルのX方向オフセット量
+            cfg.offset_y = 0;       // Panel offset in the Y direction パネルのY方向オフセット量
+            cfg.offset_rotation =
+                6; // Rotation direction offset 0~7 (4~7 are upside down) 回転方向の値のオフセット 0~7 (4~7は上下反転)
+            cfg.dummy_read_pixel =
+                8; // Number of dummy read bits before pixel readout ピクセル読出し前のダミーリードのビット数
+            cfg.dummy_read_bits =
+                1; // Number of dummy read bits before reading non-pixel data ピクセル以外のデータ読出し前のダミーリードのビット数
+            cfg.readable = true; // Set to true if data can be read データ読出しが可能な場合 trueに設定
+            cfg.invert =
+                true; // Set to true if the panel's brightness is reversed パネルの明暗が反転してしまう場合 trueに設定
+            cfg.rgb_order =
+                false; // Set to true if the red and blue of the panel are swapped. パネルの赤と青が入れ替わってしまう場合 trueに設定
+            cfg.dlen_16bit =
+                false; // Set to true for panels that transmit data in 16-bit units via 16-bit parallel or SPI. 16bitパラレルやSPIでデータ長を16bit単位で送信するパネルの場合 trueに設定
             // If the bus is shared with the SD card, set it to true (bus control is performed using drawJpgFile, etc.)
             cfg.bus_shared = true; // SDカードとバスを共有している場合 trueに設定(drawJpgFile等でバス制御を行います)
 
@@ -104,15 +113,17 @@ public:
         //*
         { // Set the backlight control (delete if not required).
             // バックライト制御の設定を行います。（必要なければ削除）
-            auto cfg = _light_instance.config(); // Gets the backlight settings structure. バックライト設定用の構造体を取得します。
+            auto cfg = _light_instance
+                           .config(); // Gets the backlight settings structure. バックライト設定用の構造体を取得します。
 
-            cfg.pin_bl = 21;     // The pin number to which the backlight is connected バックライトが接続されているピン番号
+            cfg.pin_bl = 21; // The pin number to which the backlight is connected バックライトが接続されているピン番号
             cfg.invert = false;  // true if the backlight brightness is inverted バックライトの輝度を反転させる場合 true
             cfg.freq = 44100;    // Backlight PWM frequency バックライトのPWM周波数
             cfg.pwm_channel = 7; // PWM channel number to use 使用するPWMのチャンネル番号
 
             _light_instance.config(cfg);
-            _panel_instance.setLight(&_light_instance); // Place the backlight on the panel. バックライトをパネルにセットします。
+            _panel_instance.setLight(
+                &_light_instance); // Place the backlight on the panel. バックライトをパネルにセットします。
         }
         //*/
 
@@ -121,13 +132,19 @@ public:
             // タッチスクリーン制御の設定を行います。（必要なければ削除）
             auto cfg = _touch_instance.config();
 
-            cfg.x_min = 0;           // The minimum X value (raw value) obtained from the touchscreen タッチスクリーンから得られる最小のX値(生の値)
-            cfg.x_max = 239;         // Maximum X value (raw value) obtained from the touchscreen タッチスクリーンから得られる最大のX値(生の値)
-            cfg.y_min = 0;           // The minimum Y value (raw value) obtained from the touchscreen タッチスクリーンから得られる最小のY値(生の値)
-            cfg.y_max = 319;         // Maximum Y value (raw value) obtained from the touchscreen タッチスクリーンから得られる最大のY値(生の値)
-            cfg.pin_int = -1;        // The pin number to which INT is connected INTが接続されているピン番号
-            cfg.bus_shared = true;   // If you are using a bus that is common with the screen, set it to true. 画面と共通のバスを使用している場合 trueを設定
-            cfg.offset_rotation = 0; // Adjust if display and touch direction do not match. Set a value between 0 and 7. 表示とタッチの向きのが一致しない場合の調整 0~7の値で設定 // tft_espi 1=swap xy, 2=invert x, 4=inverty
+            cfg.x_min =
+                0; // The minimum X value (raw value) obtained from the touchscreen タッチスクリーンから得られる最小のX値(生の値)
+            cfg.x_max =
+                239; // Maximum X value (raw value) obtained from the touchscreen タッチスクリーンから得られる最大のX値(生の値)
+            cfg.y_min =
+                0; // The minimum Y value (raw value) obtained from the touchscreen タッチスクリーンから得られる最小のY値(生の値)
+            cfg.y_max =
+                319; // Maximum Y value (raw value) obtained from the touchscreen タッチスクリーンから得られる最大のY値(生の値)
+            cfg.pin_int = -1; // The pin number to which INT is connected INTが接続されているピン番号
+            cfg.bus_shared =
+                true; // If you are using a bus that is common with the screen, set it to true. 画面と共通のバスを使用している場合 trueを設定
+            cfg.offset_rotation =
+                0; // Adjust if display and touch direction do not match. Set a value between 0 and 7. 表示とタッチの向きのが一致しない場合の調整 0~7の値で設定 // tft_espi 1=swap xy, 2=invert x, 4=inverty
 
             // For SPI connection SPI接続の場合
             cfg.spi_host = VSPI_HOST; // Select the SPI to use 使用するSPIを選択 (HSPI_HOST or VSPI_HOST)
@@ -145,7 +162,8 @@ public:
             // cfg.freq = 400000;     // I2Cクロックを設定
 
             _touch_instance.config(cfg);
-            _panel_instance.setTouch(&_touch_instance); // Place the touchscreen on the panel. タッチスクリーンをパネルにセットします。
+            _panel_instance.setTouch(
+                &_touch_instance); // Place the touchscreen on the panel. タッチスクリーンをパネルにセットします。
         }
         //*/
 

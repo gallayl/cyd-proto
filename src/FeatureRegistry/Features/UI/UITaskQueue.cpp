@@ -77,8 +77,7 @@ void postToUITaskSync(std::function<void()> action)
 String postToUITaskWithResult(std::function<String()> action)
 {
     String result;
-    postToUITaskSync([&]()
-                     { result = action(); });
+    postToUITaskSync([&]() { result = action(); });
     return result;
 }
 

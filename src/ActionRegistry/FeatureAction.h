@@ -2,9 +2,16 @@
 
 #include <Arduino.h>
 
-enum class Transport { CLI, REST, WS, SCRIPTING };
+enum class Transport
+{
+    CLI,
+    REST,
+    WS,
+    SCRIPTING
+};
 
-struct TransportConfig {
+struct TransportConfig
+{
     bool cli = true;
     bool rest = false;
     bool ws = true;
@@ -13,7 +20,8 @@ struct TransportConfig {
 
 typedef String (*ActionHandler)(const String &command);
 
-struct FeatureAction {
+struct FeatureAction
+{
     String name;
     String type = "GET";
     ActionHandler handler;

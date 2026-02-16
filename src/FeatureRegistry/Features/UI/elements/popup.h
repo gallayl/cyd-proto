@@ -15,7 +15,10 @@ public:
         setBounds(ix, iy, iw, ih);
     }
 
-    bool isVisible() const { return _visible; }
+    bool isVisible() const
+    {
+        return _visible;
+    }
 
     void show()
     {

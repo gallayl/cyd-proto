@@ -187,9 +187,8 @@ FeatureAction featuresAction = {.name = "features",
                                     [](const String &command)
                                 {
                                     String output;
-                                    withRegisteredFeatures(
-                                        [&output](const JsonDocument &doc)
-                                        { serializeJson(doc, output); });
+                                    withRegisteredFeatures([&output](const JsonDocument &doc)
+                                                           { serializeJson(doc, output); });
                                     return output;
                                 },
                                 .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};

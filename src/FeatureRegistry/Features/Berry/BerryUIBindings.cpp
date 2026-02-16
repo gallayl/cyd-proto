@@ -56,7 +56,7 @@ public:
         else
         {
             LoggerInstance->Error("BerryCanvas: createSprite(" + String(w) + "x" + String(h) + " @" + String(depth) +
-                                 "bpp) failed — free heap: " + String(ESP.getFreeHeap()));
+                                  "bpp) failed — free heap: " + String(ESP.getFreeHeap()));
         }
     }
 
@@ -253,8 +253,7 @@ static void getParentBounds(BerryApp *app, int parentHandle, int &px, int &py, i
 
 static constexpr size_t BERRY_MIN_FREE_HEAP = 4096;
 
-template <typename T, typename... Args>
-static std::unique_ptr<T> safeAlloc(Args &&...args)
+template <typename T, typename... Args> static std::unique_ptr<T> safeAlloc(Args &&...args)
 {
     if (ESP.getFreeHeap() < BERRY_MIN_FREE_HEAP)
         return nullptr;
@@ -1108,7 +1107,7 @@ static int ui_bounds(bvm *vm)
     be_loadbuffer(vm, "bounds", code.c_str(), code.length());
     be_pcall(vm, 0);
     // Result is now at top of stack
-    
+
     be_return(vm);
 }
 
@@ -1558,13 +1557,15 @@ static int ui_show_popup(bvm *vm)
     auto *popup = asPopup(entry);
     if (!popup)
     {
-        LoggerInstance->Error("show_popup: handle " + String(h) + " is not a POPUP (type=" + String((int)entry->type) + ")");
+        LoggerInstance->Error("show_popup: handle " + String(h) + " is not a POPUP (type=" + String((int)entry->type) +
+                              ")");
         be_return_nil(vm);
     }
 
     int bx, by, bw, bh;
     popup->getBounds(bx, by, bw, bh);
-    LoggerInstance->Info("show_popup: handle=" + String(h) + " bounds=(" + String(bx) + "," + String(by) + "," + String(bw) + "," + String(bh) + ") children=" + String(popup->getChildren().size()));
+    LoggerInstance->Info("show_popup: handle=" + String(h) + " bounds=(" + String(bx) + "," + String(by) + "," +
+                         String(bw) + "," + String(bh) + ") children=" + String(popup->getChildren().size()));
     popup->show();
     UI::markDirty();
     be_return_nil(vm);

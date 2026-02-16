@@ -32,13 +32,25 @@ constexpr uint16_t MenuSeparatorDark = 0x8410;     // #808080 (same as ButtonSha
 constexpr uint16_t MenuSeparatorLight = TFT_WHITE; // highlight line below dark
 
 // layout constants (screen-dependent values are runtime functions)
-inline int ScreenWidth() { return tft.width(); }
-inline int ScreenHeight() { return tft.height(); }
+inline int ScreenWidth()
+{
+    return tft.width();
+}
+inline int ScreenHeight()
+{
+    return tft.height();
+}
 constexpr int TaskbarHeight = 26;
 constexpr int TitleBarHeight = 18;
 constexpr int DesktopY = 0;
-inline int DesktopHeight() { return ScreenHeight() - TaskbarHeight; }
-inline int TaskbarY() { return ScreenHeight() - TaskbarHeight; }
+inline int DesktopHeight()
+{
+    return ScreenHeight() - TaskbarHeight;
+}
+inline int TaskbarY()
+{
+    return ScreenHeight() - TaskbarHeight;
+}
 constexpr int StartButtonWidth = 50;
 constexpr int CloseButtonSize = 14;
 constexpr int WindowBorderWidth = 2;
@@ -48,7 +60,10 @@ constexpr int MenuItemHeight = 20;
 constexpr int MenuWidth = 120;
 constexpr int SubMenuWidth = 120;
 constexpr int MenuSeparatorHeight = 8;
-inline int KeyboardHeight() { return DesktopHeight() / 2; }
+inline int KeyboardHeight()
+{
+    return DesktopHeight() / 2;
+}
 constexpr int KeyboardToggleSize = 22;
 
 // checkbox / radio

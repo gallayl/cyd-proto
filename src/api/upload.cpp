@@ -22,26 +22,31 @@ static String sanitizePath(const String &raw)
     path.trim();
 
     // Remove ".." segments to prevent directory traversal
-    while (path.indexOf("..") >= 0) {
+    while (path.indexOf("..") >= 0)
+    {
         path.replace("..", "");
     }
 
     // Collapse double slashes
-    while (path.indexOf("//") >= 0) {
+    while (path.indexOf("//") >= 0)
+    {
         path.replace("//", "/");
     }
 
     // Ensure path starts with /
-    if (!path.startsWith("/")) {
+    if (!path.startsWith("/"))
+    {
         path = "/" + path;
     }
 
     // Remove trailing slash (unless it's the root)
-    if (path.length() > 1 && path.endsWith("/")) {
+    if (path.length() > 1 && path.endsWith("/"))
+    {
         path.remove(path.length() - 1);
     }
 
-    if (path.length() <= 1) {
+    if (path.length() <= 1)
+    {
         return "";
     }
 
@@ -54,7 +59,8 @@ static bool mkdirs(fs::FS &fs, const String &filePath)
     while (true)
     {
         int slash = filePath.indexOf('/', idx);
-        if (slash < 0) {
+        if (slash < 0)
+        {
             break;
         }
         String dir = filePath.substring(0, slash);

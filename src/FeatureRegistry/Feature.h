@@ -43,14 +43,8 @@ public:
             return false;
 
         _taskShouldStop = false;
-        BaseType_t result = xTaskCreatePinnedToCore(
-            taskEntry,
-            _featureName.c_str(),
-            _taskStackSize,
-            this,
-            _taskPriority,
-            &_taskHandle,
-            _pinnedCore);
+        BaseType_t result = xTaskCreatePinnedToCore(taskEntry, _featureName.c_str(), _taskStackSize, this,
+                                                    _taskPriority, &_taskHandle, _pinnedCore);
         return result == pdPASS;
     }
 
@@ -70,9 +64,18 @@ public:
         }
     }
 
-    bool IsTaskBased() const { return _runAsTask; }
-    bool IsTaskRunning() const { return _taskHandle != nullptr && !_taskShouldStop; }
-    TaskHandle_t GetTaskHandle() const { return _taskHandle; }
+    bool IsTaskBased() const
+    {
+        return _runAsTask;
+    }
+    bool IsTaskRunning() const
+    {
+        return _taskHandle != nullptr && !_taskShouldStop;
+    }
+    TaskHandle_t GetTaskHandle() const
+    {
+        return _taskHandle;
+    }
 
     UBaseType_t GetTaskStackHighWaterMark() const
     {

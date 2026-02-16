@@ -7,332 +7,350 @@
 namespace UI
 {
 
-    class ScrollableContainer : public Element
+class ScrollableContainer : public Element
+{
+public:
+    ScrollableContainer() = default;
+
+    void setContentHeight(int h)
     {
-    public:
-        ScrollableContainer() = default;
+        contentHeight = h;
+    }
+    int getContentHeight() const
+    {
+        return contentHeight;
+    }
+    int getScrollOffset() const
+    {
+        return scrollOffset;
+    }
 
-        void setContentHeight(int h) { contentHeight = h; }
-        int getContentHeight() const { return contentHeight; }
-        int getScrollOffset() const { return scrollOffset; }
+    void setAutoContentHeight(bool enabled)
+    {
+        autoHeight = enabled;
+    }
+    void setThinScrollbar(bool enabled)
+    {
+        thinScrollbar = enabled;
+    }
 
-        void setAutoContentHeight(bool enabled) { autoHeight = enabled; }
-        void setThinScrollbar(bool enabled) { thinScrollbar = enabled; }
+    void addChild(std::unique_ptr<Element> child)
+    {
+        content.addChild(std::move(child));
+    }
 
-        void addChild(std::unique_ptr<Element> child)
+    Container &getContent()
+    {
+        return content;
+    }
+
+    void mount() override
+    {
+        if (mounted)
+            return;
+        Element::mount();
+        content.mount();
+    }
+
+    void unmount() override
+    {
+        if (!mounted)
+            return;
+        content.unmount();
+        Element::unmount();
+    }
+
+    void autoContentHeightFromChildren()
+    {
+        int maxBottom = y;
+        for (auto *child : content.getChildren())
         {
-            content.addChild(std::move(child));
+            int cx, cy, cw, ch;
+            child->getBounds(cx, cy, cw, ch);
+            int bottom = cy + ch;
+            if (bottom > maxBottom)
+                maxBottom = bottom;
+        }
+        contentHeight = maxBottom - y;
+    }
+
+    void draw() override
+    {
+        if (!mounted)
+            return;
+        auto &c = canvas();
+
+        if (autoHeight)
+            autoContentHeightFromChildren();
+
+        int sbW = scrollbarWidth();
+        bool needsScroll = contentHeight > height;
+        int viewW = needsScroll ? width - sbW : width;
+
+        // clip to viewport
+        c.setClipRect(drawX(), drawY(), viewW, height);
+
+        // temporarily offset children by -scrollOffset so the clip rect
+        // hides elements above/below the visible area
+        auto children = content.getChildren();
+        for (auto *child : children)
+        {
+            int cx, cy, cw, ch;
+            child->getBounds(cx, cy, cw, ch);
+            child->setBounds(cx, cy - scrollOffset, cw, ch);
+        }
+        // also offset descendants (e.g. buttons inside GroupBox) which have
+        // fixed positions and don't inherit the parent's scroll offset
+        for (auto *child : children)
+        {
+            if (Container *nested = child->getNestedContainer())
+            {
+                for (auto *grandchild : nested->getChildren())
+                {
+                    int gx, gy, gw, gh;
+                    grandchild->getBounds(gx, gy, gw, gh);
+                    grandchild->setBounds(gx, gy - scrollOffset, gw, gh);
+                }
+            }
         }
 
-        Container &getContent() { return content; }
+        content.setBounds(x, y, viewW, contentHeight);
+        content.draw();
 
-        void mount() override
+        // restore original positions
+        for (auto *child : children)
         {
-            if (mounted)
-                return;
-            Element::mount();
-            content.mount();
+            if (Container *nested = child->getNestedContainer())
+            {
+                for (auto *grandchild : nested->getChildren())
+                {
+                    int gx, gy, gw, gh;
+                    grandchild->getBounds(gx, gy, gw, gh);
+                    grandchild->setBounds(gx, gy + scrollOffset, gw, gh);
+                }
+            }
+        }
+        for (auto *child : children)
+        {
+            int cx, cy, cw, ch;
+            child->getBounds(cx, cy, cw, ch);
+            child->setBounds(cx, cy + scrollOffset, cw, ch);
         }
 
-        void unmount() override
+        c.clearClipRect();
+
+        // scrollbar
+        if (needsScroll)
         {
-            if (!mounted)
-                return;
-            content.unmount();
-            Element::unmount();
+            if (thinScrollbar)
+                drawThinScrollbar(c);
+            else
+                drawScrollbar(c);
+        }
+    }
+
+    void onTouch(int px, int py) override
+    {
+        if (!mounted)
+            return;
+
+        int sbW = scrollbarWidth();
+
+        // continuous thumb drag
+        if (draggingThumb)
+        {
+            int trackH = thinScrollbar ? height : (height - 2 * sbW);
+            int maxScroll = contentHeight - height;
+            if (maxScroll > 0 && trackH > 0)
+            {
+                int delta = py - dragStartY;
+                int thumbH = (height * trackH) / contentHeight;
+                if (thumbH < 10)
+                    thumbH = 10;
+                int thumbTrack = trackH - thumbH;
+                if (thumbTrack > 0)
+                {
+                    scrollOffset = dragStartOffset + (delta * maxScroll) / thumbTrack;
+                    clampScroll();
+                }
+            }
+            return;
         }
 
-        void autoContentHeightFromChildren()
+        // continuous content drag
+        if (draggingContent)
         {
-            int maxBottom = y;
+            int delta = lastTouchY - py;
+            scrollOffset += delta;
+            clampScroll();
+            lastTouchY = py;
+            return;
+        }
+
+        // first touch
+        bool needsScroll = contentHeight > height;
+        int sbX = x + width - sbW;
+
+        if (needsScroll && px >= sbX)
+        {
+            draggingThumb = true;
+            dragStartY = py;
+            dragStartOffset = scrollOffset;
+            return;
+        }
+
+        // forward to content (adjust for scroll offset)
+        int adjY = py + scrollOffset;
+        content.handleTouch(px, adjY);
+
+        if (needsScroll)
+        {
+            bool touchOnChild = false;
             for (auto *child : content.getChildren())
             {
-                int cx, cy, cw, ch;
-                child->getBounds(cx, cy, cw, ch);
-                int bottom = cy + ch;
-                if (bottom > maxBottom)
-                    maxBottom = bottom;
-            }
-            contentHeight = maxBottom - y;
-        }
-
-        void draw() override
-        {
-            if (!mounted)
-                return;
-            auto &c = canvas();
-
-            if (autoHeight)
-                autoContentHeightFromChildren();
-
-            int sbW = scrollbarWidth();
-            bool needsScroll = contentHeight > height;
-            int viewW = needsScroll ? width - sbW : width;
-
-            // clip to viewport
-            c.setClipRect(drawX(), drawY(), viewW, height);
-
-            // temporarily offset children by -scrollOffset so the clip rect
-            // hides elements above/below the visible area
-            auto children = content.getChildren();
-            for (auto *child : children)
-            {
-                int cx, cy, cw, ch;
-                child->getBounds(cx, cy, cw, ch);
-                child->setBounds(cx, cy - scrollOffset, cw, ch);
-            }
-            // also offset descendants (e.g. buttons inside GroupBox) which have
-            // fixed positions and don't inherit the parent's scroll offset
-            for (auto *child : children)
-            {
-                if (Container *nested = child->getNestedContainer())
+                if (child->contains(px, adjY))
                 {
-                    for (auto *grandchild : nested->getChildren())
-                    {
-                        int gx, gy, gw, gh;
-                        grandchild->getBounds(gx, gy, gw, gh);
-                        grandchild->setBounds(gx, gy - scrollOffset, gw, gh);
-                    }
+                    touchOnChild = true;
+                    break;
                 }
             }
-
-            content.setBounds(x, y, viewW, contentHeight);
-            content.draw();
-
-            // restore original positions
-            for (auto *child : children)
+            if (!touchOnChild)
             {
-                if (Container *nested = child->getNestedContainer())
-                {
-                    for (auto *grandchild : nested->getChildren())
-                    {
-                        int gx, gy, gw, gh;
-                        grandchild->getBounds(gx, gy, gw, gh);
-                        grandchild->setBounds(gx, gy + scrollOffset, gw, gh);
-                    }
-                }
-            }
-            for (auto *child : children)
-            {
-                int cx, cy, cw, ch;
-                child->getBounds(cx, cy, cw, ch);
-                child->setBounds(cx, cy + scrollOffset, cw, ch);
-            }
-
-            c.clearClipRect();
-
-            // scrollbar
-            if (needsScroll)
-            {
-                if (thinScrollbar)
-                    drawThinScrollbar(c);
-                else
-                    drawScrollbar(c);
-            }
-        }
-
-        void onTouch(int px, int py) override
-        {
-            if (!mounted)
-                return;
-
-            int sbW = scrollbarWidth();
-
-            // continuous thumb drag
-            if (draggingThumb)
-            {
-                int trackH = thinScrollbar ? height : (height - 2 * sbW);
-                int maxScroll = contentHeight - height;
-                if (maxScroll > 0 && trackH > 0)
-                {
-                    int delta = py - dragStartY;
-                    int thumbH = (height * trackH) / contentHeight;
-                    if (thumbH < 10)
-                        thumbH = 10;
-                    int thumbTrack = trackH - thumbH;
-                    if (thumbTrack > 0)
-                    {
-                        scrollOffset = dragStartOffset + (delta * maxScroll) / thumbTrack;
-                        clampScroll();
-                    }
-                }
-                return;
-            }
-
-            // continuous content drag
-            if (draggingContent)
-            {
-                int delta = lastTouchY - py;
-                scrollOffset += delta;
-                clampScroll();
+                draggingContent = true;
                 lastTouchY = py;
-                return;
-            }
-
-            // first touch
-            bool needsScroll = contentHeight > height;
-            int sbX = x + width - sbW;
-
-            if (needsScroll && px >= sbX)
-            {
-                draggingThumb = true;
-                dragStartY = py;
-                dragStartOffset = scrollOffset;
-                return;
-            }
-
-            // forward to content (adjust for scroll offset)
-            int adjY = py + scrollOffset;
-            content.handleTouch(px, adjY);
-
-            if (needsScroll)
-            {
-                bool touchOnChild = false;
-                for (auto *child : content.getChildren())
-                {
-                    if (child->contains(px, adjY))
-                    {
-                        touchOnChild = true;
-                        break;
-                    }
-                }
-                if (!touchOnChild)
-                {
-                    draggingContent = true;
-                    lastTouchY = py;
-                }
             }
         }
+    }
 
-        void onTouchEnd(int px, int py) override
+    void onTouchEnd(int px, int py) override
+    {
+        if (!mounted)
+            return;
+
+        if (draggingThumb)
         {
-            if (!mounted)
-                return;
-
-            if (draggingThumb)
-            {
-                draggingThumb = false;
-                return;
-            }
-
-            draggingContent = false;
-            int adjY = py + scrollOffset;
-            content.handleTouchEnd(px, adjY);
+            draggingThumb = false;
+            return;
         }
 
-    private:
-        Container content;
-        int contentHeight{0};
-        int scrollOffset{0};
-        bool draggingThumb{false};
-        bool draggingContent{false};
-        int dragStartY{0};
-        int dragStartOffset{0};
-        int lastTouchY{0};
-        bool autoHeight{false};
-        bool thinScrollbar{false};
+        draggingContent = false;
+        int adjY = py + scrollOffset;
+        content.handleTouchEnd(px, adjY);
+    }
 
-        int scrollbarWidth() const
+private:
+    Container content;
+    int contentHeight{0};
+    int scrollOffset{0};
+    bool draggingThumb{false};
+    bool draggingContent{false};
+    int dragStartY{0};
+    int dragStartOffset{0};
+    int lastTouchY{0};
+    bool autoHeight{false};
+    bool thinScrollbar{false};
+
+    int scrollbarWidth() const
+    {
+        return thinScrollbar ? Theme::ThinScrollbarWidth : Theme::ScrollbarWidth;
+    }
+
+    void clampScroll()
+    {
+        int maxScroll = contentHeight - height;
+        if (maxScroll < 0)
+            maxScroll = 0;
+        if (scrollOffset < 0)
+            scrollOffset = 0;
+        if (scrollOffset > maxScroll)
+            scrollOffset = maxScroll;
+    }
+
+    void drawThinScrollbar(LGFX_Sprite &c)
+    {
+        int sbW = Theme::ThinScrollbarWidth;
+        int sbX = drawX() + width - sbW;
+        int sbY = drawY();
+        int sbH = height;
+
+        // thin track
+        c.fillRect(sbX, sbY, sbW, sbH, Theme::ScrollTrack);
+
+        int maxScroll = contentHeight - height;
+        if (maxScroll <= 0)
+            return;
+
+        // thumb proportional to visible area
+        int thumbH = (height * sbH) / contentHeight;
+        if (thumbH < 8)
+            thumbH = 8;
+        int thumbTrack = sbH - thumbH;
+        int thumbY = sbY + (thumbTrack * scrollOffset) / maxScroll;
+
+        c.fillRect(sbX + 1, thumbY, sbW - 2, thumbH, Theme::ButtonShadow);
+    }
+
+    void drawScrollbar(LGFX_Sprite &c)
+    {
+        int sbX = drawX() + width - Theme::ScrollbarWidth;
+        int sbY = drawY();
+        int sbW = Theme::ScrollbarWidth;
+        int sbH = height;
+
+        // track background
+        c.fillRect(sbX, sbY, sbW, sbH, Theme::ScrollTrack);
+        c.drawRect(sbX, sbY, sbW, sbH, Theme::ButtonShadow);
+
+        // up arrow button
+        int arrowH = Theme::ScrollbarWidth;
+        drawScrollButton(c, sbX, sbY, sbW, arrowH, true);
+
+        // down arrow button
+        drawScrollButton(c, sbX, sbY + sbH - arrowH, sbW, arrowH, false);
+
+        // thumb
+        int trackH = sbH - 2 * arrowH;
+        if (trackH <= 0)
+            return;
+        int maxScroll = contentHeight - height;
+        if (maxScroll <= 0)
+            return;
+
+        int thumbH = (height * trackH) / contentHeight;
+        if (thumbH < 10)
+            thumbH = 10;
+        int thumbTrack = trackH - thumbH;
+        int thumbY = sbY + arrowH + (thumbTrack * scrollOffset) / maxScroll;
+
+        // thumb body
+        c.fillRect(sbX + 1, thumbY, sbW - 2, thumbH, Theme::ButtonFace);
+        // 3D borders on thumb
+        c.drawFastHLine(sbX + 1, thumbY, sbW - 2, Theme::ButtonHighlight);
+        c.drawFastVLine(sbX + 1, thumbY, thumbH, Theme::ButtonHighlight);
+        c.drawFastHLine(sbX + 1, thumbY + thumbH - 1, sbW - 2, Theme::ButtonShadow);
+        c.drawFastVLine(sbX + sbW - 2, thumbY, thumbH, Theme::ButtonShadow);
+    }
+
+    static void drawScrollButton(LGFX_Sprite &c, int bx, int by, int bw, int bh, bool up)
+    {
+        c.fillRect(bx, by, bw, bh, Theme::ButtonFace);
+        c.drawFastHLine(bx, by, bw, Theme::ButtonHighlight);
+        c.drawFastVLine(bx, by, bh, Theme::ButtonHighlight);
+        c.drawFastHLine(bx, by + bh - 1, bw, Theme::ButtonShadow);
+        c.drawFastVLine(bx + bw - 1, by, bh, Theme::ButtonShadow);
+
+        // small arrow triangle
+        int cx = bx + bw / 2;
+        int cy = by + bh / 2;
+        if (up)
         {
-            return thinScrollbar ? Theme::ThinScrollbarWidth : Theme::ScrollbarWidth;
+            c.fillTriangle(cx, cy - 2, cx - 3, cy + 2, cx + 3, cy + 2, Theme::TextColor);
         }
-
-        void clampScroll()
+        else
         {
-            int maxScroll = contentHeight - height;
-            if (maxScroll < 0)
-                maxScroll = 0;
-            if (scrollOffset < 0)
-                scrollOffset = 0;
-            if (scrollOffset > maxScroll)
-                scrollOffset = maxScroll;
+            c.fillTriangle(cx, cy + 2, cx - 3, cy - 2, cx + 3, cy - 2, Theme::TextColor);
         }
-
-        void drawThinScrollbar(LGFX_Sprite &c)
-        {
-            int sbW = Theme::ThinScrollbarWidth;
-            int sbX = drawX() + width - sbW;
-            int sbY = drawY();
-            int sbH = height;
-
-            // thin track
-            c.fillRect(sbX, sbY, sbW, sbH, Theme::ScrollTrack);
-
-            int maxScroll = contentHeight - height;
-            if (maxScroll <= 0)
-                return;
-
-            // thumb proportional to visible area
-            int thumbH = (height * sbH) / contentHeight;
-            if (thumbH < 8)
-                thumbH = 8;
-            int thumbTrack = sbH - thumbH;
-            int thumbY = sbY + (thumbTrack * scrollOffset) / maxScroll;
-
-            c.fillRect(sbX + 1, thumbY, sbW - 2, thumbH, Theme::ButtonShadow);
-        }
-
-        void drawScrollbar(LGFX_Sprite &c)
-        {
-            int sbX = drawX() + width - Theme::ScrollbarWidth;
-            int sbY = drawY();
-            int sbW = Theme::ScrollbarWidth;
-            int sbH = height;
-
-            // track background
-            c.fillRect(sbX, sbY, sbW, sbH, Theme::ScrollTrack);
-            c.drawRect(sbX, sbY, sbW, sbH, Theme::ButtonShadow);
-
-            // up arrow button
-            int arrowH = Theme::ScrollbarWidth;
-            drawScrollButton(c, sbX, sbY, sbW, arrowH, true);
-
-            // down arrow button
-            drawScrollButton(c, sbX, sbY + sbH - arrowH, sbW, arrowH, false);
-
-            // thumb
-            int trackH = sbH - 2 * arrowH;
-            if (trackH <= 0)
-                return;
-            int maxScroll = contentHeight - height;
-            if (maxScroll <= 0)
-                return;
-
-            int thumbH = (height * trackH) / contentHeight;
-            if (thumbH < 10)
-                thumbH = 10;
-            int thumbTrack = trackH - thumbH;
-            int thumbY = sbY + arrowH + (thumbTrack * scrollOffset) / maxScroll;
-
-            // thumb body
-            c.fillRect(sbX + 1, thumbY, sbW - 2, thumbH, Theme::ButtonFace);
-            // 3D borders on thumb
-            c.drawFastHLine(sbX + 1, thumbY, sbW - 2, Theme::ButtonHighlight);
-            c.drawFastVLine(sbX + 1, thumbY, thumbH, Theme::ButtonHighlight);
-            c.drawFastHLine(sbX + 1, thumbY + thumbH - 1, sbW - 2, Theme::ButtonShadow);
-            c.drawFastVLine(sbX + sbW - 2, thumbY, thumbH, Theme::ButtonShadow);
-        }
-
-        static void drawScrollButton(LGFX_Sprite &c, int bx, int by, int bw, int bh, bool up)
-        {
-            c.fillRect(bx, by, bw, bh, Theme::ButtonFace);
-            c.drawFastHLine(bx, by, bw, Theme::ButtonHighlight);
-            c.drawFastVLine(bx, by, bh, Theme::ButtonHighlight);
-            c.drawFastHLine(bx, by + bh - 1, bw, Theme::ButtonShadow);
-            c.drawFastVLine(bx + bw - 1, by, bh, Theme::ButtonShadow);
-
-            // small arrow triangle
-            int cx = bx + bw / 2;
-            int cy = by + bh / 2;
-            if (up)
-            {
-                c.fillTriangle(cx, cy - 2, cx - 3, cy + 2, cx + 3, cy + 2, Theme::TextColor);
-            }
-            else
-            {
-                c.fillTriangle(cx, cy + 2, cx - 3, cy - 2, cx + 3, cy - 2, Theme::TextColor);
-            }
-        }
-    };
+    }
+};
 
 } // namespace UI

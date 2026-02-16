@@ -64,8 +64,14 @@ public:
 
     // Strip-offset-aware coordinates for drawing.
     // Use these instead of raw x/y in draw() methods.
-    int drawX() const { return x; }
-    int drawY() const { return y - stripOffsetY(); }
+    int drawX() const
+    {
+        return x;
+    }
+    int drawY() const
+    {
+        return y - stripOffsetY();
+    }
 
     // default event callbacks; containers generally forward events to
     // children but a standalone element can override these to react.
@@ -74,7 +80,10 @@ public:
 
     // for scrollable: elements with nested content (e.g. GroupBox) override
     // to return their inner container so descendants can be scroll-offset
-    virtual Container *getNestedContainer() { return nullptr; }
+    virtual Container *getNestedContainer()
+    {
+        return nullptr;
+    }
 
 protected:
     bool mounted{false};

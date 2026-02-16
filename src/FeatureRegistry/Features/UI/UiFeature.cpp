@@ -36,7 +36,7 @@ static String screenCommandHandlerImpl(const String &command)
         }
         UI::windowManager().relayoutAll();
         frameReady = true; // Ensure next frame will render
-        UI::markDirty(); // Ensure UI knows it needs redraw
+        UI::markDirty();   // Ensure UI knows it needs redraw
         LoggerInstance->Info(F("Calibrated touch screen"));
         return String("{\"event\":\"calibrate\", \"status\":\"success\"}");
     }
@@ -68,12 +68,13 @@ static String screenCommandHandlerImpl(const String &command)
         if (!UI::reinitRenderer())
         {
             LoggerInstance->Error(F("Failed to reinit renderer after rotation"));
-            return String(String("{\"event\":\"rotate\",\"rotation\":") + rotate + String(",\"error\":\"renderer_init_failed\"}"));
+            return String(String("{\"event\":\"rotate\",\"rotation\":") + rotate +
+                          String(",\"error\":\"renderer_init_failed\"}"));
         }
         readCalibrationData(); // Loads rotation-specific calibration
         UI::windowManager().relayoutAll();
         frameReady = true; // Ensure next frame will render
-        UI::markDirty(); // Ensure UI knows it needs redraw
+        UI::markDirty();   // Ensure UI knows it needs redraw
         LoggerInstance->Info("Screen rotated to " + String(rotate));
         return String(String("{\"event\":\"rotate\",\"rotation\":") + rotate + String("}"));
     }
@@ -190,21 +191,14 @@ struct PageEntry
 };
 
 static const PageEntry pageTable[] = {
-    {"rgb", "RGB LED"},
-    {"rgbled", "RGB LED"},
-    {"info", "Info"},
-    {"wifi", "WiFi"},
-    {"sensors", "Sensors"},
-    {"display", "Display"},
-    {"features", "Features"},
-    {"log", "Log Viewer"},
-    {"files", "File Manager"},
+    {"rgb", "RGB LED"},       {"rgbled", "RGB LED"},  {"info", "Info"},
+    {"wifi", "WiFi"},         {"sensors", "Sensors"}, {"display", "Display"},
+    {"features", "Features"}, {"log", "Log Viewer"},  {"files", "File Manager"},
 };
 
 static String screenCommandHandler(const String &command)
 {
-    return UI::postToUITaskWithResult([&command]() -> String
-                                     { return screenCommandHandlerImpl(command); });
+    return UI::postToUITaskWithResult([&command]() -> String { return screenCommandHandlerImpl(command); });
 }
 
 static String pageCommandHandlerImpl(const String &command)
@@ -229,8 +223,7 @@ static String pageCommandHandlerImpl(const String &command)
 
 static String pageCommandHandler(const String &command)
 {
-    return UI::postToUITaskWithResult([&command]() -> String
-                                     { return pageCommandHandlerImpl(command); });
+    return UI::postToUITaskWithResult([&command]() -> String { return pageCommandHandlerImpl(command); });
 }
 
 static String wmCommandHandlerImpl(const String &command)
@@ -291,110 +284,123 @@ static String wmCommandHandlerImpl(const String &command)
 
 static String wmCommandHandler(const String &command)
 {
-    return UI::postToUITaskWithResult([&command]() -> String
-                                     { return wmCommandHandlerImpl(command); });
+    return UI::postToUITaskWithResult([&command]() -> String { return wmCommandHandlerImpl(command); });
 }
 
 // --- Action definitions ---
 
-FeatureAction wmAction = {
-    .name = "wm",
-    .handler = wmCommandHandler,
-    .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
+FeatureAction wmAction = {.name = "wm",
+                          .handler = wmCommandHandler,
+                          .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
 
-FeatureAction screenAction = {
-    .name = "screen",
-    .handler = screenCommandHandler,
-    .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
+FeatureAction screenAction = {.name = "screen",
+                              .handler = screenCommandHandler,
+                              .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
 
-FeatureAction pageAction = {
-    .name = "page",
-    .handler = pageCommandHandler,
-    .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
+FeatureAction pageAction = {.name = "page",
+                            .handler = pageCommandHandler,
+                            .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
 
 // --- Feature ---
 
 static Feature *createUiFeature()
 {
-    auto *f = new Feature("UI", []()
-                          {
-    UI::initTaskQueue();
+    auto *f = new Feature(
+        "UI",
+        []()
+        {
+            UI::initTaskQueue();
 
-    tft.fillScreen(TFT_BLACK);
-    tft.setTextColor(TFT_WHITE, TFT_BLACK);
-    tft.setTextSize(1);
-    tft.setCursor(0, 0);
-    tft.println("UI Feature Initialized");
+            tft.fillScreen(TFT_BLACK);
+            tft.setTextColor(TFT_WHITE, TFT_BLACK);
+            tft.setTextSize(1);
+            tft.setCursor(0, 0);
+            tft.println("UI Feature Initialized");
 
-    readCalibrationData();
+            readCalibrationData();
 
-    if (!UI::initRenderer())
-    {
-        LoggerInstance->Error(F("Failed to initialize renderer"));
-        return FeatureState::ERROR;
-    }
+            if (!UI::initRenderer())
+            {
+                LoggerInstance->Error(F("Failed to initialize renderer"));
+                return FeatureState::ERROR;
+            }
 
-    UI::desktop().init();
+            UI::desktop().init();
 
-    ActionRegistryInstance->RegisterAction(&screenAction);
-    ActionRegistryInstance->RegisterAction(&pageAction);
-    ActionRegistryInstance->RegisterAction(&wmAction);
+            ActionRegistryInstance->RegisterAction(&screenAction);
+            ActionRegistryInstance->RegisterAction(&pageAction);
+            ActionRegistryInstance->RegisterAction(&wmAction);
 
-    esp_timer_create_args_t args = {};
-    args.callback = [](void *) { frameReady = true; };
-    args.name = "ui_frame";
-    esp_timer_create(&args, &frameTimer);
-    esp_timer_start_periodic(frameTimer, 33000);
+            esp_timer_create_args_t args = {};
+            args.callback = [](void *)
+            {
+                frameReady = true;
+            };
+            args.name = "ui_frame";
+            esp_timer_create(&args, &frameTimer);
+            esp_timer_start_periodic(frameTimer, 33000);
 
-    LoggerInstance->Info(F("UI feature initialized (Win95 desktop)"));
+            LoggerInstance->Info(F("UI feature initialized (Win95 desktop)"));
 
-    return FeatureState::RUNNING; }, []()
-                          {
-    if (!uiTaskInitDone) {
-        UI::setUITaskHandle(xTaskGetCurrentTaskHandle());
-        uiTaskInitDone = true;
-    }
+            return FeatureState::RUNNING;
+        },
+        []()
+        {
+            if (!uiTaskInitDone)
+            {
+                UI::setUITaskHandle(xTaskGetCurrentTaskHandle());
+                uiTaskInitDone = true;
+            }
 
-    UI::processTaskQueue();
+            UI::processTaskQueue();
 
-    static bool prevTouched = false;
-    static int prevX = 0, prevY = 0;
-    int tx, ty;
-    bool touched = tft.getTouch(&tx, &ty);
+            static bool prevTouched = false;
+            static int prevX = 0, prevY = 0;
+            int tx, ty;
+            bool touched = tft.getTouch(&tx, &ty);
 
-    if (touched) {
-        UI::desktop().handleTouch(tx, ty);
-        UI::markDirty();
-    } else if (prevTouched) {
-        UI::desktop().handleTouchEnd(prevX, prevY);
-        UI::executeQueuedActions();
-        UI::markDirty();
-    }
+            if (touched)
+            {
+                UI::desktop().handleTouch(tx, ty);
+                UI::markDirty();
+            }
+            else if (prevTouched)
+            {
+                UI::desktop().handleTouchEnd(prevX, prevY);
+                UI::executeQueuedActions();
+                UI::markDirty();
+            }
 
-    prevTouched = touched;
-    if (touched) {
-        prevX = tx;
-        prevY = ty;
-    }
+            prevTouched = touched;
+            if (touched)
+            {
+                prevX = tx;
+                prevY = ty;
+            }
 
-    UI::desktop().tickTimers();
+            UI::desktop().tickTimers();
 
-    UI::executeQueuedActions();
+            UI::executeQueuedActions();
 
-    if (UI::isDirty() && frameReady) {
-        frameReady = false;
-        UI::desktop().draw();
-        UI::clearDirty();
-    } }, []()
-                          {
-    UI::setUITaskHandle(nullptr);
-    uiTaskInitDone = false;
+            if (UI::isDirty() && frameReady)
+            {
+                frameReady = false;
+                UI::desktop().draw();
+                UI::clearDirty();
+            }
+        },
+        []()
+        {
+            UI::setUITaskHandle(nullptr);
+            uiTaskInitDone = false;
 
-    if (frameTimer) {
-        esp_timer_stop(frameTimer);
-        esp_timer_delete(frameTimer);
-        frameTimer = nullptr;
-    } });
+            if (frameTimer)
+            {
+                esp_timer_stop(frameTimer);
+                esp_timer_delete(frameTimer);
+                frameTimer = nullptr;
+            }
+        });
 
     f->configureTask(8192, 0, 2);
     return f;

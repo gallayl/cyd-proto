@@ -34,11 +34,11 @@ check:
 
 ## Auto-format source files with clang-format
 format:
-	@find src -name '*.cpp' -o -name '*.h' -o -name '*.hpp' | xargs clang-format -i
+	@python -c "import glob,subprocess,sys; f=[p for e in ['cpp','h','hpp'] for p in glob.glob('src/**/*.'+e,recursive=True)]; sys.exit(subprocess.call(['clang-format','-i']+f) if f else 0)"
 
 ## Check formatting (dry-run, fails on diff)
 format-check:
-	@find src -name '*.cpp' -o -name '*.h' -o -name '*.hpp' | xargs clang-format --dry-run -Werror
+	@python -c "import glob,subprocess,sys; f=[p for e in ['cpp','h','hpp'] for p in glob.glob('src/**/*.'+e,recursive=True)]; sys.exit(subprocess.call(['clang-format','--dry-run','-Werror']+f) if f else 0)"
 
 ## Run native unit tests
 test:

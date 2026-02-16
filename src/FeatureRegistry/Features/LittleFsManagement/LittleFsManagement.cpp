@@ -3,70 +3,71 @@
 #include "../../../CommandInterpreter/CommandParser.h"
 #include "../../../fs/VirtualFS.h"
 
-FeatureAction formatAction = {
-    .name = "format",
-    .type = "POST",
-    .handler = [](const String &command)
-    {
-        LittleFS.end();
-        LittleFS.format();
-        if (!LittleFS.begin()) {
-            return String("{\"error\": \"Mount after format failed\"}");
-        }
-        return String("{\"event\": \"format\"}");
-    },
-    .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
+FeatureAction formatAction = {.name = "format",
+                              .type = "POST",
+                              .handler =
+                                  [](const String &command)
+                              {
+                                  LittleFS.end();
+                                  LittleFS.format();
+                                  if (!LittleFS.begin())
+                                  {
+                                      return String("{\"error\": \"Mount after format failed\"}");
+                                  }
+                                  return String("{\"event\": \"format\"}");
+                              },
+                              .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
 
-FeatureAction listFilesAction = {
-    .name = "list",
-    .handler = [](const String &command)
-    {
-        String path = CommandParser::GetCommandParameter(command, 1);
-        if (path.isEmpty())
-        {
-            path = "/";
-        }
+FeatureAction listFilesAction = {.name = "list",
+                                 .handler =
+                                     [](const String &command)
+                                 {
+                                     String path = CommandParser::GetCommandParameter(command, 1);
+                                     if (path.isEmpty())
+                                     {
+                                         path = "/";
+                                     }
 
-        JsonDocument response;
-        JsonArray fileList = response.to<JsonArray>();
+                                     JsonDocument response;
+                                     JsonArray fileList = response.to<JsonArray>();
 
-        if (path == "/")
-        {
-            JsonObject flash = fileList.add<JsonObject>();
-            flash["name"] = "flash";
-            flash["size"] = 0;
-            flash["isDir"] = true;
-            flash["lastWrite"] = 0;
+                                     if (path == "/")
+                                     {
+                                         JsonObject flash = fileList.add<JsonObject>();
+                                         flash["name"] = "flash";
+                                         flash["size"] = 0;
+                                         flash["isDir"] = true;
+                                         flash["lastWrite"] = 0;
 
 #if ENABLE_SD_CARD
-            if (isSdMounted())
-            {
-                JsonObject sd = fileList.add<JsonObject>();
-                sd["name"] = "sd";
-                sd["size"] = 0;
-                sd["isDir"] = true;
-                sd["lastWrite"] = 0;
-            }
+                                         if (isSdMounted())
+                                         {
+                                             JsonObject sd = fileList.add<JsonObject>();
+                                             sd["name"] = "sd";
+                                             sd["size"] = 0;
+                                             sd["isDir"] = true;
+                                             sd["lastWrite"] = 0;
+                                         }
 #endif
-        }
-        else
-        {
-            ResolvedPath resolved = resolveVirtualPath(path);
-            if (resolved.valid && resolved.fs)
-            {
-                response = getFileList(*resolved.fs, resolved.localPath.c_str());
-            }
-            else
-            {
-                response = getFileList(LittleFS, path.c_str());
-            }
-        }
+                                     }
+                                     else
+                                     {
+                                         ResolvedPath resolved = resolveVirtualPath(path);
+                                         if (resolved.valid && resolved.fs)
+                                         {
+                                             response = getFileList(*resolved.fs, resolved.localPath.c_str());
+                                         }
+                                         else
+                                         {
+                                             response = getFileList(LittleFS, path.c_str());
+                                         }
+                                     }
 
-        String output;
-        serializeJson(response, output);
-        return output;
-    },
-    .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
+                                     String output;
+                                     serializeJson(response, output);
+                                     return output;
+                                 },
+                                 .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
 
 Feature *LittleFsFeature = new Feature("LittleFsFeatures", []()
                                        {

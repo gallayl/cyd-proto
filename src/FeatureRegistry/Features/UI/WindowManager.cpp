@@ -397,8 +397,8 @@ void WindowManager::destroyPopup(PopupContainer *p)
 {
     if (!p)
         return;
-    auto it = std::find_if(popupSlots.begin(), popupSlots.end(),
-                           [p](const PopupSlot &s) { return s.popup.get() == p; });
+    auto it =
+        std::find_if(popupSlots.begin(), popupSlots.end(), [p](const PopupSlot &s) { return s.popup.get() == p; });
     if (it != popupSlots.end())
     {
         popupSlots.erase(it);
@@ -408,9 +408,9 @@ void WindowManager::destroyPopup(PopupContainer *p)
 
 void WindowManager::destroyPopupsForOwner(void *owner)
 {
-    popupSlots.erase(std::remove_if(popupSlots.begin(), popupSlots.end(),
-                                    [owner](const PopupSlot &s) { return s.owner == owner; }),
-                     popupSlots.end());
+    popupSlots.erase(
+        std::remove_if(popupSlots.begin(), popupSlots.end(), [owner](const PopupSlot &s) { return s.owner == owner; }),
+        popupSlots.end());
     markDirty();
 }
 
@@ -442,8 +442,8 @@ void WindowManager::drawPopups()
             {
                 int bx, by, bw, bh;
                 s.popup->getBounds(bx, by, bw, bh);
-                Serial.printf("drawPopups: visible popup at (%d,%d,%d,%d) mounted=%d children=%d\n",
-                              bx, by, bw, bh, s.popup->isMounted(), (int)s.popup->getChildren().size());
+                Serial.printf("drawPopups: visible popup at (%d,%d,%d,%d) mounted=%d children=%d\n", bx, by, bw, bh,
+                              s.popup->isMounted(), (int)s.popup->getChildren().size());
                 logCount++;
             }
             s.popup->draw();

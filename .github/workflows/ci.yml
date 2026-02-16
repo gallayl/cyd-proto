@@ -53,7 +53,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check clang-format
-        run: find src -name '*.cpp' -o -name '*.h' -o -name '*.hpp' | xargs clang-format --dry-run -Werror
+        run: python -c "import glob,subprocess,sys; f=[p for e in ['cpp','h','hpp'] for p in glob.glob('src/**/*.'+e,recursive=True)]; sys.exit(subprocess.call(['clang-format','--dry-run','-Werror']+f) if f else 0)"
 
   test:
     name: Unit tests (native)

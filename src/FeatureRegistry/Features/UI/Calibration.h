@@ -70,7 +70,7 @@ inline void calibrateScreen()
 
     tft.setTextColor(TFT_GREEN, TFT_BLACK);
     tft.println("Calibration complete!");
-    
+
     tft.waitDisplay(); // Wait for all calibration drawing to complete
 
     Serial.printf("Screen Calibration (rotation %d)\n", rotation);

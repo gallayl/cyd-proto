@@ -54,8 +54,7 @@ public:
 
     void draw()
     {
-        renderStrips([this]()
-                     { windowManager().draw(); });
+        renderStrips([this]() { windowManager().draw(); });
     }
 
     void handleTouch(int px, int py)
