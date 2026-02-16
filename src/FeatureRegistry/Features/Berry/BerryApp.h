@@ -77,9 +77,7 @@ public:
         if (_iconType == "procedural")
         {
             // TODO: implement procedural icon via Berry VM callback (icon() method on instance)
-            const char *fallback = !_startMenu.isEmpty()
-                                       ? UI::getDefaultIconForCategory(_startMenu)
-                                       : "generic_file";
+            const char *fallback = !_startMenu.isEmpty() ? UI::getDefaultIconForCategory(_startMenu) : "generic_file";
             UI::drawBuiltinIcon(canvas, fallback, x, y, size);
         }
         else if (_iconType == "builtin" && !_iconValue.isEmpty())
