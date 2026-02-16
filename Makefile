@@ -2,7 +2,7 @@
 # Environment name from platformio.ini
 ENV = cyd
 
-.PHONY: build upload uploadfs monitor upload-monitor clean check berry-clean compiledb
+.PHONY: build upload uploadfs monitor upload-monitor clean check format format-check test berry-clean compiledb
 
 ## Build firmware
 build:
@@ -32,6 +32,18 @@ clean:
 check:
 	pio check -e $(ENV)
 
+## Auto-format source files with clang-format
+format:
+	@find src -name '*.cpp' -o -name '*.h' -o -name '*.hpp' | xargs clang-format -i
+
+## Check formatting (dry-run, fails on diff)
+format-check:
+	@find src -name '*.cpp' -o -name '*.h' -o -name '*.hpp' | xargs clang-format --dry-run -Werror
+
+## Run native unit tests
+test:
+	pio test -e native
+
 ## Force Berry constant table regeneration on next build
 berry-clean:
 	@echo Removing Berry generate directory to trigger regeneration...
@@ -52,6 +64,9 @@ help:
 	@echo   upload-monitor - Upload firmware + open serial monitor
 	@echo   clean          - Clean build artifacts
 	@echo   check          - Run clang-tidy static analysis
+	@echo   format         - Auto-format source files with clang-format
+	@echo   format-check   - Check formatting (fails on diff)
+	@echo   test           - Run native unit tests
 	@echo   berry-clean    - Force Berry table regeneration on next build
 	@echo   compiledb      - Rebuild IntelliSense index
 	@echo   help           - Show this help
