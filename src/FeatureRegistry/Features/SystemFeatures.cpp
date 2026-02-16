@@ -6,7 +6,9 @@
 #include "../../hw/lightSensor.h"
 #include "../registeredFeatures.h"
 #include "../../utils/System.h"
+#ifndef USE_ESP_IDF
 #include <LittleFS.h>
+#endif
 #include <ArduinoJson.h>
 #ifdef USE_ESP_IDF
 #include "esp_system.h"
@@ -19,15 +21,20 @@
 #include <Esp.h>
 #endif
 #include <string>
+#include <vector>
 
 #if ENABLE_SD_CARD
+#ifndef USE_ESP_IDF
 #include <SD.h>
+#endif
 #include "./SdCard/SdCardFeature.h"
 #endif
 
 #if ENABLE_WIFI
+#ifndef USE_ESP_IDF
 #include <WiFi.h>
 #include <IPAddress.h>
+#endif
 #include "../../hw/WiFi.h"
 #endif
 
@@ -66,35 +73,23 @@ JsonDocument getInfo()
     flash["speed"] = ESP.getFlashChipSpeed();
 #endif
 
+#ifdef USE_ESP_IDF
+    // LittleFS info will be available after Phase 4 (VFS migration)
+#else
     JsonObject fs = response["fs"].to<JsonObject>();
     fs["totalBytes"] = LittleFS.totalBytes();
     fs["usedBytes"] = LittleFS.usedBytes();
+#endif
 
 #if ENABLE_SD_CARD
     JsonObject sd = response["sd"].to<JsonObject>();
     sd["mounted"] = isSdCardMounted();
     if (isSdCardMounted())
     {
-        sdcard_type_t cardType = SD.cardType();
-        const char *typeName = "UNKNOWN";
-        switch (cardType)
-        {
-        case CARD_MMC:
-            typeName = "MMC";
-            break;
-        case CARD_SD:
-            typeName = "SD";
-            break;
-        case CARD_SDHC:
-            typeName = "SDHC";
-            break;
-        default:
-            break;
-        }
-        sd["cardType"] = typeName;
-        sd["totalBytes"] = SD.totalBytes();
-        sd["usedBytes"] = SD.usedBytes();
-        sd["cardSize"] = SD.cardSize();
+        sd["cardType"] = getSdCardTypeName();
+        sd["totalBytes"] = getSdCardTotalBytes();
+        sd["usedBytes"] = getSdCardUsedBytes();
+        sd["cardSize"] = getSdCardSize();
     }
 #endif
 
@@ -104,6 +99,154 @@ JsonDocument getInfo()
 // --- WiFi handler ---
 
 #if ENABLE_WIFI
+
+#ifdef USE_ESP_IDF
+
+static std::string wifiHandler(const std::string &command)
+{
+    std::string operation = CommandParser::getCommandParameter(command, 1);
+
+    if (operation == "connect")
+    {
+        std::string ssid = CommandParser::getCommandParameter(command, 2);
+        std::string password = CommandParser::getCommandParameter(command, 3);
+        if (ssid.length() < 3 || password.length() < 5)
+        {
+            return "{\"error\": \"ssid or password too short\"}";
+        }
+
+        esp_wifi_disconnect();
+
+        wifi_config_t sta_cfg = {};
+        strncpy((char *)sta_cfg.sta.ssid, ssid.c_str(), sizeof(sta_cfg.sta.ssid) - 1);
+        strncpy((char *)sta_cfg.sta.password, password.c_str(), sizeof(sta_cfg.sta.password) - 1);
+        esp_wifi_set_config(WIFI_IF_STA, &sta_cfg);
+
+        wifi_mode_t mode;
+        esp_wifi_get_mode(&mode);
+        if (mode == WIFI_MODE_AP)
+        {
+            esp_wifi_set_mode(WIFI_MODE_APSTA);
+        }
+
+        esp_wifi_connect();
+        return "{\"event\": \"connecting\"}";
+    }
+
+    if (operation == "list")
+    {
+        JsonDocument response;
+        JsonArray arr = response.to<JsonArray>();
+
+        wifi_scan_config_t scan_cfg = {};
+        scan_cfg.show_hidden = true;
+        esp_wifi_scan_start(&scan_cfg, true);
+
+        uint16_t ap_count = 0;
+        esp_wifi_scan_get_ap_num(&ap_count);
+
+        if (ap_count > 0)
+        {
+            std::vector<wifi_ap_record_t> ap_records(ap_count);
+            esp_wifi_scan_get_ap_records(&ap_count, ap_records.data());
+
+            for (uint16_t i = 0; i < ap_count; i++)
+            {
+                JsonObject element = arr.add<JsonObject>();
+                element["ssid"] = (const char *)ap_records[i].ssid;
+                element["rssi"] = ap_records[i].rssi;
+                element["rssiText"] = getSignalStrength(ap_records[i].rssi);
+                element["encryption"] = getEncryptionType(ap_records[i].authmode);
+            }
+        }
+
+        std::string output;
+        serializeJson(response, output);
+        return output;
+    }
+
+    if (operation == "startSTA")
+    {
+        std::string ssid = CommandParser::getCommandParameter(command, 2);
+        std::string passphrase = CommandParser::getCommandParameter(command, 3);
+        if (ssid.length() < 3 || passphrase.length() < 5)
+        {
+            return "{\"error\": \"ssid or passphrase too short\"}";
+        }
+        startStaMode(ssid, passphrase);
+        return "{\"event\": \"starting STA\"}";
+    }
+
+    if (operation == "stopSTA")
+    {
+        esp_wifi_deauth_sta(0);
+        esp_wifi_set_mode(WIFI_MODE_STA);
+        esp_wifi_connect();
+        return "{\"event\": \"stopSTA\", \"success\": 1}";
+    }
+
+    if (operation == "info")
+    {
+        JsonDocument response;
+
+        wifi_mode_t mode;
+        esp_wifi_get_mode(&mode);
+
+        if (mode == WIFI_MODE_AP || mode == WIFI_MODE_APSTA)
+        {
+            JsonObject ap = response["ap"].to<JsonObject>();
+            esp_netif_ip_info_t ap_ip = {};
+            esp_netif_get_ip_info(getWifiApNetif(), &ap_ip);
+            ap["ipAddress"] = ipToString(ap_ip.ip);
+
+            uint8_t ap_mac[6];
+            esp_wifi_get_mac(WIFI_IF_AP, ap_mac);
+            ap["macAddress"] = macToString(ap_mac);
+        }
+
+        if (mode == WIFI_MODE_STA || mode == WIFI_MODE_APSTA)
+        {
+            JsonObject sta = response["sta"].to<JsonObject>();
+            esp_netif_ip_info_t sta_ip = {};
+            esp_netif_get_ip_info(getWifiStaNetif(), &sta_ip);
+            sta["ipAddress"] = ipToString(sta_ip.ip);
+
+            uint8_t sta_mac[6];
+            esp_wifi_get_mac(WIFI_IF_STA, sta_mac);
+            sta["macAddress"] = macToString(sta_mac);
+
+            wifi_config_t sta_conf = {};
+            esp_wifi_get_config(WIFI_IF_STA, &sta_conf);
+            sta["ssid"] = (const char *)sta_conf.sta.ssid;
+        }
+
+        wifi_ap_record_t ap_info = {};
+        int8_t rssi = 0;
+        if (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK)
+        {
+            rssi = ap_info.rssi;
+        }
+        response["wifiStrength"] = getSignalStrength(rssi);
+        response["wifiRssiDb"] = rssi;
+
+        std::string output;
+        serializeJson(response, output);
+        return output;
+    }
+
+    if (operation == "restart")
+    {
+        esp_wifi_disconnect();
+        esp_wifi_connect();
+        return {"{\"event\": \"disconnecting\"}"};
+    }
+
+    return {"{\"event\": \"Unknown WiFi operation command. The available commands are: info, list, connect "
+            "<ssid> <password>, startSTA <ssid> <passphrase>, stopSTA\"}"};
+}
+
+#else
+
 static std::string wifiHandler(const std::string &command)
 {
     std::string operation = CommandParser::getCommandParameter(command, 1);
@@ -196,7 +339,10 @@ static std::string wifiHandler(const std::string &command)
     return {"{\"event\": \"Unknown WiFi operation command. The available commands are: info, list, connect "
             "<ssid> <password>, startSTA <ssid> <passphrase>, stopSTA\"}"};
 }
-#endif
+
+#endif // USE_ESP_IDF
+
+#endif // ENABLE_WIFI
 
 // --- Action definitions ---
 
@@ -275,6 +421,7 @@ static FeatureAction lightSensorAction = {.name = "getLightSensorValue",
                                           },
                                           .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
 
+#ifndef USE_ESP_IDF
 static FeatureAction hallSensorAction = {.name = "getHallSensorValue",
                                          .handler =
                                              [](const std::string & /*command*/)
@@ -288,6 +435,7 @@ static FeatureAction hallSensorAction = {.name = "getHallSensorValue",
                                              return std::string(buf);
                                          },
                                          .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
+#endif
 
 #if ENABLE_WIFI
 static FeatureAction wifiAction = {
@@ -322,7 +470,9 @@ Feature *systemFeatures = new Feature(
         initLightSensor();
         actionRegistryInstance->registerAction(&rgbLedAction);
         actionRegistryInstance->registerAction(&lightSensorAction);
+#ifndef USE_ESP_IDF
         actionRegistryInstance->registerAction(&hallSensorAction);
+#endif
 
         return FeatureState::RUNNING;
     },
