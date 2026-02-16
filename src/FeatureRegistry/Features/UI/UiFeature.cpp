@@ -4,14 +4,20 @@
 
 #include <Esp.h>
 #include <esp_timer.h>
-#include "UiFeature.h"
 #include "../Logging.h"
 #include "../../../ActionRegistry/ActionRegistry.h"
+
 #include "ActionQueue.h"
 #include "Renderer.h"
 #include "Desktop.h"
 #include "WindowManager.h"
 #include "UITaskQueue.h"
+#include <LovyanGFX.hpp>
+#include "../../../hw/Screen.h"
+#include "../../Feature.h"
+#include "../../../ActionRegistry/FeatureAction.h"
+#include "../../../CommandInterpreter/CommandParser.h"
+#include "./Calibration.h"
 
 static volatile bool frameReady = true;
 static esp_timer_handle_t frameTimer = nullptr;
@@ -190,7 +196,7 @@ struct PageEntry
     const char *appName;
 };
 
-static const PageEntry pageTable[] = {
+static const PageEntry PAGE_TABLE[] = {
     {"rgb", "RGB LED"},       {"rgbled", "RGB LED"},  {"info", "Info"},
     {"wifi", "WiFi"},         {"sensors", "Sensors"}, {"display", "Display"},
     {"features", "Features"}, {"log", "Log Viewer"},  {"files", "File Manager"},
@@ -205,7 +211,7 @@ static String pageCommandHandlerImpl(const String &command)
 {
     String sub = CommandParser::getCommandParameter(command, 1);
 
-    for (auto &entry : pageTable)
+    for (const auto &entry : PAGE_TABLE)
     {
         if (sub == entry.cmd)
         {
@@ -237,7 +243,7 @@ static String wmCommandHandlerImpl(const String &command)
         auto *panel = UI::windowManager().getPanelSlot();
         String json = "{\"apps\":[";
         bool first = true;
-        if (panel)
+        if (panel != nullptr)
         {
             json += "{\"name\":\"" + panel->name + "\",\"focused\":false,\"windowed\":false}";
             first = false;
@@ -245,10 +251,12 @@ static String wmCommandHandlerImpl(const String &command)
         for (size_t i = 0; i < apps.size(); i++)
         {
             if (!first)
+            {
                 json += ",";
+            }
             first = false;
-            bool isFocused = (focused && &apps[i] == focused);
-            json += "{\"name\":\"" + apps[i].name + "\",\"focused\":" + (isFocused ? "true" : "false") +
+            bool isFocused = ((focused != nullptr) && &apps[i] == focused);
+            json += R"({"name":")" + apps[i].name + "\",\"focused\":" + (isFocused ? "true" : "false") +
                     ",\"windowed\":true}";
         }
         json += "]}";
@@ -259,7 +267,9 @@ static String wmCommandHandlerImpl(const String &command)
     {
         String name = CommandParser::getCommandParameter(command, 2);
         if (name.length() == 0)
+        {
             return String(F("{\"error\":\"No app name\"}"));
+        }
         UI::windowManager().restoreApp(name.c_str());
         return String(F("{\"status\":\"ok\"}"));
     }
@@ -268,7 +278,9 @@ static String wmCommandHandlerImpl(const String &command)
     {
         String name = CommandParser::getCommandParameter(command, 2);
         if (name.length() == 0)
+        {
             return String(F("{\"error\":\"No app name\"}"));
+        }
         UI::windowManager().closeApp(name.c_str());
         return String(F("{\"status\":\"ok\"}"));
     }
@@ -289,21 +301,21 @@ static String wmCommandHandler(const String &command)
 
 // --- Action definitions ---
 
-FeatureAction wmAction = {.name = "wm",
-                          .handler = wmCommandHandler,
-                          .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
+static FeatureAction wmAction = {.name = "wm",
+                                 .handler = wmCommandHandler,
+                                 .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
 
-FeatureAction screenAction = {.name = "screen",
-                              .handler = screenCommandHandler,
-                              .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
+static FeatureAction screenAction = {.name = "screen",
+                                     .handler = screenCommandHandler,
+                                     .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
 
-FeatureAction pageAction = {.name = "page",
-                            .handler = pageCommandHandler,
-                            .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
+static FeatureAction pageAction = {.name = "page",
+                                   .handler = pageCommandHandler,
+                                   .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
 
 // --- Feature ---
 
-static Feature *createUiFeature()
+static Feature *createuiFeature()
 {
     auto *f = new Feature(
         "UI",
@@ -355,8 +367,10 @@ static Feature *createUiFeature()
             UI::processTaskQueue();
 
             static bool prevTouched = false;
-            static int prevX = 0, prevY = 0;
-            int tx, ty;
+            static int prevX = 0;
+            static int prevY = 0;
+            int tx;
+            int ty;
             bool touched = tft.getTouch(&tx, &ty);
 
             if (touched)
@@ -406,6 +420,6 @@ static Feature *createUiFeature()
     return f;
 }
 
-Feature *UiFeature = createUiFeature();
+static Feature *uiFeature = createuiFeature();
 
 #endif

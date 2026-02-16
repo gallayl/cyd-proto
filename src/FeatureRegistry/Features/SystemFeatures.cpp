@@ -313,7 +313,7 @@ static String memoryHandler(const String & /*command*/)
     doc["maxAllocHeap"] = ESP.getMaxAllocHeap();
 
     JsonArray tasks = doc["tasks"].to<JsonArray>();
-    for (uint8_t i = 0; i < featureRegistryInstance->GetFeatureCount(); i++)
+    for (uint8_t i = 0; i < featureRegistryInstance->getFeatureCount(); i++)
     {
         Feature *f = featureRegistryInstance->RegisteredFeatures[i];
         if (f->isTaskBased())

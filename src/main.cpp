@@ -34,13 +34,13 @@ void setup()
     initWebSockets();
 #endif
 
-    featureRegistryInstance->Init();
-    featureRegistryInstance->SetupFeatures();
-    featureRegistryInstance->StartFeatureTasks();
+    featureRegistryInstance->init();
+    featureRegistryInstance->setupFeatures();
+    featureRegistryInstance->startFeatureTasks();
 }
 
 void loop()
 {
-    featureRegistryInstance->LoopFeatures();
+    featureRegistryInstance->loopFeatures();
     delay(1);
 }

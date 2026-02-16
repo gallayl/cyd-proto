@@ -41,8 +41,6 @@
 
 #define FEATURES_SIZE 16
 
-extern Feature *systemFeatures;
-
 class FeatureRegistry
 {
 private:
@@ -60,44 +58,44 @@ private:
     }
 
 public:
-    FeatureRegistry() {}
+    FeatureRegistry() = default;
 
-    void Init()
+    void init()
     {
-        this->RegisterFeature(timeFeature);
-        this->RegisterFeature(loggingFeature);
-        this->RegisterFeature(systemFeatures);
+        this->registerFeature(timeFeature);
+        this->registerFeature(loggingFeature);
+        this->registerFeature(systemFeatures);
 
 #if ENABLE_SERIAL_READ
-        this->RegisterFeature(serialReadFeature);
+        this->registerFeature(serialReadFeature);
 #endif
 
 #if ENABLE_LITTLEFS
-        this->RegisterFeature(LittleFsFeature);
+        this->registerFeature(LittleFsFeature);
 #endif
 
 #if ENABLE_SD_CARD
-        this->RegisterFeature(SdCardFeature);
+        this->registerFeature(SdCardFeature);
 #endif
 
 #if ENABLE_I2C
-        this->RegisterFeature(i2cFeature);
+        this->registerFeature(i2cFeature);
 #endif
 
 #if ENABLE_OTA
-        this->RegisterFeature(otaUpgrade);
+        this->registerFeature(otaUpgrade);
 #endif
 
 #if ENABLE_UI
-        this->RegisterFeature(UiFeature);
+        this->registerFeature(uiFeature);
 #endif
 
 #if ENABLE_BERRY
-        this->RegisterFeature(BerryFeature);
+        this->registerFeature(BerryFeature);
 #endif
     }
 
-    void RegisterFeature(Feature *newFeature)
+    void registerFeature(Feature *newFeature)
     {
         std::lock_guard<std::mutex> lock(registeredFeaturesMutex);
         if (this->_registeredFeaturesCount >= FEATURES_SIZE)
@@ -114,7 +112,7 @@ public:
         featureEntry["state"] = (int)newFeature->GetFeatureState();
     }
 
-    void SetupFeatures()
+    void setupFeatures()
     {
         for (uint8_t i = 0; i < this->_registeredFeaturesCount; i++)
         {
@@ -137,7 +135,7 @@ public:
 #endif
     }
 
-    void StartFeatureTasks()
+    void startFeatureTasks()
     {
         for (uint8_t i = 0; i < this->_registeredFeaturesCount; i++)
         {
@@ -156,13 +154,15 @@ public:
         }
     }
 
-    void LoopFeatures()
+    void loopFeatures()
     {
         for (uint8_t i = 0; i < this->_registeredFeaturesCount; i++)
         {
             Feature *f = this->RegisteredFeatures[i];
             if (f->isTaskBased())
+            {
                 continue;
+            }
             if (f->GetFeatureState() == FeatureState::RUNNING)
             {
                 f->Loop();
@@ -170,7 +170,7 @@ public:
         }
     }
 
-    Feature *GetFeature(const String &name)
+    Feature *getFeature(const String &name)
     {
         for (uint8_t i = 0; i < this->_registeredFeaturesCount; i++)
         {
@@ -182,10 +182,10 @@ public:
         return nullptr;
     }
 
-    FeatureState SetupFeature(const String &name)
+    FeatureState setupFeature(const String &name)
     {
-        Feature *f = GetFeature(name);
-        if (!f)
+        Feature *f = getFeature(name);
+        if (f == nullptr)
         {
             loggerInstance->Error("Feature not found: " + name);
             return FeatureState::ERROR;
@@ -210,10 +210,10 @@ public:
         return newState;
     }
 
-    bool TeardownFeature(const String &name)
+    bool teardownFeature(const String &name)
     {
-        Feature *f = GetFeature(name);
-        if (!f)
+        Feature *f = getFeature(name);
+        if (f == nullptr)
         {
             loggerInstance->Error("Feature not found: " + name);
             return false;
@@ -237,7 +237,7 @@ public:
         return true;
     }
 
-    uint8_t GetFeatureCount() const
+    uint8_t getFeatureCount() const
     {
         return this->_registeredFeaturesCount;
     }
