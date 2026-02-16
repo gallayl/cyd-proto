@@ -4,6 +4,7 @@
 #include <cstring>
 #include <string>
 #include <vector>
+#include <Arduino.h>
 
 #define COMMAND_DELIMITER " "
 
@@ -34,12 +35,12 @@ public:
     }
 
 #ifdef ARDUINO
-    static String GetCommandName(const String &command)
+    static String getCommandName(const String &command)
     {
         return String(getCommandParameter(command.c_str(), 0).c_str());
     }
 
-    static String GetCommandParameter(const String &command, uint8_t parameterNo)
+    static String getCommandParameter(const String &command, uint8_t parameterNo)
     {
         return String(getCommandParameter(command.c_str(), parameterNo).c_str());
     }

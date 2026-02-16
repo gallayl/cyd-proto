@@ -1,5 +1,4 @@
 #include "berry.h"
-#include "be_mem.h"
 #include "be_sys.h"
 #include <stdio.h>
 #include <string.h>

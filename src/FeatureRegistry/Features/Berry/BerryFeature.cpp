@@ -241,7 +241,7 @@ static String berryEval(const String &code)
 
 static String berryHandlerImpl(const String &command)
 {
-    String operation = CommandParser::GetCommandParameter(command, 1);
+    String operation = CommandParser::getCommandParameter(command, 1);
 
     if (operation == "eval")
     {
@@ -256,7 +256,7 @@ static String berryHandlerImpl(const String &command)
 
     if (operation == "run")
     {
-        String path = CommandParser::GetCommandParameter(command, 2);
+        String path = CommandParser::getCommandParameter(command, 2);
         if (path.length() == 0)
         {
             return String(F("{\"error\": \"No file path provided\"}"));
@@ -309,7 +309,7 @@ static String berryHandlerImpl(const String &command)
 #if ENABLE_UI
     if (operation == "open")
     {
-        String appName = CommandParser::GetCommandParameter(command, 2);
+        String appName = CommandParser::getCommandParameter(command, 2);
         if (appName.length() == 0)
         {
             return String(F("{\"error\": \"No app name provided\"}"));
@@ -330,7 +330,7 @@ static String berryHandlerImpl(const String &command)
 
     if (operation == "panel")
     {
-        String appName = CommandParser::GetCommandParameter(command, 2);
+        String appName = CommandParser::getCommandParameter(command, 2);
         if (appName.length() == 0)
         {
             return String(F("{\"error\": \"No app name provided\"}"));
@@ -380,7 +380,7 @@ static String berryHandlerImpl(const String &command)
 
     if (operation == "meta")
     {
-        String path = CommandParser::GetCommandParameter(command, 2);
+        String path = CommandParser::getCommandParameter(command, 2);
         if (path.length() == 0)
             return String(F("{\"error\": \"No file path provided\"}"));
         if (path.length() > 0 && path[0] != '/')

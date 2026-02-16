@@ -21,7 +21,7 @@ static bool uiTaskInitDone = false;
 
 static String screenCommandHandlerImpl(const String &command)
 {
-    String sub = CommandParser::GetCommandParameter(command, 1);
+    String sub = CommandParser::getCommandParameter(command, 1);
 
     if (sub == "calibrate")
     {
@@ -56,7 +56,7 @@ static String screenCommandHandlerImpl(const String &command)
     }
     else if (sub == "rotate")
     {
-        String rotateParam = CommandParser::GetCommandParameter(command, 2);
+        String rotateParam = CommandParser::getCommandParameter(command, 2);
         uint16_t rotate = 0;
         if (rotateParam.length() > 0)
         {
@@ -80,7 +80,7 @@ static String screenCommandHandlerImpl(const String &command)
     }
     else if (sub == "clear")
     {
-        String colorParam = CommandParser::GetCommandParameter(command, 2);
+        String colorParam = CommandParser::getCommandParameter(command, 2);
         uint16_t color = TFT_BLACK;
         if (colorParam.length() > 0)
         {
@@ -92,11 +92,11 @@ static String screenCommandHandlerImpl(const String &command)
     }
     else if (sub == "text")
     {
-        int x = CommandParser::GetCommandParameter(command, 2).toInt();
-        int y = CommandParser::GetCommandParameter(command, 3).toInt();
-        uint16_t fg = (uint16_t)strtoul(CommandParser::GetCommandParameter(command, 4).c_str(), NULL, 0);
-        uint16_t bg = (uint16_t)strtoul(CommandParser::GetCommandParameter(command, 5).c_str(), NULL, 0);
-        int sz = CommandParser::GetCommandParameter(command, 6).toInt();
+        int x = CommandParser::getCommandParameter(command, 2).toInt();
+        int y = CommandParser::getCommandParameter(command, 3).toInt();
+        uint16_t fg = (uint16_t)strtoul(CommandParser::getCommandParameter(command, 4).c_str(), NULL, 0);
+        uint16_t bg = (uint16_t)strtoul(CommandParser::getCommandParameter(command, 5).c_str(), NULL, 0);
+        int sz = CommandParser::getCommandParameter(command, 6).toInt();
         int count = 0;
         int pos = -1;
         for (int i = 0; i < (int)command.length(); ++i)
@@ -120,58 +120,58 @@ static String screenCommandHandlerImpl(const String &command)
     }
     else if (sub == "pixel")
     {
-        int x = CommandParser::GetCommandParameter(command, 2).toInt();
-        int y = CommandParser::GetCommandParameter(command, 3).toInt();
-        uint16_t color = (uint16_t)strtoul(CommandParser::GetCommandParameter(command, 4).c_str(), NULL, 0);
+        int x = CommandParser::getCommandParameter(command, 2).toInt();
+        int y = CommandParser::getCommandParameter(command, 3).toInt();
+        uint16_t color = (uint16_t)strtoul(CommandParser::getCommandParameter(command, 4).c_str(), NULL, 0);
         tft.drawPixel(x, y, color);
         LoggerInstance->Info("Drew pixel at " + String(x) + "," + String(y));
         return String("{\"event\":\"pixel\"}");
     }
     else if (sub == "rect")
     {
-        int x = CommandParser::GetCommandParameter(command, 2).toInt();
-        int y = CommandParser::GetCommandParameter(command, 3).toInt();
-        int w = CommandParser::GetCommandParameter(command, 4).toInt();
-        int h = CommandParser::GetCommandParameter(command, 5).toInt();
-        uint16_t color = (uint16_t)strtoul(CommandParser::GetCommandParameter(command, 6).c_str(), NULL, 0);
+        int x = CommandParser::getCommandParameter(command, 2).toInt();
+        int y = CommandParser::getCommandParameter(command, 3).toInt();
+        int w = CommandParser::getCommandParameter(command, 4).toInt();
+        int h = CommandParser::getCommandParameter(command, 5).toInt();
+        uint16_t color = (uint16_t)strtoul(CommandParser::getCommandParameter(command, 6).c_str(), NULL, 0);
         tft.drawRect(x, y, w, h, color);
         LoggerInstance->Info("Drew rect at " + String(x) + "," + String(y));
         return String("{\"event\":\"rect\"}");
     }
     else if (sub == "fillrect")
     {
-        int x = CommandParser::GetCommandParameter(command, 2).toInt();
-        int y = CommandParser::GetCommandParameter(command, 3).toInt();
-        int w = CommandParser::GetCommandParameter(command, 4).toInt();
-        int h = CommandParser::GetCommandParameter(command, 5).toInt();
-        uint16_t color = (uint16_t)strtoul(CommandParser::GetCommandParameter(command, 6).c_str(), NULL, 0);
+        int x = CommandParser::getCommandParameter(command, 2).toInt();
+        int y = CommandParser::getCommandParameter(command, 3).toInt();
+        int w = CommandParser::getCommandParameter(command, 4).toInt();
+        int h = CommandParser::getCommandParameter(command, 5).toInt();
+        uint16_t color = (uint16_t)strtoul(CommandParser::getCommandParameter(command, 6).c_str(), NULL, 0);
         tft.fillRect(x, y, w, h, color);
         LoggerInstance->Info("Drew filled rect at " + String(x) + "," + String(y));
         return String("{\"event\":\"fillrect\"}");
     }
     else if (sub == "circle")
     {
-        int x = CommandParser::GetCommandParameter(command, 2).toInt();
-        int y = CommandParser::GetCommandParameter(command, 3).toInt();
-        int r = CommandParser::GetCommandParameter(command, 4).toInt();
-        uint16_t color = (uint16_t)strtoul(CommandParser::GetCommandParameter(command, 5).c_str(), NULL, 0);
+        int x = CommandParser::getCommandParameter(command, 2).toInt();
+        int y = CommandParser::getCommandParameter(command, 3).toInt();
+        int r = CommandParser::getCommandParameter(command, 4).toInt();
+        uint16_t color = (uint16_t)strtoul(CommandParser::getCommandParameter(command, 5).c_str(), NULL, 0);
         tft.drawCircle(x, y, r, color);
         LoggerInstance->Info("Drew circle at " + String(x) + "," + String(y));
         return String("{\"event\":\"circle\"}");
     }
     else if (sub == "fillcircle")
     {
-        int x = CommandParser::GetCommandParameter(command, 2).toInt();
-        int y = CommandParser::GetCommandParameter(command, 3).toInt();
-        int r = CommandParser::GetCommandParameter(command, 4).toInt();
-        uint16_t color = (uint16_t)strtoul(CommandParser::GetCommandParameter(command, 5).c_str(), NULL, 0);
+        int x = CommandParser::getCommandParameter(command, 2).toInt();
+        int y = CommandParser::getCommandParameter(command, 3).toInt();
+        int r = CommandParser::getCommandParameter(command, 4).toInt();
+        uint16_t color = (uint16_t)strtoul(CommandParser::getCommandParameter(command, 5).c_str(), NULL, 0);
         tft.fillCircle(x, y, r, color);
         LoggerInstance->Info("Drew filled circle at " + String(x) + "," + String(y));
         return String("{\"event\":\"fillcircle\"}");
     }
     else if (sub == "brightness")
     {
-        String val = CommandParser::GetCommandParameter(command, 2);
+        String val = CommandParser::getCommandParameter(command, 2);
         uint8_t b = (uint8_t)strtoul(val.c_str(), NULL, 0);
         tft.setBrightness(b);
         LoggerInstance->Info("Brightness set to " + String(b));
@@ -203,7 +203,7 @@ static String screenCommandHandler(const String &command)
 
 static String pageCommandHandlerImpl(const String &command)
 {
-    String sub = CommandParser::GetCommandParameter(command, 1);
+    String sub = CommandParser::getCommandParameter(command, 1);
 
     for (auto &entry : pageTable)
     {
@@ -228,7 +228,7 @@ static String pageCommandHandler(const String &command)
 
 static String wmCommandHandlerImpl(const String &command)
 {
-    String sub = CommandParser::GetCommandParameter(command, 1);
+    String sub = CommandParser::getCommandParameter(command, 1);
 
     if (sub == "list")
     {
@@ -257,7 +257,7 @@ static String wmCommandHandlerImpl(const String &command)
 
     if (sub == "focus")
     {
-        String name = CommandParser::GetCommandParameter(command, 2);
+        String name = CommandParser::getCommandParameter(command, 2);
         if (name.length() == 0)
             return String(F("{\"error\":\"No app name\"}"));
         UI::windowManager().restoreApp(name.c_str());
@@ -266,7 +266,7 @@ static String wmCommandHandlerImpl(const String &command)
 
     if (sub == "close")
     {
-        String name = CommandParser::GetCommandParameter(command, 2);
+        String name = CommandParser::getCommandParameter(command, 2);
         if (name.length() == 0)
             return String(F("{\"error\":\"No app name\"}"));
         UI::windowManager().closeApp(name.c_str());

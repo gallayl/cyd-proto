@@ -113,7 +113,7 @@ static String doInfo()
 
 static String sdHandler(const String &command)
 {
-    String operation = CommandParser::GetCommandParameter(command, 1);
+    String operation = CommandParser::getCommandParameter(command, 1);
 
     if (operation == "mount")
     {

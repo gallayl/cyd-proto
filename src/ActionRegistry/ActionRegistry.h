@@ -67,7 +67,7 @@ public:
         {
             return handler(command);
         }
-        return String("{\"message\": \"Unknown action: " + CommandParser::GetCommandName(command) +
+        return String("{\"message\": \"Unknown action: " + CommandParser::getCommandName(command) +
                       ".\", \"availableActions\": \"" + getAvailableActions(transport) + "\"}");
     }
 

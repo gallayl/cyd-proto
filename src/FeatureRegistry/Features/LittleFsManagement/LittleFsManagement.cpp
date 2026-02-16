@@ -22,7 +22,7 @@ static FeatureAction listFilesAction = {.name = "list",
                                         .handler =
                                             [](const String &command)
                                         {
-                                            String path = CommandParser::GetCommandParameter(command, 1);
+                                            String path = CommandParser::getCommandParameter(command, 1);
                                             if (path.isEmpty())
                                             {
                                                 path = "/";

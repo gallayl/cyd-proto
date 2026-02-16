@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 
-enum class Transport
+enum class Transport : uint8_t
 {
     CLI,
     REST,

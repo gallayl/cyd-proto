@@ -77,11 +77,11 @@ JsonDocument getInfo()
 #if ENABLE_WIFI
 static String wifiHandler(const String &command)
 {
-    String operation = CommandParser::GetCommandParameter(command, 1);
+    String operation = CommandParser::getCommandParameter(command, 1);
     if (!operation.compareTo("connect"))
     {
-        String ssid = CommandParser::GetCommandParameter(command, 2);
-        String password = CommandParser::GetCommandParameter(command, 3);
+        String ssid = CommandParser::getCommandParameter(command, 2);
+        String password = CommandParser::getCommandParameter(command, 3);
         if (ssid.length() < 3 || password.length() < 5)
         {
             return String("{\"error\": \"ssid or password too short\"}");
@@ -113,8 +113,8 @@ static String wifiHandler(const String &command)
     }
     if (!operation.compareTo("startSTA"))
     {
-        String ssid = CommandParser::GetCommandParameter(command, 2);
-        String passphrase = CommandParser::GetCommandParameter(command, 3);
+        String ssid = CommandParser::getCommandParameter(command, 2);
+        String passphrase = CommandParser::getCommandParameter(command, 3);
         if (ssid.length() < 3 || passphrase.length() < 5)
         {
             return String("{\"error\": \"ssid or passphrase too short\"}");
@@ -208,12 +208,12 @@ FeatureAction rgbLedAction = {.name = "rgbLed",
                               .handler =
                                   [](const String &command)
                               {
-                                  const String sub = CommandParser::GetCommandParameter(command, 1);
+                                  const String sub = CommandParser::getCommandParameter(command, 1);
                                   if (sub == "setColor")
                                   {
-                                      int r = CommandParser::GetCommandParameter(command, 2).toInt();
-                                      int g = CommandParser::GetCommandParameter(command, 3).toInt();
-                                      int b = CommandParser::GetCommandParameter(command, 4).toInt();
+                                      int r = CommandParser::getCommandParameter(command, 2).toInt();
+                                      int g = CommandParser::getCommandParameter(command, 3).toInt();
+                                      int b = CommandParser::getCommandParameter(command, 4).toInt();
                                       setRgbLedColor(r, g, b);
                                       char logBuf[48];
                                       snprintf(logBuf, sizeof(logBuf), "Set RGB LED color to %d,%d,%d", r, g, b);
