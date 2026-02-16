@@ -59,7 +59,8 @@ public:
         }
         else
         {
-            loggerInstance->Error(std::string("BerryCanvas: createSprite(") + std::to_string(w) + "x" + std::to_string(h) + " @" + std::to_string(depth) +
+            loggerInstance->Error(std::string("BerryCanvas: createSprite(") + std::to_string(w) + "x" +
+                                  std::to_string(h) + " @" + std::to_string(depth) +
                                   "bpp) failed — free heap: " + std::to_string(getFreeHeap()));
         }
     }
@@ -1136,7 +1137,8 @@ static int ui_bounds(bvm *vm)
 
     // Create and return a list with the bounds
     // Simplest approach: evaluate Berry list literal
-    std::string code = std::string("return [") + std::to_string(bx) + "," + std::to_string(by) + "," + std::to_string(bw) + "," + std::to_string(bh) + "]";
+    std::string code = std::string("return [") + std::to_string(bx) + "," + std::to_string(by) + "," +
+                       std::to_string(bw) + "," + std::to_string(bh) + "]";
     be_loadbuffer(vm, "bounds", code.c_str(), code.length());
     be_pcall(vm, 0);
     // Result is now at top of stack
@@ -1558,8 +1560,9 @@ static int ui_popup(bvm *vm)
     int w = be_toint(vm, 3);
     int h = be_toint(vm, 4);
 
-    loggerInstance->Info(std::string("ui.popup: creating at (") + std::to_string(x) + "," + std::to_string(y) + "," + std::to_string(w) + "," + std::to_string(h) +
-                         ") screen=" + std::to_string(UI::Theme::ScreenWidth()) + "x" + std::to_string(UI::Theme::ScreenHeight()));
+    loggerInstance->Info(std::string("ui.popup: creating at (") + std::to_string(x) + "," + std::to_string(y) + "," +
+                         std::to_string(w) + "," + std::to_string(h) + ") screen=" +
+                         std::to_string(UI::Theme::ScreenWidth()) + "x" + std::to_string(UI::Theme::ScreenHeight()));
     auto *popup = UI::windowManager().createPopup(x, y, w, h, app);
     if (!popup)
         be_return_nil(vm);
@@ -1590,15 +1593,16 @@ static int ui_show_popup(bvm *vm)
     auto *popup = asPopup(entry);
     if (!popup)
     {
-        loggerInstance->Error(std::string("show_popup: handle ") + std::to_string(h) + " is not a POPUP (type=" + std::to_string((int)entry->type) +
-                              ")");
+        loggerInstance->Error(std::string("show_popup: handle ") + std::to_string(h) +
+                              " is not a POPUP (type=" + std::to_string((int)entry->type) + ")");
         be_return_nil(vm);
     }
 
     int bx, by, bw, bh;
     popup->getBounds(bx, by, bw, bh);
-    loggerInstance->Info(std::string("show_popup: handle=") + std::to_string(h) + " bounds=(" + std::to_string(bx) + "," + std::to_string(by) + "," +
-                         std::to_string(bw) + "," + std::to_string(bh) + ") children=" + std::to_string(popup->getChildren().size()));
+    loggerInstance->Info(std::string("show_popup: handle=") + std::to_string(h) + " bounds=(" + std::to_string(bx) +
+                         "," + std::to_string(by) + "," + std::to_string(bw) + "," + std::to_string(bh) +
+                         ") children=" + std::to_string(popup->getChildren().size()));
     popup->show();
     UI::markDirty();
     be_return_nil(vm);

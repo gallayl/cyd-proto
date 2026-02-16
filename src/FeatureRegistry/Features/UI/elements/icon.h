@@ -11,14 +11,19 @@ namespace UI
 class IconElement : public Element
 {
 public:
-    IconElement(const char *iconName, int ix, int iy, int isize)
-        : _iconName(iconName), _size(isize)
+    IconElement(const char *iconName, int ix, int iy, int isize) : _iconName(iconName), _size(isize)
     {
         setBounds(ix, iy, isize, isize);
     }
 
-    void setIconName(const char *name) { _iconName = name; }
-    const std::string &getIconName() const { return _iconName; }
+    void setIconName(const char *name)
+    {
+        _iconName = name;
+    }
+    const std::string &getIconName() const
+    {
+        return _iconName;
+    }
 
     void draw() override
     {

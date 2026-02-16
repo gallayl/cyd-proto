@@ -49,8 +49,8 @@ struct HandleEntry
 class BerryApp : public UI::App
 {
 public:
-    BerryApp(const std::string &scriptPath, const std::string &appName, const std::string &iconType = "", const std::string &iconValue = "",
-             const std::string &startMenu = "")
+    BerryApp(const std::string &scriptPath, const std::string &appName, const std::string &iconType = "",
+             const std::string &iconValue = "", const std::string &startMenu = "")
         : _scriptPath(scriptPath), _name(appName), _iconType(iconType), _iconValue(iconValue), _startMenu(startMenu)
     {
     }
@@ -79,7 +79,8 @@ public:
         if (_iconType == "procedural")
         {
             // TODO: implement procedural icon via Berry VM callback (icon() method on instance)
-            const char *fallback = !_startMenu.empty() ? UI::getDefaultIconForCategory(_startMenu.c_str()) : "generic_file";
+            const char *fallback =
+                !_startMenu.empty() ? UI::getDefaultIconForCategory(_startMenu.c_str()) : "generic_file";
             UI::drawBuiltinIcon(canvas, fallback, x, y, size);
         }
         else if (_iconType == "builtin" && !_iconValue.empty())

@@ -421,8 +421,8 @@ static std::string berryHandlerImpl(const std::string &command)
                 }
             }
 
-            json += std::string("{\"name\":\"") + scripts[i].name + "\",\"path\":\"" + scripts[i].path + "\",\"startMenu\":\"" + sm +
-                    "\",\"category\":\"" + category + "\",\"label\":\"" + label +
+            json += std::string("{\"name\":\"") + scripts[i].name + "\",\"path\":\"" + scripts[i].path +
+                    "\",\"startMenu\":\"" + sm + "\",\"category\":\"" + category + "\",\"label\":\"" + label +
                     "\",\"iconType\":\"" + scripts[i].iconType + "\",\"iconValue\":\"" + scripts[i].iconValue + "\"}";
         }
         json += "]}";
@@ -441,8 +441,8 @@ static std::string berryHandlerImpl(const std::string &command)
             path = std::string("/") + path;
         }
         auto meta = parseAppMetadata(path);
-        return std::string(R"({"app":")") + meta.name + "\",\"startMenu\":\"" + meta.startMenu +
-               "\",\"iconType\":\"" + meta.iconType + "\",\"iconValue\":\"" + meta.iconValue + "\"}";
+        return std::string(R"({"app":")") + meta.name + "\",\"startMenu\":\"" + meta.startMenu + "\",\"iconType\":\"" +
+               meta.iconType + "\",\"iconValue\":\"" + meta.iconValue + "\"}";
     }
 
     return "{\"error\": \"Usage: berry eval <code> | berry run <path> | berry open <appname> | berry panel "

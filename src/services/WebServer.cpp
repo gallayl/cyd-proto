@@ -18,8 +18,8 @@ void initWebServer()
 
     loggerInstance->Info("Starting WEB server");
 
-    server.on("/heap", HTTP_GET,
-              [](AsyncWebServerRequest *request) { request->send(200, MIME_PLAIN_TEXT, std::to_string(getFreeHeap()).c_str()); });
+    server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request)
+              { request->send(200, MIME_PLAIN_TEXT, std::to_string(getFreeHeap()).c_str()); });
 
     server.on("/uploadFiles", HTTP_POST, onPostUploadFiles, uploadFiles);
     server.on("/listFiles", HTTP_GET, listFiles);

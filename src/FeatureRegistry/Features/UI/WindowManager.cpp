@@ -24,8 +24,7 @@ static void setupWindowCallbacks(WindowManager &wm, OpenApp &oa)
     if (oa.app && oa.app->hasIcon())
     {
         App *appPtr = oa.app.get();
-        oa.window->setIconDrawer([appPtr](LGFX_Sprite &c, int x, int y, int sz)
-                                 { appPtr->drawIcon(c, x, y, sz); });
+        oa.window->setIconDrawer([appPtr](LGFX_Sprite &c, int x, int y, int sz) { appPtr->drawIcon(c, x, y, sz); });
     }
 }
 

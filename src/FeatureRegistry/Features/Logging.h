@@ -111,7 +111,8 @@ private:
         this->_entries = std::move(fresh);
     }
 
-    void addEntry(const std::string &severity, const std::string &message, unsigned long epochTime, const std::string &utcTime)
+    void addEntry(const std::string &severity, const std::string &message, unsigned long epochTime,
+                  const std::string &utcTime)
     {
         std::lock_guard<std::mutex> lock(_entriesMutex);
         if (this->_entryCount >= MAX_LOG_ENTRIES)

@@ -39,8 +39,8 @@ static std::string screenCommandHandlerImpl(const std::string &command)
         tft.waitDisplay(); // Wait for fillScreen to complete
         if (!UI::reinitRenderer())
         {
-        loggerInstance->Error("Failed to reinit renderer after calibration");
-        return std::string("{\"event\":\"calibrate\", \"status\":\"error\", \"message\":\"renderer_init_failed\"}");
+            loggerInstance->Error("Failed to reinit renderer after calibration");
+            return std::string("{\"event\":\"calibrate\", \"status\":\"error\", \"message\":\"renderer_init_failed\"}");
         }
         UI::windowManager().relayoutAll();
         frameReady = true; // Ensure next frame will render
