@@ -30,7 +30,9 @@ inline ResolvedPath resolveVirtualPath(const String &virtualPath)
     {
         String local = virtualPath.substring(6); // strip "/flash"
         if (local.isEmpty())
+        {
             local = "/";
+        }
         return {&LittleFS, local, true};
     }
 
@@ -39,7 +41,9 @@ inline ResolvedPath resolveVirtualPath(const String &virtualPath)
     {
         String local = virtualPath.substring(3); // strip "/sd"
         if (local.isEmpty())
+        {
             local = "/";
+        }
         return {&SD, local, true};
     }
 #endif
@@ -50,11 +54,15 @@ inline ResolvedPath resolveVirtualPath(const String &virtualPath)
 inline String getVirtualPrefix(fs::FS *fs)
 {
     if (fs == &LittleFS)
+    {
         return "/flash";
+    }
 
 #if ENABLE_SD_CARD
     if (fs == &SD)
+    {
         return "/sd";
+    }
 #endif
 
     return "";

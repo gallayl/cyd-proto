@@ -4,6 +4,7 @@
 #include "../../CommandInterpreter/CommandParser.h"
 #include "../../hw/RgbLed.h"
 #include "../../hw/lightSensor.h"
+#include "../registeredFeatures.h"
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 #include <Esp.h>
@@ -78,7 +79,7 @@ JsonDocument getInfo()
 static String wifiHandler(const String &command)
 {
     String operation = CommandParser::getCommandParameter(command, 1);
-    if (!operation.compareTo("connect"))
+    if (operation.compareTo("connect") == 0)
     {
         String ssid = CommandParser::getCommandParameter(command, 2);
         String password = CommandParser::getCommandParameter(command, 3);
@@ -88,11 +89,11 @@ static String wifiHandler(const String &command)
         }
         WiFi.disconnect(true, false);
         WiFi.persistent(true);
-        WiFi.mode(WIFI_AP);
+        WiFiClass::mode(WIFI_AP);
         WiFi.begin(ssid.c_str(), password.c_str());
         return String("{\"event\": \"connecting\"}");
     }
-    if (!operation.compareTo("list"))
+    if (operation.compareTo("list") == 0)
     {
         JsonDocument response;
         JsonArray arr = response.to<JsonArray>();
@@ -111,7 +112,7 @@ static String wifiHandler(const String &command)
         serializeJson(response, output);
         return output;
     }
-    if (!operation.compareTo("startSTA"))
+    if (operation.compareTo("startSTA") == 0)
     {
         String ssid = CommandParser::getCommandParameter(command, 2);
         String passphrase = CommandParser::getCommandParameter(command, 3);
@@ -123,25 +124,25 @@ static String wifiHandler(const String &command)
         return String("{\"event\": \"starting STA\"}");
     }
 
-    if (!operation.compareTo("stopSTA"))
+    if (operation.compareTo("stopSTA") == 0)
     {
         bool success = WiFi.softAPdisconnect(true);
-        WiFi.mode(WIFI_AP);
+        WiFiClass::mode(WIFI_AP);
         WiFi.begin();
-        return String("{\"event\": \"stopSTA\", \"success\": " + String(success) + "}");
+        return String("{\"event\": \"stopSTA\", \"success\": " + String(static_cast<int>(success)) + "}");
     }
 
-    if (!operation.compareTo("info"))
+    if (operation.compareTo("info") == 0)
     {
         JsonDocument response;
-        if (WiFi.getMode() == WIFI_AP || WiFi.getMode() == WIFI_AP_STA)
+        if (WiFiClass::getMode() == WIFI_AP || WiFiClass::getMode() == WIFI_AP_STA)
         {
             JsonObject ap = response["ap"].to<JsonObject>();
             ap["ipAddress"] = WiFi.softAPIP().toString();
             ap["macAddress"] = WiFi.softAPmacAddress();
         }
 
-        if (WiFi.getMode() == WIFI_STA || WiFi.getMode() == WIFI_AP_STA)
+        if (WiFiClass::getMode() == WIFI_STA || WiFiClass::getMode() == WIFI_AP_STA)
         {
             JsonObject sta = response["sta"].to<JsonObject>();
             sta["ipAddress"] = WiFi.localIP().toString();
@@ -149,7 +150,7 @@ static String wifiHandler(const String &command)
             sta["ssid"] = WiFi.SSID();
         }
 
-        int32_t rssi = WiFi.RSSI();
+        int8_t rssi = WiFi.RSSI();
         response["wifiStrength"] = getSignalStrength(rssi);
         response["wifiRssiDb"] = rssi;
 
@@ -158,127 +159,127 @@ static String wifiHandler(const String &command)
         return output;
     }
 
-    if (!operation.compareTo("restart"))
+    if (operation.compareTo("restart") == 0)
     {
         WiFi.disconnect(true, false);
         WiFi.begin();
-        return String("{\"event\": \"disconnecting\"}");
+        return {"{\"event\": \"disconnecting\"}"};
     }
-    return String("{\"event\": \"Unknown WiFi operation command. The available commands are: info, list, connect "
-                  "<ssid> <password>, startSTA <ssid> <passphrase>, stopSTA\"}");
+    return {"{\"event\": \"Unknown WiFi operation command. The available commands are: info, list, connect "
+            "<ssid> <password>, startSTA <ssid> <passphrase>, stopSTA\"}"};
 }
 #endif
 
 // --- Action definitions ---
 
-FeatureAction restartAction = {.name = "restart",
-                               .type = "POST",
-                               .handler =
-                                   [](const String &command)
-                               {
-                                   delay(100);
-                                   ESP.restart();
-                                   return String("{\"event\": \"restart\"}");
-                               },
-                               .transports = {.cli = true, .rest = true, .ws = false, .scripting = true}};
+static FeatureAction restartAction = {.name = "restart",
+                                      .type = "POST",
+                                      .handler =
+                                          [](const String & /*command*/)
+                                      {
+                                          delay(100);
+                                          ESP.restart();
+                                          return String("{\"event\": \"restart\"}");
+                                      },
+                                      .transports = {.cli = true, .rest = true, .ws = false, .scripting = true}};
 
-FeatureAction featuresAction = {.name = "features",
-                                .handler =
-                                    [](const String &command)
-                                {
-                                    String output;
-                                    withRegisteredFeatures([&output](const JsonDocument &doc)
-                                                           { serializeJson(doc, output); });
-                                    return output;
-                                },
-                                .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
+static FeatureAction featuresAction = {.name = "features",
+                                       .handler =
+                                           [](const String & /*command*/)
+                                       {
+                                           String output;
+                                           withRegisteredFeatures([&output](const JsonDocument &doc)
+                                                                  { serializeJson(doc, output); });
+                                           return output;
+                                       },
+                                       .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
 
-FeatureAction infoAction = {.name = "info",
-                            .handler =
-                                [](const String &command)
-                            {
-                                JsonDocument response = getInfo();
-                                String output;
-                                serializeJson(response, output);
-                                return output;
-                            },
-                            .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
-
-FeatureAction rgbLedAction = {.name = "rgbLed",
-                              .handler =
-                                  [](const String &command)
-                              {
-                                  const String sub = CommandParser::getCommandParameter(command, 1);
-                                  if (sub == "setColor")
-                                  {
-                                      int r = CommandParser::getCommandParameter(command, 2).toInt();
-                                      int g = CommandParser::getCommandParameter(command, 3).toInt();
-                                      int b = CommandParser::getCommandParameter(command, 4).toInt();
-                                      setRgbLedColor(r, g, b);
-                                      char logBuf[48];
-                                      snprintf(logBuf, sizeof(logBuf), "Set RGB LED color to %d,%d,%d", r, g, b);
-                                      LoggerInstance->Info(logBuf);
-                                  }
-                                  else if (sub == "off")
-                                  {
-                                      setRgbLedColor(0, 0, 0);
-                                      LoggerInstance->Info(F("Turned off RGB LED"));
-                                  }
-                                  else
-                                  {
-                                      LoggerInstance->Error("Unknown rgbLed subcommand: " + sub);
-                                  }
-                                  return String("{\"event\": \"rgbLedCommandexecuted\"}");
-                              },
-                              .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
-
-FeatureAction lightSensorAction = {.name = "getLightSensorValue",
+static FeatureAction infoAction = {.name = "info",
                                    .handler =
-                                       [](const String &command)
+                                       [](const String & /*command*/)
                                    {
-                                       uint16_t value = readLightSensor();
-                                       char buf[80];
-                                       snprintf(buf, sizeof(buf), "Read light sensor value: %u", value);
-                                       LoggerInstance->Info(buf);
-                                       snprintf(buf, sizeof(buf), "{\"event\": \"getLightSensorValue\", \"value\": %u}",
-                                                value);
-                                       return String(buf);
+                                       JsonDocument response = getInfo();
+                                       String output;
+                                       serializeJson(response, output);
+                                       return output;
                                    },
                                    .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
 
-FeatureAction hallSensorAction = {.name = "getHallSensorValue",
-                                  .handler =
-                                      [](const String &command)
-                                  {
-                                      uint16_t value = hallRead();
-                                      char buf[80];
-                                      snprintf(buf, sizeof(buf), "Read hall sensor value: %u", value);
-                                      LoggerInstance->Info(buf);
-                                      snprintf(buf, sizeof(buf), "{\"event\": \"getHallSensorValue\", \"value\": %u}",
-                                               value);
-                                      return String(buf);
-                                  },
-                                  .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
+static FeatureAction rgbLedAction = {.name = "rgbLed",
+                                     .handler =
+                                         [](const String &command)
+                                     {
+                                         const String SUB = CommandParser::getCommandParameter(command, 1);
+                                         if (SUB == "setColor")
+                                         {
+                                             int r = CommandParser::getCommandParameter(command, 2).toInt();
+                                             int g = CommandParser::getCommandParameter(command, 3).toInt();
+                                             int b = CommandParser::getCommandParameter(command, 4).toInt();
+                                             setRgbLedColor(r, g, b);
+                                             char logBuf[48];
+                                             snprintf(logBuf, sizeof(logBuf), "Set RGB LED color to %d,%d,%d", r, g, b);
+                                             LoggerInstance->Info(logBuf);
+                                         }
+                                         else if (SUB == "off")
+                                         {
+                                             setRgbLedColor(0, 0, 0);
+                                             LoggerInstance->Info(F("Turned off RGB LED"));
+                                         }
+                                         else
+                                         {
+                                             LoggerInstance->Error("Unknown rgbLed subcommand: " + SUB);
+                                         }
+                                         return String("{\"event\": \"rgbLedCommandexecuted\"}");
+                                     },
+                                     .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
+
+static FeatureAction lightSensorAction = {.name = "getLightSensorValue",
+                                          .handler =
+                                              [](const String & /*command*/)
+                                          {
+                                              uint16_t value = readLightSensor();
+                                              char buf[80];
+                                              snprintf(buf, sizeof(buf), "Read light sensor value: %u", value);
+                                              LoggerInstance->Info(buf);
+                                              snprintf(buf, sizeof(buf),
+                                                       "{\"event\": \"getLightSensorValue\", \"value\": %u}", value);
+                                              return String(buf);
+                                          },
+                                          .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
+
+static FeatureAction hallSensorAction = {.name = "getHallSensorValue",
+                                         .handler =
+                                             [](const String & /*command*/)
+                                         {
+                                             uint16_t value = hallRead();
+                                             char buf[80];
+                                             snprintf(buf, sizeof(buf), "Read hall sensor value: %u", value);
+                                             LoggerInstance->Info(buf);
+                                             snprintf(buf, sizeof(buf),
+                                                      "{\"event\": \"getHallSensorValue\", \"value\": %u}", value);
+                                             return String(buf);
+                                         },
+                                         .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
 
 #if ENABLE_WIFI
-FeatureAction wifiAction = {
+static FeatureAction wifiAction = {
     .name = "wifi", .handler = wifiHandler, .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
 #endif
 
 // forward declaration to avoid circular include
 class FeatureRegistry;
-extern FeatureRegistry *FeatureRegistryInstance;
+extern FeatureRegistry *featureRegistryInstance;
 
 static String memoryHandler(const String &command);
 
-FeatureAction memoryAction = {.name = "memory",
-                              .handler = memoryHandler,
-                              .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
+static FeatureAction memoryAction = {.name = "memory",
+                                     .handler = memoryHandler,
+                                     .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
 
 // --- Feature ---
 
-Feature *SystemFeatures = new Feature(
-    "SystemFeatures",
+Feature *systemFeatures = new Feature(
+    "systemFeatures",
     []()
     {
 #if ENABLE_WIFI
@@ -303,7 +304,7 @@ Feature *SystemFeatures = new Feature(
 
 #include "../FeatureRegistry.h"
 
-static String memoryHandler(const String &command)
+static String memoryHandler(const String & /*command*/)
 {
     JsonDocument doc;
     doc["freeHeap"] = ESP.getFreeHeap();
@@ -312,15 +313,15 @@ static String memoryHandler(const String &command)
     doc["maxAllocHeap"] = ESP.getMaxAllocHeap();
 
     JsonArray tasks = doc["tasks"].to<JsonArray>();
-    for (uint8_t i = 0; i < FeatureRegistryInstance->GetFeatureCount(); i++)
+    for (uint8_t i = 0; i < featureRegistryInstance->GetFeatureCount(); i++)
     {
-        Feature *f = FeatureRegistryInstance->RegisteredFeatures[i];
-        if (f->IsTaskBased())
+        Feature *f = featureRegistryInstance->RegisteredFeatures[i];
+        if (f->isTaskBased())
         {
             JsonObject t = tasks.add<JsonObject>();
             t["name"] = f->GetFeatureName();
-            t["running"] = f->IsTaskRunning();
-            t["stackHighWaterMark"] = f->GetTaskStackHighWaterMark();
+            t["running"] = f->isTaskRunning();
+            t["stackHighWaterMark"] = f->getTaskStackHighWaterMark();
         }
     }
 

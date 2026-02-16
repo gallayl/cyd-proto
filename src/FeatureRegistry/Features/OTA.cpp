@@ -4,23 +4,24 @@
 
 #include "OTA.h"
 #include "../../services/WebSocketServer.h" // ensure webSocket is declared (fixed relative path)
+#include "../../mime.h"
 
 // redundant extern in this translation unit to satisfy IntelliSense
 extern AsyncWebSocket *webSocket;
 
 ArRequestHandlerFunction getUpdateForm = ([](AsyncWebServerRequest *request)
-                                          { request->send(200, MIME_html, F("<form method='POST' action='/update' accept='application/octet-stream' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>")); });
+                                          { request->send(200, MIME_HTML, F("<form method='POST' action='/update' accept='application/octet-stream' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>")); });
 
 ArRequestHandlerFunction getRedirectPage = ([](AsyncWebServerRequest *request)
                                             {
-                                                AsyncWebServerResponse *response = request->beginResponse(200, MIME_html, "<html><head><meta http-equiv=\"refresh\" content=\"30\"></head><body>Update done, page will be refreshed.</body></html>");
+                                                AsyncWebServerResponse *response = request->beginResponse(200, MIME_HTML, "<html><head><meta http-equiv=\"refresh\" content=\"30\"></head><body>Update done, page will be refreshed.</body></html>");
                                                 response->addHeader("Refresh", REFRESH_TIMEOUT_AFTER_UPDATE);
                                                 request->send(response); });
 
 ArRequestHandlerFunction onPostUpdate = ([](AsyncWebServerRequest *request)
                                          {
                                              boolean shouldReboot = !Update.hasError();
-                                             AsyncWebServerResponse *response = request->beginResponse(200, MIME_plainText, shouldReboot ? "OK" : "FAIL");
+                                             AsyncWebServerResponse *response = request->beginResponse(200, MIME_PLAIN_TEXT, shouldReboot ? "OK" : "FAIL");
                                              response->addHeader("Connection", "close");
                                              request->send(response); });
 
@@ -30,7 +31,7 @@ ArUploadHandlerFunction onUploadUpdate = ([](AsyncWebServerRequest *request, Str
                                               if (Update.hasError())
                                               {
                                                   Update.printError(Serial);
-                                                  request->send(500, MIME_plainText, "Update error");
+                                                  request->send(500, MIME_PLAIN_TEXT, "Update error");
                                                   return;
                                               }
                                               if (!index)

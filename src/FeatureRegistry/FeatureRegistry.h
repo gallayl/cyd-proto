@@ -41,7 +41,7 @@
 
 #define FEATURES_SIZE 16
 
-extern Feature *SystemFeatures;
+extern Feature *systemFeatures;
 
 class FeatureRegistry
 {
@@ -64,9 +64,9 @@ public:
 
     void Init()
     {
-        this->RegisterFeature(TimeFeature);
+        this->RegisterFeature(timeFeature);
         this->RegisterFeature(LoggingFeature);
-        this->RegisterFeature(SystemFeatures);
+        this->RegisterFeature(systemFeatures);
 
 #if ENABLE_SERIAL_READ
         this->RegisterFeature(SerialReadFeature);
@@ -142,9 +142,9 @@ public:
         for (uint8_t i = 0; i < this->_registeredFeaturesCount; i++)
         {
             Feature *f = this->RegisteredFeatures[i];
-            if (f->IsTaskBased() && f->GetFeatureState() == FeatureState::RUNNING)
+            if (f->isTaskBased() && f->GetFeatureState() == FeatureState::RUNNING)
             {
-                if (f->StartTask())
+                if (f->startTask())
                 {
                     LoggerInstance->Info("Started task for: " + f->GetFeatureName());
                 }
@@ -161,7 +161,7 @@ public:
         for (uint8_t i = 0; i < this->_registeredFeaturesCount; i++)
         {
             Feature *f = this->RegisteredFeatures[i];
-            if (f->IsTaskBased())
+            if (f->isTaskBased())
                 continue;
             if (f->GetFeatureState() == FeatureState::RUNNING)
             {
@@ -202,9 +202,9 @@ public:
         FeatureState newState = f->Setup();
         updateFeatureJson(f);
 
-        if (f->IsTaskBased() && newState == FeatureState::RUNNING)
+        if (f->isTaskBased() && newState == FeatureState::RUNNING)
         {
-            f->StartTask();
+            f->startTask();
         }
 
         return newState;
@@ -245,4 +245,4 @@ public:
     Feature *RegisteredFeatures[FEATURES_SIZE] = {};
 };
 
-extern FeatureRegistry *FeatureRegistryInstance;
+extern FeatureRegistry *featureRegistryInstance;

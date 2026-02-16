@@ -8,12 +8,12 @@ ArRequestHandlerFunction onPostUploadFiles = ([](AsyncWebServerRequest *request)
     // Check if there was an error during upload (stored in _tempObject)
     if (request->_tempObject != nullptr) {
         String* errorMsg = (String*)request->_tempObject;
-        request->send(400, MIME_json, *errorMsg);
+        request->send(400, MIME_JSON, *errorMsg);
         delete errorMsg;
         request->_tempObject = nullptr;
         return;
     }
-    request->send(200, MIME_json, "{\"status\":\"ok\"}");
+    request->send(200, MIME_JSON, "{\"status\":\"ok\"}");
 });
 
 static String sanitizePath(const String &raw)

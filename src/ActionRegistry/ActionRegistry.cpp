@@ -39,7 +39,7 @@ void ActionRegistry::wireRestEndpoints()
                   [action](AsyncWebServerRequest *request)
                   {
                       String result = action->handler(action->name);
-                      request->send(200, MIME_json, result);
+                      request->send(200, MIME_JSON, result);
                   });
     }
 }

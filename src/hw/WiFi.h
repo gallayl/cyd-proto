@@ -8,7 +8,6 @@
 #include "../FeatureRegistry/Features/Logging.h"
 
 // ensure logger declaration available (guard against include order)
-extern Logger *LoggerInstance;
 
 inline String getSignalStrength(int32_t rssi)
 {
@@ -61,11 +60,11 @@ inline String getEncryptionType(wifi_auth_mode_t mode)
     }
 }
 
-inline void startStaMode(String ssid, String staPassPharse)
+inline void startStaMode(const String &ssid, const String &staPassPharse)
 {
-    if (WiFi.getMode() == WIFI_AP && WiFi.begin() != WL_CONNECTED)
+    if (WiFiClass::getMode() == WIFI_AP && WiFi.begin() != WL_CONNECTED)
     {
-        WiFi.mode(WIFI_AP_STA);
+        WiFiClass::mode(WIFI_AP_STA);
         WiFi.softAP(ssid, staPassPharse);
     }
 }
@@ -79,7 +78,7 @@ inline bool hasStoredCredentials()
 
 inline void initWifi()
 {
-    WiFi.mode(WIFI_AP);
+    WiFiClass::mode(WIFI_AP);
 
     if (!hasStoredCredentials())
     {

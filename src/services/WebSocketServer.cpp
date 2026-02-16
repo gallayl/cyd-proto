@@ -3,6 +3,8 @@
 #if ENABLE_WEBSERVER
 
 #include "WebSocketServer.h"
+#include "./WebServer.h"
+#include "../FeatureRegistry/Features/Logging.h"
 
 AsyncWebSocket *webSocket = nullptr;
 
@@ -11,7 +13,7 @@ void initWebSockets()
     webSocket = new AsyncWebSocket(WEBSOCKETS_URL);
 
     webSocket->onEvent(
-        [](AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data,
+        [](AsyncWebSocket * /*server*/, AsyncWebSocketClient *client, AwsEventType type, void * /*arg*/, uint8_t *data,
            size_t len)
         {
             if (type == WS_EVT_CONNECT)
@@ -39,7 +41,9 @@ void initWebSockets()
         [](const String &scope, const String &message)
         {
             if (!webSocket)
+            {
                 return;
+            }
             String buf;
             buf.reserve(scope.length() + 1 + message.length());
             buf += scope;
