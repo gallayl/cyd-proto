@@ -343,10 +343,14 @@ void WindowManager::relayoutAll()
 {
     relayoutWindows();
 
+    // Destroy all popups (they'll be recreated by panel setup)
+    popupSlots.clear();
+
     if (panelSlot)
     {
         panelSlot->app->teardown();
         panelSlot->container->unmount();
+        panelSlot->container->clear(); // Remove old children before re-setup
         panelSlot->container->setBounds(0, Theme::TaskbarY(), Theme::ScreenWidth(), Theme::TaskbarHeight);
         panelSlot->container->mount();
         panelSlot->app->setup(*panelSlot->container, Theme::ScreenWidth(), Theme::TaskbarHeight);
