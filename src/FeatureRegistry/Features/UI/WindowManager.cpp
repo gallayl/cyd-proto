@@ -25,14 +25,18 @@ static void setupWindowCallbacks(WindowManager &wm, OpenApp &oa)
 void WindowManager::openApp(const char *appName)
 {
     // if already open, just focus (restore if minimized)
-    for (auto &oa : openApps)
+    for (auto &oa : _openApps)
     {
         if (oa.name == appName)
         {
             if (oa.window->isMinimized())
+            {
                 restoreApp(appName);
+            }
             else
+            {
                 focusApp(appName);
+            }
             return;
         }
     }
@@ -50,18 +54,24 @@ void WindowManager::openApp(const char *appName)
 
 void WindowManager::openApp(const char *appName, App *appInstance)
 {
-    if (!appInstance)
+    if (appInstance == nullptr)
+    {
         return;
+    }
 
     // if already open, just focus (restore if minimized)
-    for (auto &oa : openApps)
+    for (auto &oa : _openApps)
     {
         if (oa.name == appName)
         {
             if (oa.window->isMinimized())
+            {
                 restoreApp(appName);
+            }
             else
+            {
                 focusApp(appName);
+            }
             delete appInstance;
             return;
         }
@@ -73,7 +83,7 @@ void WindowManager::openApp(const char *appName, App *appInstance)
 
     int winX = Theme::WindowBorderWidth;
     int winY = Theme::DesktopY + 2;
-    int winW = Theme::ScreenWidth() - Theme::WindowBorderWidth * 2;
+    int winW = Theme::ScreenWidth() - (Theme::WindowBorderWidth * 2);
     int winH = availableDesktopHeight() - 4;
 
     oa.window = std::make_unique<Window>(appName, winX, winY, winW, winH);
@@ -83,19 +93,19 @@ void WindowManager::openApp(const char *appName, App *appInstance)
     oa.window->mount();
     oa.app->setup(oa.window->getContent(), oa.window->contentW(), oa.window->contentH());
 
-    openApps.push_back(std::move(oa));
+    _openApps.push_back(std::move(oa));
     updateActiveStates();
     markDirty();
 }
 
 void WindowManager::closeApp(const char *appName)
 {
-    auto it = std::find_if(openApps.begin(), openApps.end(), [&](const OpenApp &oa) { return oa.name == appName; });
-    if (it != openApps.end())
+    auto it = std::find_if(_openApps.begin(), _openApps.end(), [&](const OpenApp &oa) { return oa.name == appName; });
+    if (it != _openApps.end())
     {
         it->app->teardown();
         it->window->unmount();
-        openApps.erase(it);
+        _openApps.erase(it);
         updateActiveStates();
         markDirty();
     }
@@ -103,12 +113,12 @@ void WindowManager::closeApp(const char *appName)
 
 void WindowManager::focusApp(const char *appName)
 {
-    auto it = std::find_if(openApps.begin(), openApps.end(), [&](const OpenApp &oa) { return oa.name == appName; });
-    if (it != openApps.end() && it != openApps.end() - 1)
+    auto it = std::find_if(_openApps.begin(), _openApps.end(), [&](const OpenApp &oa) { return oa.name == appName; });
+    if (it != _openApps.end() && it != _openApps.end() - 1)
     {
         OpenApp tmp = std::move(*it);
-        openApps.erase(it);
-        openApps.push_back(std::move(tmp));
+        _openApps.erase(it);
+        _openApps.push_back(std::move(tmp));
         markDirty();
     }
     updateActiveStates();
@@ -116,8 +126,8 @@ void WindowManager::focusApp(const char *appName)
 
 void WindowManager::minimizeApp(const char *appName)
 {
-    auto it = std::find_if(openApps.begin(), openApps.end(), [&](const OpenApp &oa) { return oa.name == appName; });
-    if (it != openApps.end())
+    auto it = std::find_if(_openApps.begin(), _openApps.end(), [&](const OpenApp &oa) { return oa.name == appName; });
+    if (it != _openApps.end())
     {
         it->window->setState(WindowState::Minimized);
         markDirty();
@@ -126,8 +136,8 @@ void WindowManager::minimizeApp(const char *appName)
 
 void WindowManager::restoreApp(const char *appName)
 {
-    auto it = std::find_if(openApps.begin(), openApps.end(), [&](const OpenApp &oa) { return oa.name == appName; });
-    if (it != openApps.end())
+    auto it = std::find_if(_openApps.begin(), _openApps.end(), [&](const OpenApp &oa) { return oa.name == appName; });
+    if (it != _openApps.end())
     {
         if (it->window->isMinimized())
         {
@@ -140,13 +150,15 @@ void WindowManager::restoreApp(const char *appName)
 
 void WindowManager::handleWindowStateChange(const char *appName, WindowState state)
 {
-    auto it = std::find_if(openApps.begin(), openApps.end(), [&](const OpenApp &oa) { return oa.name == appName; });
-    if (it == openApps.end())
+    auto it = std::find_if(_openApps.begin(), _openApps.end(), [&](const OpenApp &oa) { return oa.name == appName; });
+    if (it == _openApps.end())
+    {
         return;
+    }
 
     int winX = Theme::WindowBorderWidth;
     int winY = Theme::DesktopY + 2;
-    int winW = Theme::ScreenWidth() - Theme::WindowBorderWidth * 2;
+    int winW = Theme::ScreenWidth() - (Theme::WindowBorderWidth * 2);
     int deskH = availableDesktopHeight();
     int winH = deskH - 4;
 
@@ -166,7 +178,7 @@ void WindowManager::handleWindowStateChange(const char *appName, WindowState sta
         break;
     case WindowState::BottomHalf:
         winX = 0;
-        winY = Theme::DesktopY + deskH / 2;
+        winY = Theme::DesktopY + (deskH / 2);
         winW = Theme::ScreenWidth();
         winH = deskH / 2;
         break;
@@ -196,23 +208,29 @@ void WindowManager::handleWindowStateChange(const char *appName, WindowState sta
 
 bool WindowManager::isAppOpen(const char *appName) const
 {
-    for (auto &oa : openApps)
+    for (const auto &oa : _openApps)
     {
         if (oa.name == appName)
+        {
             return true;
+        }
     }
     return false;
 }
 
 OpenApp *WindowManager::getFocused()
 {
-    if (openApps.empty())
-        return nullptr;
-    // find topmost non-minimized
-    for (int i = (int)openApps.size() - 1; i >= 0; i--)
+    if (_openApps.empty())
     {
-        if (!openApps[i].window->isMinimized())
-            return &openApps[i];
+        return nullptr;
+    }
+    // find topmost non-minimized
+    for (int i = (int)_openApps.size() - 1; i >= 0; i--)
+    {
+        if (!_openApps[i].window->isMinimized())
+        {
+            return &_openApps[i];
+        }
     }
     return nullptr;
 }
@@ -220,9 +238,9 @@ OpenApp *WindowManager::getFocused()
 void WindowManager::updateActiveStates()
 {
     auto *focused = getFocused();
-    for (auto &oa : openApps)
+    for (auto &oa : _openApps)
     {
-        oa.window->setActive(focused && &oa == focused);
+        oa.window->setActive((focused != nullptr) && &oa == focused);
     }
 }
 
@@ -233,41 +251,51 @@ void WindowManager::draw()
     c.fillRect(0, Theme::DesktopY - stripOffsetY(), Theme::ScreenWidth(), Theme::DesktopHeight(), Theme::DesktopBg);
 
     // draw windows in z-order (back to front), skip minimized
-    for (auto &oa : openApps)
+    for (auto &oa : _openApps)
     {
         if (!oa.window->isMinimized())
+        {
             oa.window->draw();
+        }
     }
 
     // overlay (taskbar, start menu)
-    if (overlayDraw)
-        overlayDraw();
+    if (_overlayDraw)
+    {
+        _overlayDraw();
+    }
 }
 
 void WindowManager::handleTouch(int px, int py)
 {
     // overlay gets first crack (taskbar, start menu)
-    if (overlayTouch && overlayTouch(px, py))
+    if (_overlayTouch && _overlayTouch(px, py))
+    {
         return;
+    }
 
     // hit-test windows top-down (back of vector = top), skip minimized
-    for (int i = (int)openApps.size() - 1; i >= 0; i--)
+    for (int i = (int)_openApps.size() - 1; i >= 0; i--)
     {
-        if (openApps[i].window->isMinimized())
+        if (_openApps[i].window->isMinimized())
+        {
             continue;
-        if (openApps[i].window->contains(px, py))
+        }
+        if (_openApps[i].window->contains(px, py))
         {
             // focus this window if not already focused
             auto *focused = getFocused();
-            if (&openApps[i] != focused)
+            if (&_openApps[i] != focused)
             {
-                String name = openApps[i].name;
+                String name = _openApps[i].name;
                 focusApp(name.c_str());
             }
             // top non-minimized window gets the touch
             auto *nowFocused = getFocused();
-            if (nowFocused)
+            if (nowFocused != nullptr)
+            {
                 nowFocused->window->onTouch(px, py);
+            }
             return;
         }
     }
@@ -275,19 +303,25 @@ void WindowManager::handleTouch(int px, int py)
 
 void WindowManager::handleTouchEnd(int px, int py)
 {
-    if (overlayTouchEnd && overlayTouchEnd(px, py))
+    if (_overlayTouchEnd && _overlayTouchEnd(px, py))
+    {
         return;
+    }
 
     // forward to focused (non-minimized) window
     auto *focused = getFocused();
-    if (focused)
+    if (focused != nullptr)
+    {
         focused->window->onTouchEnd(px, py);
+    }
 }
 
 void WindowManager::openPanel(const char *name, App *appInstance, int x, int y, int w, int h)
 {
-    if (!appInstance)
+    if (appInstance == nullptr)
+    {
         return;
+    }
 
     auto slot = std::make_unique<PanelSlot>();
     slot->name = name;
@@ -297,44 +331,52 @@ void WindowManager::openPanel(const char *name, App *appInstance, int x, int y, 
     slot->container->mount();
     slot->app->setup(*slot->container, w, h);
 
-    panelSlot = std::move(slot);
+    _panelSlot = std::move(slot);
     markDirty();
 }
 
 void WindowManager::closePanel(const char *name)
 {
-    if (panelSlot && panelSlot->name == name)
+    if (_panelSlot && _panelSlot->name == name)
     {
-        panelSlot->app->teardown();
-        panelSlot->container->unmount();
-        panelSlot.reset();
+        _panelSlot->app->teardown();
+        _panelSlot->container->unmount();
+        _panelSlot.reset();
         markDirty();
     }
 }
 
 void WindowManager::tickTimers()
 {
-    for (auto &oa : openApps)
+    for (auto &oa : _openApps)
     {
         if (oa.app->tickTimers())
+        {
             markDirty();
+        }
     }
-    if (panelSlot && panelSlot->app->tickTimers())
+    if (_panelSlot && _panelSlot->app->tickTimers())
+    {
         markDirty();
+    }
 }
 
 int WindowManager::availableDesktopHeight() const
 {
-    if (keyboardVisible)
+    if (_keyboardVisible)
+    {
         return Theme::DesktopHeight() - Theme::KeyboardHeight();
+    }
     return Theme::DesktopHeight();
 }
 
 void WindowManager::setKeyboardVisible(bool vis)
 {
-    if (vis == keyboardVisible)
+    if (vis == _keyboardVisible)
+    {
         return;
-    keyboardVisible = vis;
+    }
+    _keyboardVisible = vis;
     relayoutWindows();
     markDirty();
 }
@@ -344,16 +386,16 @@ void WindowManager::relayoutAll()
     relayoutWindows();
 
     // Destroy all popups (they'll be recreated by panel setup)
-    popupSlots.clear();
+    _popupSlots.clear();
 
-    if (panelSlot)
+    if (_panelSlot)
     {
-        panelSlot->app->teardown();
-        panelSlot->container->unmount();
-        panelSlot->container->clear(); // Remove old children before re-setup
-        panelSlot->container->setBounds(0, Theme::TaskbarY(), Theme::ScreenWidth(), Theme::TaskbarHeight);
-        panelSlot->container->mount();
-        panelSlot->app->setup(*panelSlot->container, Theme::ScreenWidth(), Theme::TaskbarHeight);
+        _panelSlot->app->teardown();
+        _panelSlot->container->unmount();
+        _panelSlot->container->clear(); // Remove old children before re-setup
+        _panelSlot->container->setBounds(0, Theme::TaskbarY(), Theme::ScreenWidth(), Theme::TaskbarHeight);
+        _panelSlot->container->mount();
+        _panelSlot->app->setup(*_panelSlot->container, Theme::ScreenWidth(), Theme::TaskbarHeight);
     }
     markDirty();
 }
@@ -362,10 +404,10 @@ void WindowManager::relayoutWindows()
 {
     int winX = Theme::WindowBorderWidth;
     int winY = Theme::DesktopY + 2;
-    int winW = Theme::ScreenWidth() - Theme::WindowBorderWidth * 2;
+    int winW = Theme::ScreenWidth() - (Theme::WindowBorderWidth * 2);
     int winH = availableDesktopHeight() - 4;
 
-    for (auto &oa : openApps)
+    for (auto &oa : _openApps)
     {
         oa.app->teardown();
         oa.window->unmount();
@@ -389,61 +431,70 @@ PopupContainer *WindowManager::createPopup(int x, int y, int w, int h, void *own
 {
     auto p = std::make_unique<PopupContainer>(x, y, w, h);
     PopupContainer *raw = p.get();
-    popupSlots.push_back({std::move(p), owner});
+    _popupSlots.push_back({std::move(p), owner});
     return raw;
 }
 
 void WindowManager::destroyPopup(PopupContainer *p)
 {
-    if (!p)
-        return;
-    auto it =
-        std::find_if(popupSlots.begin(), popupSlots.end(), [p](const PopupSlot &s) { return s.popup.get() == p; });
-    if (it != popupSlots.end())
+    if (p == nullptr)
     {
-        popupSlots.erase(it);
+        return;
+    }
+    auto it =
+        std::find_if(_popupSlots.begin(), _popupSlots.end(), [p](const PopupSlot &s) { return s.popup.get() == p; });
+    if (it != _popupSlots.end())
+    {
+        _popupSlots.erase(it);
         markDirty();
     }
 }
 
 void WindowManager::destroyPopupsForOwner(void *owner)
 {
-    popupSlots.erase(
-        std::remove_if(popupSlots.begin(), popupSlots.end(), [owner](const PopupSlot &s) { return s.owner == owner; }),
-        popupSlots.end());
+    _popupSlots.erase(std::remove_if(_popupSlots.begin(), _popupSlots.end(),
+                                     [owner](const PopupSlot &s) { return s.owner == owner; }),
+                      _popupSlots.end());
     markDirty();
 }
 
 bool WindowManager::hasVisiblePopups() const
 {
-    for (auto &s : popupSlots)
+    for (const auto &s : _popupSlots)
     {
         if (s.popup->isVisible())
+        {
             return true;
+        }
     }
     return false;
 }
 
 void WindowManager::hideAllPopups()
 {
-    for (auto &s : popupSlots)
+    for (auto &s : _popupSlots)
+    {
         s.popup->hide();
+    }
     markDirty();
 }
 
 void WindowManager::drawPopups()
 {
     static int logCount = 0;
-    for (auto &s : popupSlots)
+    for (auto &s : _popupSlots)
     {
         if (s.popup->isVisible())
         {
             if (logCount < 5)
             {
-                int bx, by, bw, bh;
+                int bx;
+                int by;
+                int bw;
+                int bh;
                 s.popup->getBounds(bx, by, bw, bh);
                 Serial.printf("drawPopups: visible popup at (%d,%d,%d,%d) mounted=%d children=%d\n", bx, by, bw, bh,
-                              s.popup->isMounted(), (int)s.popup->getChildren().size());
+                              static_cast<int>(s.popup->isMounted()), (int)s.popup->getChildren().size());
                 logCount++;
             }
             s.popup->draw();
@@ -455,14 +506,16 @@ bool WindowManager::handlePopupTouch(int px, int py)
 {
     bool anyVisible = hasVisiblePopups();
     if (!anyVisible)
+    {
         return false;
+    }
 
     // check if touch is inside any visible popup (iterate in reverse for z-order)
-    for (int i = (int)popupSlots.size() - 1; i >= 0; i--)
+    for (int i = (int)_popupSlots.size() - 1; i >= 0; i--)
     {
-        if (popupSlots[i].popup->isVisible() && popupSlots[i].popup->contains(px, py))
+        if (_popupSlots[i].popup->isVisible() && _popupSlots[i].popup->contains(px, py))
         {
-            popupSlots[i].popup->handleTouch(px, py);
+            _popupSlots[i].popup->handleTouch(px, py);
             return true;
         }
     }
@@ -476,13 +529,15 @@ bool WindowManager::handlePopupTouchEnd(int px, int py)
 {
     bool anyVisible = hasVisiblePopups();
     if (!anyVisible)
-        return false;
-
-    for (int i = (int)popupSlots.size() - 1; i >= 0; i--)
     {
-        if (popupSlots[i].popup->isVisible() && popupSlots[i].popup->contains(px, py))
+        return false;
+    }
+
+    for (int i = (int)_popupSlots.size() - 1; i >= 0; i--)
+    {
+        if (_popupSlots[i].popup->isVisible() && _popupSlots[i].popup->contains(px, py))
         {
-            popupSlots[i].popup->handleTouchEnd(px, py);
+            _popupSlots[i].popup->handleTouchEnd(px, py);
             return true;
         }
     }

@@ -23,7 +23,7 @@ String getUtcTime()
 }
 
 // instantiate feature
-Feature *TimeFeature = new Feature(
+Feature *timeFeature = new Feature(
     "Time",
     []()
     {

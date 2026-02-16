@@ -41,8 +41,6 @@
 
 #define FEATURES_SIZE 16
 
-extern Feature *SystemFeatures;
-
 class FeatureRegistry
 {
 private:
@@ -60,49 +58,49 @@ private:
     }
 
 public:
-    FeatureRegistry() {}
+    FeatureRegistry() = default;
 
-    void Init()
+    void init()
     {
-        this->RegisterFeature(TimeFeature);
-        this->RegisterFeature(LoggingFeature);
-        this->RegisterFeature(SystemFeatures);
+        this->registerFeature(timeFeature);
+        this->registerFeature(loggingFeature);
+        this->registerFeature(systemFeatures);
 
 #if ENABLE_SERIAL_READ
-        this->RegisterFeature(SerialReadFeature);
+        this->registerFeature(serialReadFeature);
 #endif
 
 #if ENABLE_LITTLEFS
-        this->RegisterFeature(LittleFsFeature);
+        this->registerFeature(LittleFsFeature);
 #endif
 
 #if ENABLE_SD_CARD
-        this->RegisterFeature(SdCardFeature);
+        this->registerFeature(SdCardFeature);
 #endif
 
 #if ENABLE_I2C
-        this->RegisterFeature(i2cFeature);
+        this->registerFeature(i2cFeature);
 #endif
 
 #if ENABLE_OTA
-        this->RegisterFeature(OtaUpgrade);
+        this->registerFeature(otaUpgrade);
 #endif
 
 #if ENABLE_UI
-        this->RegisterFeature(UiFeature);
+        this->registerFeature(uiFeature);
 #endif
 
 #if ENABLE_BERRY
-        this->RegisterFeature(BerryFeature);
+        this->registerFeature(BerryFeature);
 #endif
     }
 
-    void RegisterFeature(Feature *newFeature)
+    void registerFeature(Feature *newFeature)
     {
         std::lock_guard<std::mutex> lock(registeredFeaturesMutex);
         if (this->_registeredFeaturesCount >= FEATURES_SIZE)
         {
-            LoggerInstance->Error(F("Feature registry full, cannot register"));
+            loggerInstance->Error(F("Feature registry full, cannot register"));
             return;
         }
         this->RegisteredFeatures[this->_registeredFeaturesCount] = newFeature;
@@ -114,7 +112,7 @@ public:
         featureEntry["state"] = (int)newFeature->GetFeatureState();
     }
 
-    void SetupFeatures()
+    void setupFeatures()
     {
         for (uint8_t i = 0; i < this->_registeredFeaturesCount; i++)
         {
@@ -123,11 +121,11 @@ public:
 
             if (!f->isAutoStart())
             {
-                LoggerInstance->Info("Deferring feature: " + featureName);
+                loggerInstance->Info("Deferring feature: " + featureName);
                 continue;
             }
 
-            LoggerInstance->Info("Setting up feature: " + featureName);
+            loggerInstance->Info("Setting up feature: " + featureName);
             f->Setup();
             updateFeatureJson(f);
         }
@@ -137,32 +135,34 @@ public:
 #endif
     }
 
-    void StartFeatureTasks()
+    void startFeatureTasks()
     {
         for (uint8_t i = 0; i < this->_registeredFeaturesCount; i++)
         {
             Feature *f = this->RegisteredFeatures[i];
-            if (f->IsTaskBased() && f->GetFeatureState() == FeatureState::RUNNING)
+            if (f->isTaskBased() && f->GetFeatureState() == FeatureState::RUNNING)
             {
-                if (f->StartTask())
+                if (f->startTask())
                 {
-                    LoggerInstance->Info("Started task for: " + f->GetFeatureName());
+                    loggerInstance->Info("Started task for: " + f->GetFeatureName());
                 }
                 else
                 {
-                    LoggerInstance->Error("Failed to start task for: " + f->GetFeatureName());
+                    loggerInstance->Error("Failed to start task for: " + f->GetFeatureName());
                 }
             }
         }
     }
 
-    void LoopFeatures()
+    void loopFeatures()
     {
         for (uint8_t i = 0; i < this->_registeredFeaturesCount; i++)
         {
             Feature *f = this->RegisteredFeatures[i];
-            if (f->IsTaskBased())
+            if (f->isTaskBased())
+            {
                 continue;
+            }
             if (f->GetFeatureState() == FeatureState::RUNNING)
             {
                 f->Loop();
@@ -170,7 +170,7 @@ public:
         }
     }
 
-    Feature *GetFeature(const String &name)
+    Feature *getFeature(const String &name)
     {
         for (uint8_t i = 0; i < this->_registeredFeaturesCount; i++)
         {
@@ -182,62 +182,62 @@ public:
         return nullptr;
     }
 
-    FeatureState SetupFeature(const String &name)
+    FeatureState setupFeature(const String &name)
     {
-        Feature *f = GetFeature(name);
-        if (!f)
+        Feature *f = getFeature(name);
+        if (f == nullptr)
         {
-            LoggerInstance->Error("Feature not found: " + name);
+            loggerInstance->Error("Feature not found: " + name);
             return FeatureState::ERROR;
         }
 
         FeatureState state = f->GetFeatureState();
         if (state == FeatureState::RUNNING)
         {
-            LoggerInstance->Info("Feature already running: " + name);
+            loggerInstance->Info("Feature already running: " + name);
             return state;
         }
 
-        LoggerInstance->Info("Setting up feature: " + name);
+        loggerInstance->Info("Setting up feature: " + name);
         FeatureState newState = f->Setup();
         updateFeatureJson(f);
 
-        if (f->IsTaskBased() && newState == FeatureState::RUNNING)
+        if (f->isTaskBased() && newState == FeatureState::RUNNING)
         {
-            f->StartTask();
+            f->startTask();
         }
 
         return newState;
     }
 
-    bool TeardownFeature(const String &name)
+    bool teardownFeature(const String &name)
     {
-        Feature *f = GetFeature(name);
-        if (!f)
+        Feature *f = getFeature(name);
+        if (f == nullptr)
         {
-            LoggerInstance->Error("Feature not found: " + name);
+            loggerInstance->Error("Feature not found: " + name);
             return false;
         }
 
         if (f->GetFeatureState() != FeatureState::RUNNING)
         {
-            LoggerInstance->Info("Feature not running: " + name);
+            loggerInstance->Info("Feature not running: " + name);
             return false;
         }
 
         if (!f->hasTeardown())
         {
-            LoggerInstance->Error("Feature has no teardown: " + name);
+            loggerInstance->Error("Feature has no teardown: " + name);
             return false;
         }
 
-        LoggerInstance->Info("Tearing down feature: " + name);
+        loggerInstance->Info("Tearing down feature: " + name);
         f->Teardown();
         updateFeatureJson(f);
         return true;
     }
 
-    uint8_t GetFeatureCount() const
+    uint8_t getFeatureCount() const
     {
         return this->_registeredFeaturesCount;
     }
@@ -245,4 +245,4 @@ public:
     Feature *RegisteredFeatures[FEATURES_SIZE] = {};
 };
 
-extern FeatureRegistry *FeatureRegistryInstance;
+extern FeatureRegistry *featureRegistryInstance;

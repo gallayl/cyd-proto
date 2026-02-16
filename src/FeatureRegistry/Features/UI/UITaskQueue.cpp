@@ -14,46 +14,48 @@ struct UICommand
     SemaphoreHandle_t done;
 };
 
-static QueueHandle_t s_cmdQueue = nullptr;
-static TaskHandle_t s_uiTaskHandle = nullptr;
+static QueueHandle_t sCmdQueue = nullptr;
+static TaskHandle_t sUiTaskHandle = nullptr;
 
-static SemaphoreHandle_t s_syncMutex = nullptr;
-static SemaphoreHandle_t s_syncDone = nullptr;
+static SemaphoreHandle_t sSyncMutex = nullptr;
+static SemaphoreHandle_t sSyncDone = nullptr;
 
 void initTaskQueue()
 {
-    s_cmdQueue = xQueueCreate(8, sizeof(UICommand));
-    s_syncMutex = xSemaphoreCreateMutex();
-    s_syncDone = xSemaphoreCreateBinary();
+    sCmdQueue = xQueueCreate(8, sizeof(UICommand));
+    sSyncMutex = xSemaphoreCreateMutex();
+    sSyncDone = xSemaphoreCreateBinary();
 }
 
 void setUITaskHandle(TaskHandle_t handle)
 {
-    s_uiTaskHandle = handle;
+    sUiTaskHandle = handle;
 }
 
 bool isUITaskRunning()
 {
-    return s_uiTaskHandle != nullptr;
+    return sUiTaskHandle != nullptr;
 }
 
 bool isOnUITask()
 {
-    return s_uiTaskHandle != nullptr && xTaskGetCurrentTaskHandle() == s_uiTaskHandle;
+    return sUiTaskHandle != nullptr && xTaskGetCurrentTaskHandle() == sUiTaskHandle;
 }
 
 void processTaskQueue()
 {
-    if (!s_cmdQueue)
-        return;
-    UICommand cmd;
-    while (xQueueReceive(s_cmdQueue, &cmd, 0) == pdTRUE)
+    if (sCmdQueue == nullptr)
     {
-        if (cmd.action)
+        return;
+    }
+    UICommand cmd;
+    while (xQueueReceive(sCmdQueue, &cmd, 0) == pdTRUE)
+    {
+        if (cmd.action != nullptr)
         {
             (*cmd.action)();
         }
-        if (cmd.done)
+        if (cmd.done != nullptr)
         {
             xSemaphoreGive(cmd.done);
         }
@@ -67,11 +69,11 @@ void postToUITaskSync(std::function<void()> action)
         action();
         return;
     }
-    xSemaphoreTake(s_syncMutex, portMAX_DELAY);
-    UICommand cmd = {&action, s_syncDone};
-    xQueueSend(s_cmdQueue, &cmd, portMAX_DELAY);
-    xSemaphoreTake(s_syncDone, portMAX_DELAY);
-    xSemaphoreGive(s_syncMutex);
+    xSemaphoreTake(sSyncMutex, portMAX_DELAY);
+    UICommand cmd = {&action, sSyncDone};
+    xQueueSend(sCmdQueue, &cmd, portMAX_DELAY);
+    xSemaphoreTake(sSyncDone, portMAX_DELAY);
+    xSemaphoreGive(sSyncMutex);
 }
 
 String postToUITaskWithResult(std::function<String()> action)

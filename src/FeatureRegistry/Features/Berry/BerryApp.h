@@ -79,7 +79,7 @@ public:
         }
         if (!f)
         {
-            LoggerInstance->Error("BerryApp: cannot open " + _scriptPath);
+            loggerInstance->Error("BerryApp: cannot open " + _scriptPath);
             UI::errorPopup().show(("Cannot open " + _scriptPath).c_str());
             berrySetCurrentApp(nullptr);
             return;
@@ -92,7 +92,7 @@ public:
         if (res != 0)
         {
             String err = be_tostring(vm, -1);
-            LoggerInstance->Error("BerryApp compile: " + err);
+            loggerInstance->Error("BerryApp compile: " + err);
             UI::errorPopup().show(("Compile error:\n" + err).c_str());
             be_pop(vm, 1);
             berrySetCurrentApp(nullptr);
@@ -104,7 +104,7 @@ public:
         if (res != 0)
         {
             String err = be_tostring(vm, -1);
-            LoggerInstance->Error("BerryApp exec: " + err);
+            loggerInstance->Error("BerryApp exec: " + err);
             UI::errorPopup().show(("Script error:\n" + err).c_str());
             be_pop(vm, 1);
             berrySetCurrentApp(nullptr);
@@ -113,7 +113,7 @@ public:
 
         if (!be_isclass(vm, -1))
         {
-            LoggerInstance->Error("BerryApp: script must return a class");
+            loggerInstance->Error("BerryApp: script must return a class");
             UI::errorPopup().show("Script must return a class");
             be_pop(vm, 1);
             berrySetCurrentApp(nullptr);
@@ -125,7 +125,7 @@ public:
         if (res != 0)
         {
             String err = be_tostring(vm, -1);
-            LoggerInstance->Error("BerryApp init: " + err);
+            loggerInstance->Error("BerryApp init: " + err);
             UI::errorPopup().show(("Init error:\n" + err).c_str());
             be_pop(vm, 1);
             berrySetCurrentApp(nullptr);
@@ -264,7 +264,7 @@ public:
         int res = be_pcall(vm, argc);
         if (res != 0)
         {
-            LoggerInstance->Error("BerryApp callback: " + String(be_tostring(vm, -1)));
+            loggerInstance->Error("BerryApp callback: " + String(be_tostring(vm, -1)));
         }
         be_pop(vm, argc + 1);
 
@@ -320,7 +320,7 @@ private:
         int res = be_pcall(vm, argc);
         if (res != 0)
         {
-            LoggerInstance->Error("BerryApp " + String(method) + ": " + String(be_tostring(vm, -1)));
+            loggerInstance->Error("BerryApp " + String(method) + ": " + String(be_tostring(vm, -1)));
         }
         be_pop(vm, argc + 2); // method + args + result + instance
     }

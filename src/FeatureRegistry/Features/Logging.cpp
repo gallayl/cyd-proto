@@ -2,20 +2,20 @@
 #include "../../ActionRegistry/ActionRegistry.h"
 
 // instantiate globals
-Logger *LoggerInstance = new Logger();
+Logger *loggerInstance = new Logger();
 
-FeatureAction logAction = {.name = "log",
-                           .handler =
-                               [](const String &command)
-                           {
-                               const JsonDocument &entries = LoggerInstance->getEntries();
-                               String output;
-                               serializeJson(entries, output);
-                               return output;
-                           },
-                           .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
+static FeatureAction logAction = {.name = "log",
+                                  .handler =
+                                      [](const String & /*command*/)
+                                  {
+                                      const JsonDocument &entries = loggerInstance->getEntries();
+                                      String output;
+                                      serializeJson(entries, output);
+                                      return output;
+                                  },
+                                  .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
 
-Feature *LoggingFeature = new Feature(
+Feature *loggingFeature = new Feature(
     "Logging",
     []()
     {

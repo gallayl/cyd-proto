@@ -206,7 +206,7 @@ static int native_log(bvm *vm)
     if (argc >= 1 && be_isstring(vm, 1))
     {
         const char *msg = be_tostring(vm, 1);
-        LoggerInstance->Info(String(msg));
+        loggerInstance->Info(String(msg));
     }
     be_return_nil(vm);
 }
@@ -231,7 +231,7 @@ static String berryEval(const String &code)
     {
         const char *err = be_tostring(berry_vm, -1);
         output = "{\"error\": \"" + String(err) + "\"}";
-        LoggerInstance->Error("Berry: " + String(err));
+        loggerInstance->Error("Berry: " + String(err));
         be_pop(berry_vm, 1);
     }
     else
@@ -317,7 +317,7 @@ static String berryHandlerImpl(const String &command)
             auto meta = parseAppMetadata(path);
             const String &pathCopy = path;
             UI::queueAction([pathCopy]() { openBerryScript(pathCopy); });
-            LoggerInstance->Info("Berry: opening " + meta.name + " (" + path + ")");
+            loggerInstance->Info("Berry: opening " + meta.name + " (" + path + ")");
             return R"({"event":"berry", "status":"queued", "app":")" + meta.name + "\"}";
         }
 #else
@@ -350,7 +350,7 @@ static String berryHandlerImpl(const String &command)
             {
                 String scriptPath = s.path;
                 UI::queueAction([scriptPath]() { openBerryScript(scriptPath); });
-                LoggerInstance->Info("Berry: opening app " + s.name);
+                loggerInstance->Info("Berry: opening app " + s.name);
                 return "{\"event\":\"berry\", \"status\":\"queued\", \"app\":\"" + s.name + "\"}";
             }
         }
@@ -370,7 +370,7 @@ static String berryHandlerImpl(const String &command)
             if (s.name.equalsIgnoreCase(appName))
             {
                 openBerryPanel(s.path);
-                LoggerInstance->Info("Berry: opened panel " + s.name);
+                loggerInstance->Info("Berry: opened panel " + s.name);
                 return R"({"event":"berry", "status":"panel_opened", "app":")" + s.name + "\"}";
             }
         }
@@ -463,7 +463,7 @@ Feature *BerryFeature = new Feature(
         berry_vm = be_vm_new();
         if (!berry_vm)
         {
-            LoggerInstance->Error(F("Failed to create Berry VM"));
+            loggerInstance->Error(F("Failed to create Berry VM"));
             return FeatureState::ERROR;
         }
 
@@ -478,7 +478,7 @@ Feature *BerryFeature = new Feature(
 
         if (LittleFS.exists("/berry/autoexec.be"))
         {
-            LoggerInstance->Info(F("Running /berry/autoexec.be"));
+            loggerInstance->Info(F("Running /berry/autoexec.be"));
             File f = LittleFS.open("/berry/autoexec.be", "r");
             if (f)
             {
@@ -488,7 +488,7 @@ Feature *BerryFeature = new Feature(
             }
         }
 
-        LoggerInstance->Info(F("Berry VM initialized"));
+        loggerInstance->Info(F("Berry VM initialized"));
         return FeatureState::RUNNING;
     },
     []() {},
@@ -513,6 +513,6 @@ Feature *BerryFeature = new Feature(
 #else
             doDelete();
 #endif
-            LoggerInstance->Info(F("Berry VM destroyed"));
+            loggerInstance->Info(F("Berry VM destroyed"));
         }
     });

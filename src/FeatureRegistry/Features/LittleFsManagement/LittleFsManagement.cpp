@@ -76,7 +76,7 @@ Feature *LittleFsFeature = new Feature("LittleFsFeatures", []()
 
     if (!LittleFS.begin())
     {
-        LoggerInstance->Error(F("LittleFS not available"));
+        loggerInstance->Error(F("LittleFS not available"));
         return FeatureState::ERROR;
     }
 

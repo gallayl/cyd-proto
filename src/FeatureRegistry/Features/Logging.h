@@ -5,13 +5,12 @@
 #include "../../config.h"
 #include "../Feature.h"
 #include "./Time.h"
-#include "../../ActionRegistry/FeatureAction.h"
 
 // forward declaration of global logger so circular includes don't break
 class Logger;
-extern Logger *LoggerInstance;
+extern Logger *loggerInstance;
 
-typedef void (*LogListener)(const String &, const String &);
+using LogListener = void (*)(const String &, const String &);
 
 #define LOG_LISTENERS_COUNT 10
 #define MAX_LOG_ENTRIES 100
@@ -21,13 +20,13 @@ class Logger
 public:
     const JsonDocument &getEntries() const
     {
-        return this->entries;
+        return this->_entries;
     }
 
     void withEntries(std::function<void(const JsonDocument &)> fn) const
     {
-        std::lock_guard<std::mutex> lock(entriesMutex);
-        fn(entries);
+        std::lock_guard<std::mutex> lock(_entriesMutex);
+        fn(_entries);
     }
 
     void Info(const String &message)
@@ -47,29 +46,29 @@ public:
 
     void AddListener(LogListener listener)
     {
-        std::lock_guard<std::mutex> lock(listenersMutex);
-        if (this->listenersCount < LOG_LISTENERS_COUNT)
+        std::lock_guard<std::mutex> lock(_listenersMutex);
+        if (this->_listenersCount < LOG_LISTENERS_COUNT)
         {
-            this->listeners[this->listenersCount] = listener;
-            this->listenersCount++;
+            this->_listeners[this->_listenersCount] = listener;
+            this->_listenersCount++;
         }
     }
 
     Logger()
     {
-        this->entries.to<JsonArray>();
-        this->listenersCount = 0;
-        this->entryCount = 0;
+        this->_entries.to<JsonArray>();
+        this->_listenersCount = 0;
+        this->_entryCount = 0;
     }
 
 private:
-    mutable std::mutex entriesMutex;
-    std::mutex listenersMutex;
-    JsonDocument entries;
-    uint16_t entryCount;
+    mutable std::mutex _entriesMutex;
+    std::mutex _listenersMutex;
+    JsonDocument _entries;
+    uint16_t _entryCount;
 
-    byte listenersCount;
-    LogListener listeners[LOG_LISTENERS_COUNT];
+    byte _listenersCount;
+    LogListener _listeners[LOG_LISTENERS_COUNT];
 
     void handle(const String &severity, const String &message)
     {
@@ -87,9 +86,9 @@ private:
         LogListener listenersCopy[LOG_LISTENERS_COUNT];
         byte count;
         {
-            std::lock_guard<std::mutex> lock(listenersMutex);
-            count = this->listenersCount;
-            memcpy(listenersCopy, this->listeners, sizeof(LogListener) * count);
+            std::lock_guard<std::mutex> lock(_listenersMutex);
+            count = this->_listenersCount;
+            memcpy(listenersCopy, this->_listeners, sizeof(LogListener) * count);
         }
         for (byte i = 0; i < count; i++)
         {
@@ -97,41 +96,41 @@ private:
         }
     }
 
-    uint16_t compactCounter{0};
+    uint16_t _compactCounter{0};
 
     void compactEntries()
     {
         JsonDocument fresh;
         JsonArray freshArr = fresh.to<JsonArray>();
-        JsonArrayConst oldArr = this->entries.as<JsonArrayConst>();
+        JsonArrayConst oldArr = this->_entries.as<JsonArrayConst>();
         for (JsonObjectConst obj : oldArr)
         {
             freshArr.add(obj);
         }
-        this->entries = std::move(fresh);
+        this->_entries = std::move(fresh);
     }
 
     void addEntry(const String &severity, const String &message, unsigned long epochTime, const String &utcTime)
     {
-        std::lock_guard<std::mutex> lock(entriesMutex);
-        if (this->entryCount >= MAX_LOG_ENTRIES)
+        std::lock_guard<std::mutex> lock(_entriesMutex);
+        if (this->_entryCount >= MAX_LOG_ENTRIES)
         {
-            JsonArray arr = this->entries.as<JsonArray>();
+            JsonArray arr = this->_entries.as<JsonArray>();
             arr.remove(0);
 
             // periodically compact to reclaim memory from removed entries
-            if (++compactCounter >= 20)
+            if (++_compactCounter >= 20)
             {
-                compactCounter = 0;
+                _compactCounter = 0;
                 compactEntries();
             }
         }
         else
         {
-            this->entryCount++;
+            this->_entryCount++;
         }
 
-        JsonObject entry = this->entries.as<JsonArray>().add<JsonObject>();
+        JsonObject entry = this->_entries.as<JsonArray>().add<JsonObject>();
         entry["severity"] = severity;
         entry["message"] = message;
         entry["epochTime"] = epochTime;
@@ -139,6 +138,4 @@ private:
     }
 };
 
-extern Logger *LoggerInstance;
-
-extern Feature *LoggingFeature;
+extern Feature *loggingFeature;

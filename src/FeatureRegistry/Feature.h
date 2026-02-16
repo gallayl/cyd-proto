@@ -4,7 +4,9 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
-enum class FeatureState
+#include <utility>
+
+enum class FeatureState : uint8_t
 {
     PENDING = 0,
     SETUP = 1,
@@ -13,20 +15,20 @@ enum class FeatureState
     STOPPED = 4
 };
 
-typedef enum FeatureState (*FeatureSetupFunction)();
+using FeatureSetupFunction = enum FeatureState (*)();
 
-typedef void (*FeatureLoopFunction)();
+using FeatureLoopFunction = void (*)();
 
-typedef void (*FeatureTeardownFunction)();
+using FeatureTeardownFunction = void (*)();
 
 class Feature
 {
 public:
     Feature(
-        const String &name = "featureName", FeatureSetupFunction setupCallback = []() { return FeatureState::PENDING; },
+        String name = "featureName", FeatureSetupFunction setupCallback = []() { return FeatureState::PENDING; },
         FeatureLoopFunction loopCallback = []() {}, FeatureTeardownFunction teardownCallback = nullptr,
         bool autoStart = true)
-        : _featureName(name), _onSetup(setupCallback), _onLoop(loopCallback), _onTeardown(teardownCallback),
+        : _featureName(std::move(name)), _onSetup(setupCallback), _onLoop(loopCallback), _onTeardown(teardownCallback),
           _autoStart(autoStart) {};
 
     void configureTask(uint16_t stackSize, BaseType_t core, UBaseType_t priority = 1)
@@ -37,10 +39,12 @@ public:
         _taskPriority = priority;
     }
 
-    bool StartTask()
+    bool startTask()
     {
         if (!_runAsTask || _taskHandle != nullptr)
+        {
             return false;
+        }
 
         _taskShouldStop = false;
         BaseType_t result = xTaskCreatePinnedToCore(taskEntry, _featureName.c_str(), _taskStackSize, this,
@@ -48,39 +52,43 @@ public:
         return result == pdPASS;
     }
 
-    void StopTask()
+    void stopTask()
     {
-        if (!_taskHandle)
+        if (_taskHandle == nullptr)
+        {
             return;
+        }
         _taskShouldStop = true;
-        for (int i = 0; i < 50 && _taskHandle; i++)
+        for (int i = 0; i < 50 && (_taskHandle != nullptr); i++)
         {
             vTaskDelay(pdMS_TO_TICKS(10));
         }
-        if (_taskHandle)
+        if (_taskHandle != nullptr)
         {
             vTaskDelete(_taskHandle);
             _taskHandle = nullptr;
         }
     }
 
-    bool IsTaskBased() const
+    bool isTaskBased() const
     {
         return _runAsTask;
     }
-    bool IsTaskRunning() const
+    bool isTaskRunning() const
     {
         return _taskHandle != nullptr && !_taskShouldStop;
     }
-    TaskHandle_t GetTaskHandle() const
+    TaskHandle_t getTaskHandle() const
     {
         return _taskHandle;
     }
 
-    UBaseType_t GetTaskStackHighWaterMark() const
+    UBaseType_t getTaskStackHighWaterMark() const
     {
-        if (_taskHandle)
+        if (_taskHandle != nullptr)
+        {
             return uxTaskGetStackHighWaterMark(_taskHandle);
+        }
         return 0;
     }
 
@@ -101,7 +109,7 @@ public:
     {
         if (_taskHandle)
         {
-            StopTask();
+            stopTask();
         }
         if (this->_onTeardown)
         {

@@ -8,7 +8,6 @@
 #include "../FeatureRegistry/Features/Logging.h"
 
 // ensure logger declaration available (guard against include order)
-extern Logger *LoggerInstance;
 
 inline String getSignalStrength(int32_t rssi)
 {
@@ -61,11 +60,11 @@ inline String getEncryptionType(wifi_auth_mode_t mode)
     }
 }
 
-inline void startStaMode(String ssid, String staPassPharse)
+inline void startStaMode(const String &ssid, const String &staPassPharse)
 {
-    if (WiFi.getMode() == WIFI_AP && WiFi.begin() != WL_CONNECTED)
+    if (WiFiClass::getMode() == WIFI_AP && WiFi.begin() != WL_CONNECTED)
     {
-        WiFi.mode(WIFI_AP_STA);
+        WiFiClass::mode(WIFI_AP_STA);
         WiFi.softAP(ssid, staPassPharse);
     }
 }
@@ -79,11 +78,11 @@ inline bool hasStoredCredentials()
 
 inline void initWifi()
 {
-    WiFi.mode(WIFI_AP);
+    WiFiClass::mode(WIFI_AP);
 
     if (!hasStoredCredentials())
     {
-        LoggerInstance->Info(F("No WiFi credentials saved, starting in AP mode only"));
+        loggerInstance->Info(F("No WiFi credentials saved, starting in AP mode only"));
         startStaMode(STA_SSID, STA_PASSPHRASE);
         return;
     }
@@ -93,11 +92,11 @@ inline void initWifi()
 
     if (state != WL_CONNECTED)
     {
-        LoggerInstance->Error(F("Failed to connect to access point"));
+        loggerInstance->Error(F("Failed to connect to access point"));
         startStaMode(STA_SSID, STA_PASSPHRASE);
     }
     else
     {
-        LoggerInstance->Info(F("Connected to access point"));
+        loggerInstance->Info(F("Connected to access point"));
     }
 }
