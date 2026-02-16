@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include "container.h"
 #include "../Renderer.h"
 #include "../Theme.h"
@@ -10,13 +11,13 @@ namespace UI
 class GroupBox : public Element
 {
 public:
-    GroupBox(const String &lbl = String(), int ix = 0, int iy = 0, int iw = 0, int ih = 0) : label(lbl)
+    GroupBox(const std::string &lbl = "", int ix = 0, int iy = 0, int iw = 0, int ih = 0) : label(lbl)
     {
         setBounds(ix, iy, iw, ih);
         updateContentBounds();
     }
 
-    void setLabel(const String &lbl)
+    void setLabel(const std::string &lbl)
     {
         label = lbl;
     }
@@ -74,13 +75,13 @@ public:
         if (label.length() > 0)
         {
             c.setTextSize(1);
-            int16_t tw = c.textWidth(label);
+            int16_t tw = c.textWidth(label.c_str());
             int lx = drawX() + Theme::GroupBoxPad + 4;
 
             c.fillRect(lx - 2, borderY - 1, tw + 4, 3, Theme::WindowBg);
             c.setTextColor(Theme::TextColor, Theme::WindowBg);
             c.setCursor(lx, drawY());
-            c.print(label);
+            c.print(label.c_str());
         }
 
         // draw children
@@ -115,7 +116,7 @@ public:
     }
 
 private:
-    String label;
+    std::string label;
     Container content;
 
     void updateContentBounds()

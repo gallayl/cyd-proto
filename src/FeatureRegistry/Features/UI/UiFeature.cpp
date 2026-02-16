@@ -2,6 +2,8 @@
 
 #if ENABLE_UI
 
+#include <string>
+#include <cstdlib>
 #include <Esp.h>
 #include <esp_timer.h>
 #include "../Logging.h"
@@ -25,9 +27,9 @@ static bool uiTaskInitDone = false;
 
 // --- Screen command handler ---
 
-static String screenCommandHandlerImpl(const String &command)
+static std::string screenCommandHandlerImpl(const std::string &command)
 {
-    String sub = CommandParser::getCommandParameter(command, 1);
+    std::string sub = CommandParser::getCommandParameter(command, 1);
 
     if (sub == "calibrate")
     {
@@ -37,14 +39,14 @@ static String screenCommandHandlerImpl(const String &command)
         tft.waitDisplay(); // Wait for fillScreen to complete
         if (!UI::reinitRenderer())
         {
-            loggerInstance->Error(F("Failed to reinit renderer after calibration"));
-            return String("{\"event\":\"calibrate\", \"status\":\"error\", \"message\":\"renderer_init_failed\"}");
+        loggerInstance->Error("Failed to reinit renderer after calibration");
+        return std::string("{\"event\":\"calibrate\", \"status\":\"error\", \"message\":\"renderer_init_failed\"}");
         }
         UI::windowManager().relayoutAll();
         frameReady = true; // Ensure next frame will render
         UI::markDirty();   // Ensure UI knows it needs redraw
-        loggerInstance->Info(F("Calibrated touch screen"));
-        return String("{\"event\":\"calibrate\", \"status\":\"success\"}");
+        loggerInstance->Info("Calibrated touch screen");
+        return std::string("{\"event\":\"calibrate\", \"status\":\"success\"}");
     }
     else if (sub == "demo")
     {
@@ -57,12 +59,12 @@ static String screenCommandHandlerImpl(const String &command)
         tft.drawCircle(120, 160, 50, TFT_MAGENTA);
         tft.drawEllipse(200, 160, 60, 40, TFT_GOLD);
 
-        loggerInstance->Info(F("Displayed hello world demo"));
-        return String("{\"event\":\"helloDemo\"}");
+        loggerInstance->Info("Displayed hello world demo");
+        return std::string("{\"event\":\"helloDemo\"}");
     }
     else if (sub == "rotate")
     {
-        String rotateParam = CommandParser::getCommandParameter(command, 2);
+        std::string rotateParam = CommandParser::getCommandParameter(command, 2);
         uint16_t rotate = 0;
         if (rotateParam.length() > 0)
         {
@@ -73,36 +75,36 @@ static String screenCommandHandlerImpl(const String &command)
         tft.waitDisplay(); // Wait for fillScreen to complete
         if (!UI::reinitRenderer())
         {
-            loggerInstance->Error(F("Failed to reinit renderer after rotation"));
-            return String(String("{\"event\":\"rotate\",\"rotation\":") + rotate +
-                          String(",\"error\":\"renderer_init_failed\"}"));
+            loggerInstance->Error("Failed to reinit renderer after rotation");
+            return std::string("{\"event\":\"rotate\",\"rotation\":") + std::to_string(rotate) +
+                   ",\"error\":\"renderer_init_failed\"}";
         }
         readCalibrationData(); // Loads rotation-specific calibration
         UI::windowManager().relayoutAll();
         frameReady = true; // Ensure next frame will render
         UI::markDirty();   // Ensure UI knows it needs redraw
-        loggerInstance->Info("Screen rotated to " + String(rotate));
-        return String(String("{\"event\":\"rotate\",\"rotation\":") + rotate + String("}"));
+        loggerInstance->Info("Screen rotated to " + std::to_string(rotate));
+        return std::string("{\"event\":\"rotate\",\"rotation\":") + std::to_string(rotate) + "}";
     }
     else if (sub == "clear")
     {
-        String colorParam = CommandParser::getCommandParameter(command, 2);
+        std::string colorParam = CommandParser::getCommandParameter(command, 2);
         uint16_t color = TFT_BLACK;
         if (colorParam.length() > 0)
         {
             color = (uint16_t)strtoul(colorParam.c_str(), NULL, 0);
         }
         tft.fillScreen(color);
-        loggerInstance->Info(F("Screen cleared"));
-        return String(String("{\"event\":\"clear\",\"color\":\"") + colorParam + String("\"}"));
+        loggerInstance->Info("Screen cleared");
+        return std::string("{\"event\":\"clear\",\"color\":\"") + colorParam + "\"}";
     }
     else if (sub == "text")
     {
-        int x = CommandParser::getCommandParameter(command, 2).toInt();
-        int y = CommandParser::getCommandParameter(command, 3).toInt();
+        int x = atoi(CommandParser::getCommandParameter(command, 2).c_str());
+        int y = atoi(CommandParser::getCommandParameter(command, 3).c_str());
         uint16_t fg = (uint16_t)strtoul(CommandParser::getCommandParameter(command, 4).c_str(), NULL, 0);
         uint16_t bg = (uint16_t)strtoul(CommandParser::getCommandParameter(command, 5).c_str(), NULL, 0);
-        int sz = CommandParser::getCommandParameter(command, 6).toInt();
+        int sz = atoi(CommandParser::getCommandParameter(command, 6).c_str());
         int count = 0;
         int pos = -1;
         for (int i = 0; i < (int)command.length(); ++i)
@@ -116,76 +118,76 @@ static String screenCommandHandlerImpl(const String &command)
                 }
             }
         }
-        String msg = (pos >= 0) ? command.substring(pos + 1) : String();
+        std::string msg = (pos >= 0) ? command.substr(pos + 1) : std::string();
         tft.setCursor(x, y);
         tft.setTextColor(fg, bg);
         tft.setTextSize(sz);
-        tft.print(msg);
+        tft.print(msg.c_str());
         loggerInstance->Info("Drew text: " + msg);
-        return String("{\"event\":\"text\"}");
+        return std::string("{\"event\":\"text\"}");
     }
     else if (sub == "pixel")
     {
-        int x = CommandParser::getCommandParameter(command, 2).toInt();
-        int y = CommandParser::getCommandParameter(command, 3).toInt();
+        int x = atoi(CommandParser::getCommandParameter(command, 2).c_str());
+        int y = atoi(CommandParser::getCommandParameter(command, 3).c_str());
         uint16_t color = (uint16_t)strtoul(CommandParser::getCommandParameter(command, 4).c_str(), NULL, 0);
         tft.drawPixel(x, y, color);
-        loggerInstance->Info("Drew pixel at " + String(x) + "," + String(y));
-        return String("{\"event\":\"pixel\"}");
+        loggerInstance->Info("Drew pixel at " + std::to_string(x) + "," + std::to_string(y));
+        return std::string("{\"event\":\"pixel\"}");
     }
     else if (sub == "rect")
     {
-        int x = CommandParser::getCommandParameter(command, 2).toInt();
-        int y = CommandParser::getCommandParameter(command, 3).toInt();
-        int w = CommandParser::getCommandParameter(command, 4).toInt();
-        int h = CommandParser::getCommandParameter(command, 5).toInt();
+        int x = atoi(CommandParser::getCommandParameter(command, 2).c_str());
+        int y = atoi(CommandParser::getCommandParameter(command, 3).c_str());
+        int w = atoi(CommandParser::getCommandParameter(command, 4).c_str());
+        int h = atoi(CommandParser::getCommandParameter(command, 5).c_str());
         uint16_t color = (uint16_t)strtoul(CommandParser::getCommandParameter(command, 6).c_str(), NULL, 0);
         tft.drawRect(x, y, w, h, color);
-        loggerInstance->Info("Drew rect at " + String(x) + "," + String(y));
-        return String("{\"event\":\"rect\"}");
+        loggerInstance->Info("Drew rect at " + std::to_string(x) + "," + std::to_string(y));
+        return std::string("{\"event\":\"rect\"}");
     }
     else if (sub == "fillrect")
     {
-        int x = CommandParser::getCommandParameter(command, 2).toInt();
-        int y = CommandParser::getCommandParameter(command, 3).toInt();
-        int w = CommandParser::getCommandParameter(command, 4).toInt();
-        int h = CommandParser::getCommandParameter(command, 5).toInt();
+        int x = atoi(CommandParser::getCommandParameter(command, 2).c_str());
+        int y = atoi(CommandParser::getCommandParameter(command, 3).c_str());
+        int w = atoi(CommandParser::getCommandParameter(command, 4).c_str());
+        int h = atoi(CommandParser::getCommandParameter(command, 5).c_str());
         uint16_t color = (uint16_t)strtoul(CommandParser::getCommandParameter(command, 6).c_str(), NULL, 0);
         tft.fillRect(x, y, w, h, color);
-        loggerInstance->Info("Drew filled rect at " + String(x) + "," + String(y));
-        return String("{\"event\":\"fillrect\"}");
+        loggerInstance->Info("Drew filled rect at " + std::to_string(x) + "," + std::to_string(y));
+        return std::string("{\"event\":\"fillrect\"}");
     }
     else if (sub == "circle")
     {
-        int x = CommandParser::getCommandParameter(command, 2).toInt();
-        int y = CommandParser::getCommandParameter(command, 3).toInt();
-        int r = CommandParser::getCommandParameter(command, 4).toInt();
+        int x = atoi(CommandParser::getCommandParameter(command, 2).c_str());
+        int y = atoi(CommandParser::getCommandParameter(command, 3).c_str());
+        int r = atoi(CommandParser::getCommandParameter(command, 4).c_str());
         uint16_t color = (uint16_t)strtoul(CommandParser::getCommandParameter(command, 5).c_str(), NULL, 0);
         tft.drawCircle(x, y, r, color);
-        loggerInstance->Info("Drew circle at " + String(x) + "," + String(y));
-        return String("{\"event\":\"circle\"}");
+        loggerInstance->Info("Drew circle at " + std::to_string(x) + "," + std::to_string(y));
+        return std::string("{\"event\":\"circle\"}");
     }
     else if (sub == "fillcircle")
     {
-        int x = CommandParser::getCommandParameter(command, 2).toInt();
-        int y = CommandParser::getCommandParameter(command, 3).toInt();
-        int r = CommandParser::getCommandParameter(command, 4).toInt();
+        int x = atoi(CommandParser::getCommandParameter(command, 2).c_str());
+        int y = atoi(CommandParser::getCommandParameter(command, 3).c_str());
+        int r = atoi(CommandParser::getCommandParameter(command, 4).c_str());
         uint16_t color = (uint16_t)strtoul(CommandParser::getCommandParameter(command, 5).c_str(), NULL, 0);
         tft.fillCircle(x, y, r, color);
-        loggerInstance->Info("Drew filled circle at " + String(x) + "," + String(y));
-        return String("{\"event\":\"fillcircle\"}");
+        loggerInstance->Info("Drew filled circle at " + std::to_string(x) + "," + std::to_string(y));
+        return std::string("{\"event\":\"fillcircle\"}");
     }
     else if (sub == "brightness")
     {
-        String val = CommandParser::getCommandParameter(command, 2);
+        std::string val = CommandParser::getCommandParameter(command, 2);
         uint8_t b = (uint8_t)strtoul(val.c_str(), NULL, 0);
         tft.setBrightness(b);
-        loggerInstance->Info("Brightness set to " + String(b));
-        return String(String("{\"event\":\"brightness\",\"value\":") + b + String("}"));
+        loggerInstance->Info("Brightness set to " + std::to_string(b));
+        return std::string("{\"event\":\"brightness\",\"value\":") + std::to_string(b) + "}";
     }
 
     loggerInstance->Info("Unknown screen subcommand: " + sub);
-    return String(String("{\"event\":\"screen\",\"error\":\"unknown\",\"sub\":\"") + sub + String("\"}"));
+    return std::string("{\"event\":\"screen\",\"error\":\"unknown\",\"sub\":\"") + sub + "\"}";
 }
 
 // --- Page command handler ---
@@ -202,46 +204,46 @@ static const PageEntry PAGE_TABLE[] = {
     {"features", "Features"}, {"log", "Log Viewer"},  {"files", "File Manager"},
 };
 
-static String screenCommandHandler(const String &command)
+static std::string screenCommandHandler(const std::string &command)
 {
-    return UI::postToUITaskWithResult([&command]() -> String { return screenCommandHandlerImpl(command); });
+    return UI::postToUITaskWithResult([&command]() -> std::string { return screenCommandHandlerImpl(command); });
 }
 
-static String pageCommandHandlerImpl(const String &command)
+static std::string pageCommandHandlerImpl(const std::string &command)
 {
-    String sub = CommandParser::getCommandParameter(command, 1);
+    std::string sub = CommandParser::getCommandParameter(command, 1);
 
     for (const auto &entry : PAGE_TABLE)
     {
         if (sub == entry.cmd)
         {
             UI::windowManager().openApp(entry.appName);
-            loggerInstance->Info(String("Opening ") + entry.appName + " app");
-            return String("{\"event\":\"page\", \"status\":\"success\", \"page\":\"") + sub + "\"}";
+            loggerInstance->Info(std::string("Opening ") + entry.appName + " app");
+            return std::string("{\"event\":\"page\", \"status\":\"success\", \"page\":\"") + sub + "\"}";
         }
     }
 
     loggerInstance->Info("Unknown page subcommand: " + sub);
-    return String(String("{\"event\":\"page\",\"error\":\"unknown\",\"sub\":\"") + sub + String("\"}"));
+    return std::string("{\"event\":\"page\",\"error\":\"unknown\",\"sub\":\"") + sub + "\"}";
 }
 
 // --- Window manager command handler ---
 
-static String pageCommandHandler(const String &command)
+static std::string pageCommandHandler(const std::string &command)
 {
-    return UI::postToUITaskWithResult([&command]() -> String { return pageCommandHandlerImpl(command); });
+    return UI::postToUITaskWithResult([&command]() -> std::string { return pageCommandHandlerImpl(command); });
 }
 
-static String wmCommandHandlerImpl(const String &command)
+static std::string wmCommandHandlerImpl(const std::string &command)
 {
-    String sub = CommandParser::getCommandParameter(command, 1);
+    std::string sub = CommandParser::getCommandParameter(command, 1);
 
     if (sub == "list")
     {
         auto &apps = UI::windowManager().getOpenApps();
         auto *focused = UI::windowManager().getFocused();
         auto *panel = UI::windowManager().getPanelSlot();
-        String json = "{\"apps\":[";
+        std::string json = "{\"apps\":[";
         bool first = true;
         if (panel != nullptr)
         {
@@ -265,38 +267,38 @@ static String wmCommandHandlerImpl(const String &command)
 
     if (sub == "focus")
     {
-        String name = CommandParser::getCommandParameter(command, 2);
-        if (name.length() == 0)
+        std::string name = CommandParser::getCommandParameter(command, 2);
+        if (name.empty())
         {
-            return String(F("{\"error\":\"No app name\"}"));
+            return "{\"error\":\"No app name\"}";
         }
         UI::windowManager().restoreApp(name.c_str());
-        return String(F("{\"status\":\"ok\"}"));
+        return "{\"status\":\"ok\"}";
     }
 
     if (sub == "close")
     {
-        String name = CommandParser::getCommandParameter(command, 2);
-        if (name.length() == 0)
+        std::string name = CommandParser::getCommandParameter(command, 2);
+        if (name.empty())
         {
-            return String(F("{\"error\":\"No app name\"}"));
+            return "{\"error\":\"No app name\"}";
         }
         UI::windowManager().closeApp(name.c_str());
-        return String(F("{\"status\":\"ok\"}"));
+        return "{\"status\":\"ok\"}";
     }
 
     if (sub == "keyboard")
     {
         UI::desktop().toggleKeyboard();
-        return String(F("{\"status\":\"ok\"}"));
+        return "{\"status\":\"ok\"}";
     }
 
-    return String(F("{\"error\":\"Usage: wm list | wm focus <name> | wm close <name> | wm keyboard\"}"));
+    return "{\"error\":\"Usage: wm list | wm focus <name> | wm close <name> | wm keyboard\"}";
 }
 
-static String wmCommandHandler(const String &command)
+static std::string wmCommandHandler(const std::string &command)
 {
-    return UI::postToUITaskWithResult([&command]() -> String { return wmCommandHandlerImpl(command); });
+    return UI::postToUITaskWithResult([&command]() -> std::string { return wmCommandHandlerImpl(command); });
 }
 
 // --- Action definitions ---
@@ -333,7 +335,7 @@ static Feature *createuiFeature()
 
             if (!UI::initRenderer())
             {
-                loggerInstance->Error(F("Failed to initialize renderer"));
+                loggerInstance->Error("Failed to initialize renderer");
                 return FeatureState::ERROR;
             }
 
@@ -352,7 +354,7 @@ static Feature *createuiFeature()
             esp_timer_create(&args, &frameTimer);
             esp_timer_start_periodic(frameTimer, 33000);
 
-            loggerInstance->Info(F("UI feature initialized (Win95 desktop)"));
+            loggerInstance->Info("UI feature initialized (Win95 desktop)");
 
             return FeatureState::RUNNING;
         },

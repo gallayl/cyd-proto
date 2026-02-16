@@ -1,6 +1,7 @@
 #pragma once
 
-#include <Arduino.h>
+#include <string>
+#include <cstdint>
 
 enum class Transport : uint8_t
 {
@@ -18,12 +19,12 @@ struct TransportConfig
     bool scripting = true;
 };
 
-using ActionHandler = String (*)(const String &command);
+using ActionHandler = std::string (*)(const std::string &command);
 
 struct FeatureAction
 {
-    String name;
-    String type = "GET";
+    std::string name;
+    std::string type = "GET";
     ActionHandler handler;
     TransportConfig transports;
 };

@@ -49,7 +49,7 @@ private:
     void updateFeatureJson(Feature *feature)
     {
         std::lock_guard<std::mutex> lock(registeredFeaturesMutex);
-        const String &name = feature->GetFeatureName();
+        const std::string &name = feature->GetFeatureName();
         JsonObject entry = registeredFeatures[name];
         if (!entry.isNull())
         {
@@ -100,12 +100,12 @@ public:
         std::lock_guard<std::mutex> lock(registeredFeaturesMutex);
         if (this->_registeredFeaturesCount >= FEATURES_SIZE)
         {
-            loggerInstance->Error(F("Feature registry full, cannot register"));
+            loggerInstance->Error("Feature registry full, cannot register");
             return;
         }
         this->RegisteredFeatures[this->_registeredFeaturesCount] = newFeature;
         this->_registeredFeaturesCount++;
-        const String &featureName = newFeature->GetFeatureName();
+        const std::string &featureName = newFeature->GetFeatureName();
 
         JsonObject featureEntry = registeredFeatures[featureName].to<JsonObject>();
         featureEntry["name"] = featureName;
@@ -117,7 +117,7 @@ public:
         for (uint8_t i = 0; i < this->_registeredFeaturesCount; i++)
         {
             Feature *f = this->RegisteredFeatures[i];
-            const String &featureName = f->GetFeatureName();
+            const std::string &featureName = f->GetFeatureName();
 
             if (!f->isAutoStart())
             {
@@ -144,11 +144,11 @@ public:
             {
                 if (f->startTask())
                 {
-                    loggerInstance->Info("Started task for: " + f->GetFeatureName());
+                    loggerInstance->Info(std::string("Started task for: ") + f->GetFeatureName());
                 }
                 else
                 {
-                    loggerInstance->Error("Failed to start task for: " + f->GetFeatureName());
+                    loggerInstance->Error(std::string("Failed to start task for: ") + f->GetFeatureName());
                 }
             }
         }
@@ -170,7 +170,7 @@ public:
         }
     }
 
-    Feature *getFeature(const String &name)
+    Feature *getFeature(const std::string &name)
     {
         for (uint8_t i = 0; i < this->_registeredFeaturesCount; i++)
         {
@@ -182,7 +182,7 @@ public:
         return nullptr;
     }
 
-    FeatureState setupFeature(const String &name)
+    FeatureState setupFeature(const std::string &name)
     {
         Feature *f = getFeature(name);
         if (f == nullptr)
@@ -210,7 +210,7 @@ public:
         return newState;
     }
 
-    bool teardownFeature(const String &name)
+    bool teardownFeature(const std::string &name)
     {
         Feature *f = getFeature(name);
         if (f == nullptr)

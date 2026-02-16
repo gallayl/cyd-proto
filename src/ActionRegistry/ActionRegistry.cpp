@@ -19,7 +19,7 @@ void ActionRegistry::wireRestEndpoints()
             continue;
         }
 
-        String path = "/" + action->name;
+        std::string path = "/" + action->name;
 
         WebRequestMethodComposite method = HTTP_GET;
         if (action->type == "POST")
@@ -38,8 +38,8 @@ void ActionRegistry::wireRestEndpoints()
         server.on(path.c_str(), method,
                   [action](AsyncWebServerRequest *request)
                   {
-                      String result = action->handler(action->name);
-                      request->send(200, MIME_JSON, result);
+                      std::string result = action->handler(action->name);
+                      request->send(200, MIME_JSON, result.c_str());
                   });
     }
 }

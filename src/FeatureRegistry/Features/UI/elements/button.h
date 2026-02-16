@@ -15,7 +15,7 @@ class Button : public Element
 public:
     using Callback = std::function<void()>;
 
-    Button(const String &txt = String(), int ix = 0, int iy = 0, int iw = 0, int ih = 0) : label(txt, ix, iy, iw, ih)
+    Button(const std::string &txt = "", int ix = 0, int iy = 0, int iw = 0, int ih = 0) : label(txt, ix, iy, iw, ih)
     {
         setBounds(ix, iy, iw, ih);
         labelFg = TFT_BLACK;
@@ -26,7 +26,7 @@ public:
     {
         onClick = std::move(cb);
     }
-    void setLabel(const String &txt)
+    void setLabel(const std::string &txt)
     {
         label.setText(txt);
     }

@@ -2,6 +2,7 @@
 #include <LittleFS.h>
 #include "../fs/VirtualFS.h"
 #include "../mime.h"
+#include <string>
 
 JsonDocument getFileList()
 {
@@ -55,7 +56,7 @@ ArRequestHandlerFunction listFiles = ([](AsyncWebServerRequest *request)
 
     if (request->hasParam("path"))
     {
-        String path = request->getParam("path")->value();
+        std::string path(request->getParam("path")->value().c_str());
         ResolvedPath resolved = resolveVirtualPath(path);
         if (resolved.valid && resolved.fs) {
             response = getFileList(*resolved.fs, resolved.localPath.c_str());
@@ -68,6 +69,6 @@ ArRequestHandlerFunction listFiles = ([](AsyncWebServerRequest *request)
         response = getFileList();
     }
 
-    String responseStr;
+    std::string responseStr;
     serializeJson(response, responseStr);
-    request->send(200, MIME_JSON, responseStr); });
+    request->send(200, MIME_JSON, responseStr.c_str()); });

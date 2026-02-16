@@ -1,7 +1,7 @@
 #pragma once
 
+#include <string>
 #include <LovyanGFX.hpp>
-#include <Arduino.h>
 #include "container.h"
 #include "../Renderer.h"
 
@@ -21,17 +21,17 @@ enum class TextAlign
 class Label : public Element
 {
 public:
-    Label(const String &txt = String(), int ix = 0, int iy = 0, int iw = 0, int ih = 0) : text(txt)
+    Label(const std::string &txt = "", int ix = 0, int iy = 0, int iw = 0, int ih = 0) : text(txt)
     {
         setBounds(ix, iy, iw, ih);
     }
 
-    void setText(const String &txt)
+    void setText(const std::string &txt)
     {
         text = txt;
     }
 
-    const String &getText() const
+    const std::string &getText() const
     {
         return text;
     }
@@ -64,7 +64,7 @@ public:
         int16_t ty = drawY();
         if (width > 0 && height > 0)
         {
-            int16_t tw = c.textWidth(text);
+            int16_t tw = c.textWidth(text.c_str());
             int16_t th = c.fontHeight();
 
             switch (align)
@@ -86,11 +86,11 @@ public:
         }
 
         c.setCursor(tx, ty);
-        c.print(text);
+        c.print(text.c_str());
     }
 
 private:
-    String text;
+    std::string text;
     uint16_t color{TFT_WHITE};
     uint16_t bgColor{TFT_BLACK};
     uint8_t textSize{1};

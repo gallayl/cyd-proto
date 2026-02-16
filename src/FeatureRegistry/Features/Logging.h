@@ -2,6 +2,7 @@
 #include <ArduinoJson.h>
 #include <functional>
 #include <mutex>
+#include <string>
 #include "../../config.h"
 #include "../Feature.h"
 #include "./Time.h"
@@ -10,7 +11,7 @@
 class Logger;
 extern Logger *loggerInstance;
 
-using LogListener = void (*)(const String &, const String &);
+using LogListener = void (*)(const std::string &, const std::string &);
 
 #define LOG_LISTENERS_COUNT 10
 #define MAX_LOG_ENTRIES 100
@@ -29,17 +30,17 @@ public:
         fn(_entries);
     }
 
-    void Info(const String &message)
+    void Info(const std::string &message)
     {
         this->handle("I", message);
     }
 
-    void Error(const String &message)
+    void Error(const std::string &message)
     {
         this->handle("E", message);
     }
 
-    void Debug(const String &message)
+    void Debug(const std::string &message)
     {
         this->handle("D", message);
     }
@@ -70,18 +71,18 @@ private:
     byte _listenersCount;
     LogListener _listeners[LOG_LISTENERS_COUNT];
 
-    void handle(const String &severity, const String &message)
+    void handle(const std::string &severity, const std::string &message)
     {
         unsigned long epochTime = getEpochTime();
-        String utcTime = getUtcTime();
+        std::string utcTime(getUtcTime().c_str());
 
         this->addEntry(severity, message, epochTime, utcTime);
-        Serial.print(F("["));
-        Serial.print(severity);
-        Serial.print(F("] "));
-        Serial.print(utcTime);
-        Serial.print(F(" - "));
-        Serial.println(message);
+        Serial.print("[");
+        Serial.print(severity.c_str());
+        Serial.print("] ");
+        Serial.print(utcTime.c_str());
+        Serial.print(" - ");
+        Serial.println(message.c_str());
 
         LogListener listenersCopy[LOG_LISTENERS_COUNT];
         byte count;
@@ -110,7 +111,7 @@ private:
         this->_entries = std::move(fresh);
     }
 
-    void addEntry(const String &severity, const String &message, unsigned long epochTime, const String &utcTime)
+    void addEntry(const std::string &severity, const std::string &message, unsigned long epochTime, const std::string &utcTime)
     {
         std::lock_guard<std::mutex> lock(_entriesMutex);
         if (this->_entryCount >= MAX_LOG_ENTRIES)

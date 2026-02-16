@@ -5,6 +5,7 @@
 #include "WebSocketServer.h"
 #include "./WebServer.h"
 #include "../FeatureRegistry/Features/Logging.h"
+#include <string>
 
 AsyncWebSocket *webSocket = nullptr;
 
@@ -18,38 +19,37 @@ void initWebSockets()
         {
             if (type == WS_EVT_CONNECT)
             {
-                String msg(F("WS connected: "));
-                msg += client->remoteIP().toString();
+                std::string msg = "WS connected: ";
+                msg += client->remoteIP().toString().c_str();
                 loggerInstance->Info(msg);
             }
             else if (type == WS_EVT_DISCONNECT)
             {
-                String msg(F("WS left: "));
-                msg += client->remoteIP().toString();
+                std::string msg = "WS left: ";
+                msg += client->remoteIP().toString().c_str();
                 loggerInstance->Info(msg);
             }
             else if (type == WS_EVT_DATA)
             {
-                String str;
-                str.concat((const char *)data, len);
-                String response = actionRegistryInstance->execute(str, Transport::WS);
-                client->text(response);
+                std::string str((const char *)data, len);
+                std::string response = actionRegistryInstance->execute(str, Transport::WS);
+                client->text(response.c_str());
             }
         });
 
     loggerInstance->AddListener(
-        [](const String &scope, const String &message)
+        [](const std::string &scope, const std::string &message)
         {
             if (!webSocket)
             {
                 return;
             }
-            String buf;
+            std::string buf;
             buf.reserve(scope.length() + 1 + message.length());
             buf += scope;
             buf += ':';
             buf += message;
-            webSocket->textAll(buf);
+            webSocket->textAll(buf.c_str());
         });
 
     server.addHandler(webSocket);

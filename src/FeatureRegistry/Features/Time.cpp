@@ -9,7 +9,7 @@ time_t getEpochTime()
     return now;
 }
 
-String getUtcTime()
+std::string getUtcTime()
 {
     time_t rawtime;
     struct tm *timeinfo;
@@ -19,7 +19,7 @@ String getUtcTime()
     timeinfo = gmtime(&rawtime);
 
     strftime(buffer, 80, "%FT%TZ", timeinfo);
-    return String(buffer);
+    return buffer;
 }
 
 // instantiate feature

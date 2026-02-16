@@ -9,31 +9,31 @@
 
 static FeatureAction i2cAction = {.name = "i2c",
                                   .handler =
-                                      [](const String &command)
+                                      [](const std::string &command)
                                   {
-                                      String sub = CommandParser::getCommandParameter(command, 1);
+                                      std::string sub = CommandParser::getCommandParameter(command, 1);
                                       if (sub == "scan")
                                       {
                                           return scanDevices();
                                       }
                                       else if (sub == "read")
                                       {
-                                          uint16_t address = CommandParser::getCommandParameter(command, 2).toInt();
-                                          uint16_t size = CommandParser::getCommandParameter(command, 3).toInt();
+                                          uint16_t address = atoi(CommandParser::getCommandParameter(command, 2).c_str());
+                                          uint16_t size = atoi(CommandParser::getCommandParameter(command, 3).c_str());
                                           return readDevice(address, size);
                                       }
                                       else if (sub == "write")
                                       {
                                           uint16_t address =
                                               strtol(CommandParser::getCommandParameter(command, 2).c_str(), 0, 16);
-                                          String prefix =
-                                              "i2c write " + CommandParser::getCommandParameter(command, 2) + " ";
-                                          String data = command.substring(prefix.length());
+                                          std::string prefix =
+                                              std::string("i2c write ") + CommandParser::getCommandParameter(command, 2) + " ";
+                                          std::string data = command.substr(prefix.length());
                                           writeDevice(address, data);
-                                          return String("Written.");
+                                          return std::string("Written.");
                                       }
 
-                                      String fallback = "The available I2C Commands are: scan, read, write";
+                                      std::string fallback = "The available I2C Commands are: scan, read, write";
                                       return fallback;
                                   },
                                   .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};

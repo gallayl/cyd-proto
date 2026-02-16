@@ -13,7 +13,9 @@
 #include "../Logging.h"
 #include "../../../fs/VirtualFS.h"
 #include "../UI/BuiltinIcons.h"
+#include "../../../utils/StringUtil.h"
 #include <vector>
+#include <string>
 
 extern "C"
 {
@@ -47,8 +49,8 @@ struct HandleEntry
 class BerryApp : public UI::App
 {
 public:
-    BerryApp(const String &scriptPath, const String &appName, const String &iconType = "", const String &iconValue = "",
-             const String &startMenu = "")
+    BerryApp(const std::string &scriptPath, const std::string &appName, const std::string &iconType = "", const std::string &iconValue = "",
+             const std::string &startMenu = "")
         : _scriptPath(scriptPath), _name(appName), _iconType(iconType), _iconValue(iconValue), _startMenu(startMenu)
     {
     }
@@ -58,11 +60,11 @@ public:
         return _name.c_str();
     }
 
-    const String &getIconType() const
+    const std::string &getIconType() const
     {
         return _iconType;
     }
-    const String &getIconValue() const
+    const std::string &getIconValue() const
     {
         return _iconValue;
     }
@@ -77,16 +79,16 @@ public:
         if (_iconType == "procedural")
         {
             // TODO: implement procedural icon via Berry VM callback (icon() method on instance)
-            const char *fallback = !_startMenu.isEmpty() ? UI::getDefaultIconForCategory(_startMenu) : "generic_file";
+            const char *fallback = !_startMenu.empty() ? UI::getDefaultIconForCategory(_startMenu.c_str()) : "generic_file";
             UI::drawBuiltinIcon(canvas, fallback, x, y, size);
         }
-        else if (_iconType == "builtin" && !_iconValue.isEmpty())
+        else if (_iconType == "builtin" && !_iconValue.empty())
         {
             UI::drawBuiltinIcon(canvas, _iconValue.c_str(), x, y, size);
         }
-        else if (_iconType.isEmpty() && !_startMenu.isEmpty())
+        else if (_iconType.empty() && !_startMenu.empty())
         {
-            const char *defaultIcon = UI::getDefaultIconForCategory(_startMenu);
+            const char *defaultIcon = UI::getDefaultIconForCategory(_startMenu.c_str());
             UI::drawBuiltinIcon(canvas, defaultIcon, x, y, size);
         }
         else
@@ -114,29 +116,29 @@ public:
         File f;
         if (resolved.valid && resolved.fs != nullptr)
         {
-            f = resolved.fs->open(resolved.localPath, "r");
+            f = resolved.fs->open(resolved.localPath.c_str(), "r");
         }
         else
         {
-            f = LittleFS.open(_scriptPath, "r");
+            f = LittleFS.open(_scriptPath.c_str(), "r");
         }
         if (!f)
         {
-            loggerInstance->Error("BerryApp: cannot open " + _scriptPath);
-            UI::errorPopup().show(("Cannot open " + _scriptPath).c_str());
+            loggerInstance->Error(std::string("BerryApp: cannot open ") + _scriptPath);
+            UI::errorPopup().show((std::string("Cannot open ") + _scriptPath).c_str());
             berrySetCurrentApp(nullptr);
             return;
         }
-        String code = f.readString();
+        std::string code = f.readString().c_str();
         f.close();
 
         // compile
         int res = be_loadbuffer(vm, _scriptPath.c_str(), code.c_str(), code.length());
         if (res != 0)
         {
-            String err = be_tostring(vm, -1);
-            loggerInstance->Error("BerryApp compile: " + err);
-            UI::errorPopup().show(("Compile error:\n" + err).c_str());
+            std::string err = be_tostring(vm, -1);
+            loggerInstance->Error(std::string("BerryApp compile: ") + err);
+            UI::errorPopup().show((std::string("Compile error:\n") + err).c_str());
             be_pop(vm, 1);
             berrySetCurrentApp(nullptr);
             return;
@@ -146,9 +148,9 @@ public:
         res = be_pcall(vm, 0);
         if (res != 0)
         {
-            String err = be_tostring(vm, -1);
-            loggerInstance->Error("BerryApp exec: " + err);
-            UI::errorPopup().show(("Script error:\n" + err).c_str());
+            std::string err = be_tostring(vm, -1);
+            loggerInstance->Error(std::string("BerryApp exec: ") + err);
+            UI::errorPopup().show((std::string("Script error:\n") + err).c_str());
             be_pop(vm, 1);
             berrySetCurrentApp(nullptr);
             return;
@@ -167,16 +169,16 @@ public:
         res = be_pcall(vm, 0);
         if (res != 0)
         {
-            String err = be_tostring(vm, -1);
-            loggerInstance->Error("BerryApp init: " + err);
-            UI::errorPopup().show(("Init error:\n" + err).c_str());
+            std::string err = be_tostring(vm, -1);
+            loggerInstance->Error(std::string("BerryApp init: ") + err);
+            UI::errorPopup().show((std::string("Init error:\n") + err).c_str());
             be_pop(vm, 1);
             berrySetCurrentApp(nullptr);
             return;
         }
 
         // store instance as global to prevent GC
-        _instanceGlobal = "_bapp_" + String((unsigned long)this, HEX);
+        _instanceGlobal = "_bapp_" + StringUtil::toHex((unsigned long)this);
         be_setglobal(vm, _instanceGlobal.c_str());
         be_pop(vm, 1);
 
@@ -196,7 +198,7 @@ public:
     void teardown() override
     {
         bvm *vm = getBerryVM();
-        if (vm == nullptr || _instanceGlobal.isEmpty())
+        if (vm == nullptr || _instanceGlobal.empty())
         {
             return;
         }
@@ -264,7 +266,7 @@ public:
     int storeCallback(bvm *vm, int stackIdx)
     {
         int id = _nextCbId++;
-        String name = "_cb_" + String((unsigned long)this, HEX) + "_" + String(id);
+        std::string name = "_cb_" + StringUtil::toHex((unsigned long)this) + "_" + std::to_string(id);
         be_pushvalue(vm, stackIdx);
         be_setglobal(vm, name.c_str());
         be_pop(vm, 1);
@@ -285,7 +287,7 @@ public:
             return;
         }
 
-        String name = "_cb_" + String((unsigned long)this, HEX) + "_" + String(cbId);
+        std::string name = "_cb_" + StringUtil::toHex((unsigned long)this) + "_" + std::to_string(cbId);
 
         BerryApp *prev = berryCurrentApp();
         berrySetCurrentApp(this);
@@ -307,7 +309,7 @@ public:
         int res = be_pcall(vm, argc);
         if (res != 0)
         {
-            loggerInstance->Error("BerryApp callback: " + String(be_tostring(vm, -1)));
+            loggerInstance->Error(std::string("BerryApp callback: ") + be_tostring(vm, -1));
         }
         be_pop(vm, argc + 1);
 
@@ -322,20 +324,20 @@ public:
     }
 
 private:
-    String _scriptPath;
-    String _name;
-    String _iconType;
-    String _iconValue;
-    String _startMenu;
-    String _instanceGlobal;
+    std::string _scriptPath;
+    std::string _name;
+    std::string _iconType;
+    std::string _iconValue;
+    std::string _startMenu;
+    std::string _instanceGlobal;
     std::vector<HandleEntry> _handles;
-    std::vector<String> _callbackGlobals;
+    std::vector<std::string> _callbackGlobals;
     int _nextCbId{0};
 
     void callMethod(const char *method, const std::function<int(bvm *)> &pushArgs)
     {
         bvm *vm = getBerryVM();
-        if ((vm == nullptr) || _instanceGlobal.isEmpty())
+        if ((vm == nullptr) || _instanceGlobal.empty())
         {
             return;
         }
@@ -366,7 +368,7 @@ private:
         int res = be_pcall(vm, argc);
         if (res != 0)
         {
-            loggerInstance->Error("BerryApp " + String(method) + ": " + String(be_tostring(vm, -1)));
+            loggerInstance->Error(std::string("BerryApp ") + method + ": " + be_tostring(vm, -1));
         }
         be_pop(vm, argc + 2); // method + args + result + instance
     }

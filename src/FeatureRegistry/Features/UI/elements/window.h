@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <string>
 #include "container.h"
 #include "scrollable.h"
 #include "label.h"
@@ -29,7 +30,7 @@ public:
     using MinimizeCallback = std::function<void()>;
     using StateChangeCallback = std::function<void(WindowState)>;
 
-    Window(const String &title, int ix, int iy, int iw, int ih)
+    Window(const std::string &title, int ix, int iy, int iw, int ih)
         : titleText(title), closeBtn("x", 0, 0, Theme::WinBtnSize, Theme::WinBtnSize),
           maxBtn("", 0, 0, Theme::WinBtnSize, Theme::WinBtnSize),
           minBtn("_", 0, 0, Theme::WinBtnSize, Theme::WinBtnSize), titleLabel(title, 0, 0, 0, Theme::TitleBarHeight),
@@ -86,7 +87,7 @@ public:
         return active;
     }
 
-    const String &getTitle() const
+    const std::string &getTitle() const
     {
         return titleText;
     }
@@ -376,7 +377,7 @@ public:
     }
 
 private:
-    String titleText;
+    std::string titleText;
     bool active{true};
     WindowState winState{WindowState::Restored};
 

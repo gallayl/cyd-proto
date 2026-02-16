@@ -5,9 +5,11 @@
 #include "../../hw/RgbLed.h"
 #include "../../hw/lightSensor.h"
 #include "../registeredFeatures.h"
+#include "../../utils/System.h"
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 #include <Esp.h>
+#include <string>
 
 #if ENABLE_SD_CARD
 #include <SD.h>
@@ -29,7 +31,7 @@ JsonDocument getInfo()
 
     esp["sdkVersion"] = ESP.getSdkVersion();
     esp["cpuFreqMhz"] = ESP.getCpuFreqMHz();
-    esp["freeHeap"] = ESP.getFreeHeap();
+    esp["freeHeap"] = getFreeHeap();
     esp["freeSkSpace"] = ESP.getFreeSketchSpace();
 
     JsonObject flash = response["flash"].to<JsonObject>();
@@ -76,24 +78,24 @@ JsonDocument getInfo()
 // --- WiFi handler ---
 
 #if ENABLE_WIFI
-static String wifiHandler(const String &command)
+static std::string wifiHandler(const std::string &command)
 {
-    String operation = CommandParser::getCommandParameter(command, 1);
-    if (operation.compareTo("connect") == 0)
+    std::string operation = CommandParser::getCommandParameter(command, 1);
+    if (operation == "connect")
     {
-        String ssid = CommandParser::getCommandParameter(command, 2);
-        String password = CommandParser::getCommandParameter(command, 3);
+        std::string ssid = CommandParser::getCommandParameter(command, 2);
+        std::string password = CommandParser::getCommandParameter(command, 3);
         if (ssid.length() < 3 || password.length() < 5)
         {
-            return String("{\"error\": \"ssid or password too short\"}");
+            return "{\"error\": \"ssid or password too short\"}";
         }
         WiFi.disconnect(true, false);
         WiFi.persistent(true);
         WiFiClass::mode(WIFI_AP);
         WiFi.begin(ssid.c_str(), password.c_str());
-        return String("{\"event\": \"connecting\"}");
+        return "{\"event\": \"connecting\"}";
     }
-    if (operation.compareTo("list") == 0)
+    if (operation == "list")
     {
         JsonDocument response;
         JsonArray arr = response.to<JsonArray>();
@@ -108,31 +110,31 @@ static String wifiHandler(const String &command)
             element["rssiText"] = getSignalStrength(WiFi.RSSI(i));
             element["encryption"] = getEncryptionType(WiFi.encryptionType(i));
         }
-        String output;
+        std::string output;
         serializeJson(response, output);
         return output;
     }
-    if (operation.compareTo("startSTA") == 0)
+    if (operation == "startSTA")
     {
-        String ssid = CommandParser::getCommandParameter(command, 2);
-        String passphrase = CommandParser::getCommandParameter(command, 3);
+        std::string ssid = CommandParser::getCommandParameter(command, 2);
+        std::string passphrase = CommandParser::getCommandParameter(command, 3);
         if (ssid.length() < 3 || passphrase.length() < 5)
         {
-            return String("{\"error\": \"ssid or passphrase too short\"}");
+            return "{\"error\": \"ssid or passphrase too short\"}";
         }
-        startStaMode(ssid, passphrase);
-        return String("{\"event\": \"starting STA\"}");
+        startStaMode(ssid.c_str(), passphrase.c_str());
+        return "{\"event\": \"starting STA\"}";
     }
 
-    if (operation.compareTo("stopSTA") == 0)
+    if (operation == "stopSTA")
     {
         bool success = WiFi.softAPdisconnect(true);
         WiFiClass::mode(WIFI_AP);
         WiFi.begin();
-        return String("{\"event\": \"stopSTA\", \"success\": " + String(static_cast<int>(success)) + "}");
+        return std::string("{\"event\": \"stopSTA\", \"success\": ") + std::to_string(static_cast<int>(success)) + "}";
     }
 
-    if (operation.compareTo("info") == 0)
+    if (operation == "info")
     {
         JsonDocument response;
         if (WiFiClass::getMode() == WIFI_AP || WiFiClass::getMode() == WIFI_AP_STA)
@@ -154,12 +156,12 @@ static String wifiHandler(const String &command)
         response["wifiStrength"] = getSignalStrength(rssi);
         response["wifiRssiDb"] = rssi;
 
-        String output;
+        std::string output;
         serializeJson(response, output);
         return output;
     }
 
-    if (operation.compareTo("restart") == 0)
+    if (operation == "restart")
     {
         WiFi.disconnect(true, false);
         WiFi.begin();
@@ -175,19 +177,19 @@ static String wifiHandler(const String &command)
 static FeatureAction restartAction = {.name = "restart",
                                       .type = "POST",
                                       .handler =
-                                          [](const String & /*command*/)
+                                          [](const std::string & /*command*/)
                                       {
                                           delay(100);
-                                          ESP.restart();
-                                          return String("{\"event\": \"restart\"}");
+                                          systemRestart();
+                                          return std::string("{\"event\": \"restart\"}");
                                       },
                                       .transports = {.cli = true, .rest = true, .ws = false, .scripting = true}};
 
 static FeatureAction featuresAction = {.name = "features",
                                        .handler =
-                                           [](const String & /*command*/)
+                                           [](const std::string & /*command*/)
                                        {
-                                           String output;
+                                           std::string output;
                                            withRegisteredFeatures([&output](const JsonDocument &doc)
                                                                   { serializeJson(doc, output); });
                                            return output;
@@ -196,10 +198,10 @@ static FeatureAction featuresAction = {.name = "features",
 
 static FeatureAction infoAction = {.name = "info",
                                    .handler =
-                                       [](const String & /*command*/)
+                                       [](const std::string & /*command*/)
                                    {
                                        JsonDocument response = getInfo();
-                                       String output;
+                                       std::string output;
                                        serializeJson(response, output);
                                        return output;
                                    },
@@ -207,14 +209,14 @@ static FeatureAction infoAction = {.name = "info",
 
 static FeatureAction rgbLedAction = {.name = "rgbLed",
                                      .handler =
-                                         [](const String &command)
+                                         [](const std::string &command)
                                      {
-                                         const String SUB = CommandParser::getCommandParameter(command, 1);
+                                         const std::string SUB = CommandParser::getCommandParameter(command, 1);
                                          if (SUB == "setColor")
                                          {
-                                             int r = CommandParser::getCommandParameter(command, 2).toInt();
-                                             int g = CommandParser::getCommandParameter(command, 3).toInt();
-                                             int b = CommandParser::getCommandParameter(command, 4).toInt();
+                                             int r = atoi(CommandParser::getCommandParameter(command, 2).c_str());
+                                             int g = atoi(CommandParser::getCommandParameter(command, 3).c_str());
+                                             int b = atoi(CommandParser::getCommandParameter(command, 4).c_str());
                                              setRgbLedColor(r, g, b);
                                              char logBuf[48];
                                              snprintf(logBuf, sizeof(logBuf), "Set RGB LED color to %d,%d,%d", r, g, b);
@@ -223,19 +225,19 @@ static FeatureAction rgbLedAction = {.name = "rgbLed",
                                          else if (SUB == "off")
                                          {
                                              setRgbLedColor(0, 0, 0);
-                                             loggerInstance->Info(F("Turned off RGB LED"));
+                                             loggerInstance->Info("Turned off RGB LED");
                                          }
                                          else
                                          {
-                                             loggerInstance->Error("Unknown rgbLed subcommand: " + SUB);
+                                             loggerInstance->Error(std::string("Unknown rgbLed subcommand: ") + SUB);
                                          }
-                                         return String("{\"event\": \"rgbLedCommandexecuted\"}");
+                                         return std::string("{\"event\": \"rgbLedCommandexecuted\"}");
                                      },
                                      .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
 
 static FeatureAction lightSensorAction = {.name = "getLightSensorValue",
                                           .handler =
-                                              [](const String & /*command*/)
+                                              [](const std::string & /*command*/)
                                           {
                                               uint16_t value = readLightSensor();
                                               char buf[80];
@@ -243,13 +245,13 @@ static FeatureAction lightSensorAction = {.name = "getLightSensorValue",
                                               loggerInstance->Info(buf);
                                               snprintf(buf, sizeof(buf),
                                                        "{\"event\": \"getLightSensorValue\", \"value\": %u}", value);
-                                              return String(buf);
+                                              return std::string(buf);
                                           },
                                           .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
 
 static FeatureAction hallSensorAction = {.name = "getHallSensorValue",
                                          .handler =
-                                             [](const String & /*command*/)
+                                             [](const std::string & /*command*/)
                                          {
                                              uint16_t value = hallRead();
                                              char buf[80];
@@ -257,7 +259,7 @@ static FeatureAction hallSensorAction = {.name = "getHallSensorValue",
                                              loggerInstance->Info(buf);
                                              snprintf(buf, sizeof(buf),
                                                       "{\"event\": \"getHallSensorValue\", \"value\": %u}", value);
-                                             return String(buf);
+                                             return std::string(buf);
                                          },
                                          .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
 
@@ -270,7 +272,7 @@ static FeatureAction wifiAction = {
 class FeatureRegistry;
 extern FeatureRegistry *featureRegistryInstance;
 
-static String memoryHandler(const String &command);
+static std::string memoryHandler(const std::string &command);
 
 static FeatureAction memoryAction = {.name = "memory",
                                      .handler = memoryHandler,
@@ -304,10 +306,10 @@ Feature *systemFeatures = new Feature(
 
 #include "../FeatureRegistry.h"
 
-static String memoryHandler(const String & /*command*/)
+static std::string memoryHandler(const std::string & /*command*/)
 {
     JsonDocument doc;
-    doc["freeHeap"] = ESP.getFreeHeap();
+    doc["freeHeap"] = getFreeHeap();
     doc["minFreeHeap"] = ESP.getMinFreeHeap();
     doc["heapSize"] = ESP.getHeapSize();
     doc["maxAllocHeap"] = ESP.getMaxAllocHeap();
@@ -325,7 +327,7 @@ static String memoryHandler(const String & /*command*/)
         }
     }
 
-    String output;
+    std::string output;
     serializeJson(doc, output);
     return output;
 }

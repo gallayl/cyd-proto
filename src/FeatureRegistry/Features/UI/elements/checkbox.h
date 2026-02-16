@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <string>
 #include "container.h"
 #include "../Renderer.h"
 #include "../Theme.h"
@@ -14,7 +15,7 @@ class Checkbox : public Element
 public:
     using ChangeCb = std::function<void(bool)>;
 
-    Checkbox(const String &txt = String(), int ix = 0, int iy = 0, int iw = 0, int ih = 0) : labelText(txt)
+    Checkbox(const std::string &txt = "", int ix = 0, int iy = 0, int iw = 0, int ih = 0) : labelText(txt)
     {
         setBounds(ix, iy, iw, ih);
     }
@@ -28,7 +29,7 @@ public:
         return checked;
     }
 
-    void setLabel(const String &txt)
+    void setLabel(const std::string &txt)
     {
         labelText = txt;
     }
@@ -82,7 +83,7 @@ public:
             int16_t th = c.fontHeight();
             int labelY = drawY() + (height - th) / 2;
             c.setCursor(labelX, labelY);
-            c.print(labelText);
+            c.print(labelText.c_str());
         }
     }
 
@@ -104,7 +105,7 @@ public:
     }
 
 private:
-    String labelText;
+    std::string labelText;
     bool checked{false};
     bool pressing{false};
     uint16_t textFg{TFT_BLACK};

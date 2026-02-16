@@ -1,7 +1,7 @@
 #pragma once
 
 #include <functional>
-#include <Arduino.h>
+#include <string>
 #include "container.h"
 #include "../Renderer.h"
 #include "../Theme.h"
@@ -50,20 +50,20 @@ inline void requestKeyboardBlur()
 class TextField : public Element
 {
 public:
-    using ChangeCb = std::function<void(const String &)>;
+    using ChangeCb = std::function<void(const std::string &)>;
 
-    TextField(const String &txt = String(), int ix = 0, int iy = 0, int iw = 0, int ih = 0) : text(txt)
+    TextField(const std::string &txt = "", int ix = 0, int iy = 0, int iw = 0, int ih = 0) : text(txt)
     {
         setBounds(ix, iy, iw, ih);
         cursorPos = text.length();
     }
 
-    void setText(const String &t)
+    void setText(const std::string &t)
     {
         text = t;
         cursorPos = text.length();
     }
-    const String &getText() const
+    const std::string &getText() const
     {
         return text;
     }
@@ -76,7 +76,7 @@ public:
     {
         onChange = std::move(cb);
     }
-    void setPlaceholder(const String &p)
+    void setPlaceholder(const std::string &p)
     {
         placeholder = p;
     }
@@ -120,28 +120,28 @@ public:
         {
             c.setTextColor(Theme::ButtonShadow, Theme::TextFieldBg);
             c.setCursor(innerX, ty);
-            c.print(placeholder);
+            c.print(placeholder.c_str());
         }
         else
         {
             c.setTextColor(Theme::TextColor, Theme::TextFieldBg);
 
             // compute visible portion of text
-            int tw = c.textWidth(text);
+            int tw = c.textWidth(text.c_str());
             int offset = 0;
             if (tw > innerW)
                 offset = tw - innerW;
 
             c.setClipRect(innerX, drawY() + 2, innerW, height - 4);
             c.setCursor(innerX - offset, ty);
-            c.print(text);
+            c.print(text.c_str());
             c.clearClipRect();
 
             // cursor
             if (focused)
             {
-                String beforeCursor = text.substring(0, cursorPos);
-                int cx = innerX + c.textWidth(beforeCursor) - offset;
+                std::string beforeCursor = text.substr(0, cursorPos);
+                int cx = innerX + c.textWidth(beforeCursor.c_str()) - offset;
                 if (cx >= innerX && cx < innerX + innerW)
                 {
                     c.drawFastVLine(cx, drawY() + 3, height - 6, Theme::TextColor);
@@ -171,7 +171,7 @@ public:
             // backspace
             if (cursorPos > 0 && text.length() > 0)
             {
-                text = text.substring(0, cursorPos - 1) + text.substring(cursorPos);
+                text = text.substr(0, cursorPos - 1) + text.substr(cursorPos);
                 cursorPos--;
                 if (onChange)
                     onChange(text);
@@ -189,7 +189,7 @@ public:
         {
             if (maxLen > 0 && (int)text.length() >= maxLen)
                 return;
-            text = text.substring(0, cursorPos) + String(ch) + text.substring(cursorPos);
+            text = text.substr(0, cursorPos) + std::string(1, ch) + text.substr(cursorPos);
             cursorPos++;
             if (onChange)
                 onChange(text);
@@ -198,8 +198,8 @@ public:
     }
 
 private:
-    String text;
-    String placeholder;
+    std::string text;
+    std::string placeholder;
     int cursorPos{0};
     int maxLen{0};
     bool focused{false};

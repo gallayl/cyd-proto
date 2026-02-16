@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <string>
 #include <vector>
 #include <memory>
 #include "container.h"
@@ -20,7 +21,7 @@ public:
         setBounds(ix, iy, iw, ih);
     }
 
-    int addTab(const String &label)
+    int addTab(const std::string &label)
     {
         Tab tab;
         tab.label = label;
@@ -136,14 +137,14 @@ public:
             }
 
             // tab label
-            int16_t textW = c.textWidth(tabs[i].label);
+            int16_t textW = c.textWidth(tabs[i].label.c_str());
             int16_t th = c.fontHeight();
             int labelY = active ? tabBarY : (tabBarY + 2);
             int labelH = active ? tabH : (tabH - 2);
             uint16_t bg = active ? Theme::WindowBg : Theme::ButtonFace;
             c.setTextColor(Theme::TextColor, bg);
             c.setCursor(tx + (tw - textW) / 2, labelY + (labelH - th) / 2);
-            c.print(tabs[i].label);
+            c.print(tabs[i].label.c_str());
         }
 
         // draw active tab content
@@ -210,7 +211,7 @@ public:
 private:
     struct Tab
     {
-        String label;
+        std::string label;
         std::unique_ptr<Container> content;
     };
 

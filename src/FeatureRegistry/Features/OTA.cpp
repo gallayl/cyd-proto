@@ -7,11 +7,12 @@
 #include "../../mime.h"
 #include "./Logging.h"
 #include "../../services/WebServer.h"
+#include "../../utils/System.h"
 
 // redundant extern in this translation unit to satisfy IntelliSense
 
 ArRequestHandlerFunction getUpdateForm = ([](AsyncWebServerRequest *request)
-                                          { request->send(200, MIME_HTML, F("<form method='POST' action='/update' accept='application/octet-stream' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>")); });
+                                          { request->send(200, MIME_HTML, "<form method='POST' action='/update' accept='application/octet-stream' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>"); });
 
 ArRequestHandlerFunction getRedirectPage = ([](AsyncWebServerRequest *request)
                                             {
@@ -37,7 +38,7 @@ ArUploadHandlerFunction onUploadUpdate = ([](AsyncWebServerRequest *request, con
                                               }
                                               if (!index)
                                               {
-                                                  loggerInstance->Info(F("Starting OTA update..."));
+                                                  loggerInstance->Info("Starting OTA update...");
                                                   if (webSocket) {
                                                       webSocket->textAll(R"({"type":"otaUpdateStarted"})");
 }
@@ -66,13 +67,13 @@ ArUploadHandlerFunction onUploadUpdate = ([](AsyncWebServerRequest *request, con
                                                       if (webSocket) {
                                                           webSocket->textAll(R"({"type":"otaUpdateFinished"})");
 }
-                                                      loggerInstance->Info(F("Update done, rebooting..."));
+                                                      loggerInstance->Info("Update done, rebooting...");
                                                       LittleFS.end();
                                                       if (webSocket) {
                                                           webSocket->closeAll();
 }
                                                       server.end();
-                                                      ESP.restart();
+                                                      systemRestart();
                                                       return;
                                                   }
                                                   else
@@ -89,6 +90,6 @@ Feature *otaUpgrade = new Feature(
         server.on("/update", HTTP_POST, onPostUpdate, onUploadUpdate);
         return FeatureState::RUNNING;
     },
-    []() {}, []() { loggerInstance->Info(F("OTA feature stopped")); });
+    []() {}, []() { loggerInstance->Info("OTA feature stopped"); });
 
 #endif

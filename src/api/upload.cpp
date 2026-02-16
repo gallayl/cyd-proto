@@ -2,13 +2,15 @@
 #include "../mime.h"
 #include "../fs/VirtualFS.h"
 #include "../FeatureRegistry/Features/Logging.h"
+#include "../utils/StringUtil.h"
 #include <Arduino.h>
+#include <string>
 
 ArRequestHandlerFunction onPostUploadFiles = ([](AsyncWebServerRequest *request) {
     // Check if there was an error during upload (stored in _tempObject)
     if (request->_tempObject != nullptr) {
-        String* errorMsg = (String*)request->_tempObject;
-        request->send(400, MIME_JSON, *errorMsg);
+        std::string* errorMsg = (std::string*)request->_tempObject;
+        request->send(400, MIME_JSON, errorMsg->c_str());
         delete errorMsg;
         request->_tempObject = nullptr;
         return;
@@ -16,34 +18,34 @@ ArRequestHandlerFunction onPostUploadFiles = ([](AsyncWebServerRequest *request)
     request->send(200, MIME_JSON, "{\"status\":\"ok\"}");
 });
 
-static String sanitizePath(const String &raw)
+static std::string sanitizePath(const std::string &raw)
 {
-    String path = raw;
-    path.replace("\\", "/");
-    path.trim();
+    std::string path = raw;
+    StringUtil::replaceAll(path, "\\", "/");
+    path = StringUtil::trim(path);
 
     // Remove ".." segments to prevent directory traversal
-    while (path.indexOf("..") >= 0)
+    while (path.find("..") != std::string::npos)
     {
-        path.replace("..", "");
+        StringUtil::replaceAll(path, "..", "");
     }
 
     // Collapse double slashes
-    while (path.indexOf("//") >= 0)
+    while (path.find("//") != std::string::npos)
     {
-        path.replace("//", "/");
+        StringUtil::replaceAll(path, "//", "/");
     }
 
     // Ensure path starts with /
-    if (!path.startsWith("/"))
+    if (!StringUtil::startsWith(path, "/"))
     {
-        path = "/" + path;
+        path = std::string("/") + path;
     }
 
     // Remove trailing slash (unless it's the root)
-    if (path.length() > 1 && path.endsWith("/"))
+    if (path.length() > 1 && StringUtil::endsWith(path, "/"))
     {
-        path.remove(path.length() - 1);
+        path.erase(path.length() - 1);
     }
 
     if (path.length() <= 1)
@@ -54,17 +56,17 @@ static String sanitizePath(const String &raw)
     return path;
 }
 
-static bool mkdirs(fs::FS &fs, const String &filePath)
+static bool mkdirs(fs::FS &fs, const std::string &filePath)
 {
-    int idx = 1; // skip leading '/'
+    size_t idx = 1; // skip leading '/'
     while (true)
     {
-        int slash = filePath.indexOf('/', idx);
-        if (slash < 0)
+        size_t slash = filePath.find('/', idx);
+        if (slash == std::string::npos)
         {
             break;
         }
-        String dir = filePath.substring(0, slash);
+        std::string dir = filePath.substr(0, slash);
         fs.mkdir(dir.c_str());
         idx = slash + 1;
     }
@@ -78,32 +80,32 @@ ArUploadHandlerFunction uploadFiles = ([](AsyncWebServerRequest *request, const 
         return;
     }
 
-    String targetPath = request->arg("path");
+    std::string targetPath(request->arg("path").c_str());
 
-    if (targetPath.isEmpty()) {
-        String basePath = request->arg("basePath");
-        if (!basePath.isEmpty()) {
-            if (!basePath.endsWith("/")) {
+    if (targetPath.empty()) {
+        std::string basePath(request->arg("basePath").c_str());
+        if (!basePath.empty()) {
+            if (!StringUtil::endsWith(basePath, "/")) {
                 basePath += "/";
             }
-            targetPath = basePath + filename;
+            targetPath = basePath + filename.c_str();
         } else {
-            targetPath = filename;
+            targetPath = filename.c_str();
         }
     }
 
-    String safePath = sanitizePath(targetPath);
+    std::string safePath = sanitizePath(targetPath);
 
-    if (safePath.isEmpty())
+    if (safePath.empty())
     {
-        request->_tempObject = new String("{\"error\":\"Invalid file path\"}");
+        request->_tempObject = new std::string("{\"error\":\"Invalid file path\"}");
         return;
     }
 
     ResolvedPath resolved = resolveVirtualPath(safePath);
     if (!resolved.valid || !resolved.fs)
     {
-        request->_tempObject = new String("{\"error\":\"Path must start with /flash or /sd\"}");
+        request->_tempObject = new std::string("{\"error\":\"Path must start with /flash or /sd\"}");
         return;
     }
 
@@ -111,12 +113,12 @@ ArUploadHandlerFunction uploadFiles = ([](AsyncWebServerRequest *request, const 
         mkdirs(*resolved.fs, resolved.localPath);
     }
 
-    fs::File file = resolved.fs->open(resolved.localPath, index == 0 ? "w" : "a");
+    fs::File file = resolved.fs->open(resolved.localPath.c_str(), index == 0 ? "w" : "a");
 
     if (!file)
     {
-        loggerInstance->Error(F("Failed to open file for writing"));
-        request->_tempObject = new String("{\"error\":\"Failed to open file for writing\"}");
+        loggerInstance->Error("Failed to open file for writing");
+        request->_tempObject = new std::string("{\"error\":\"Failed to open file for writing\"}");
         return;
     }
     file.write(data, len);
@@ -125,5 +127,5 @@ ArUploadHandlerFunction uploadFiles = ([](AsyncWebServerRequest *request, const 
 
     if (final)
     {
-        loggerInstance->Info(String(F("Upload finished: ")) + safePath);
+        loggerInstance->Info(std::string("Upload finished: ") + safePath);
     } });

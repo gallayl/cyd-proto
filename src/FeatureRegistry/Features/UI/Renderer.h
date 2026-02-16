@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <LovyanGFX.hpp>
 #include "../../../hw/Screen.h"
 #include <Esp.h>
@@ -40,7 +41,7 @@ inline bool initRenderer()
     if (!stripBuffer())
     {
         if (loggerInstance)
-            loggerInstance->Error("Failed to allocate strip buffer (" + String(bufSize) + " bytes)");
+            loggerInstance->Error("Failed to allocate strip buffer (" + std::to_string(bufSize) + " bytes)");
         return false;
     }
 
@@ -50,8 +51,8 @@ inline bool initRenderer()
     c.setBuffer(stripBuffer(), tft.width(), STRIP_H, 16);
 
     if (loggerInstance)
-        loggerInstance->Info("Renderer: strip " + String(tft.width()) + "x" + String(STRIP_H) +
-                             " 16-bit, buffer=" + String(bufSize) + " bytes");
+        loggerInstance->Info("Renderer: strip " + std::to_string(tft.width()) + "x" + std::to_string(STRIP_H) +
+                             " 16-bit, buffer=" + std::to_string(bufSize) + " bytes");
     return true;
 }
 
@@ -65,7 +66,7 @@ inline bool reinitRenderer()
     c.setBuffer(stripBuffer(), tft.width(), STRIP_H, 16);
 
     if (loggerInstance)
-        loggerInstance->Info("Renderer reinit: strip " + String(tft.width()) + "x" + String(STRIP_H) +
+        loggerInstance->Info("Renderer reinit: strip " + std::to_string(tft.width()) + "x" + std::to_string(STRIP_H) +
                              " (buffer reused)");
     return true;
 }

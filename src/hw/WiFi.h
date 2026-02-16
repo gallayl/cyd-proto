@@ -4,68 +4,69 @@
 #include <AsyncTCP.h>
 #include <WiFiClientSecure.h>
 #include <esp_wifi.h>
+#include <string>
 #include "../config.h"
 #include "../FeatureRegistry/Features/Logging.h"
 
 // ensure logger declaration available (guard against include order)
 
-inline String getSignalStrength(int32_t rssi)
+inline std::string getSignalStrength(int32_t rssi)
 {
     if (rssi > -30)
     {
-        return F("Amazing");
+        return "Amazing";
     }
     else if (rssi > -67)
     {
-        return F("Very good");
+        return "Very good";
     }
     else if (rssi > -70)
     {
-        return F("Okay (not good, not terrible)");
+        return "Okay (not good, not terrible)";
     }
     else if (rssi > -80)
     {
-        return F("Not good");
+        return "Not good";
     }
     else if (rssi > -90)
     {
-        return F("Unusable");
+        return "Unusable";
     }
-    return F("Unknown");
+    return "Unknown";
 }
 
-inline String getEncryptionType(wifi_auth_mode_t mode)
+inline std::string getEncryptionType(wifi_auth_mode_t mode)
 {
     // translate ESP32 wifi_auth_mode_t to human readable strings
     switch (mode)
     {
     case WIFI_AUTH_OPEN:
-        return F("OPEN");
+        return "OPEN";
     case WIFI_AUTH_WEP:
-        return F("WEP");
+        return "WEP";
     case WIFI_AUTH_WPA_PSK:
-        return F("WPA_PSK");
+        return "WPA_PSK";
     case WIFI_AUTH_WPA2_PSK:
-        return F("WPA2_PSK");
+        return "WPA2_PSK";
     case WIFI_AUTH_WPA_WPA2_PSK:
-        return F("WPA_WPA2_PSK");
+        return "WPA_WPA2_PSK";
     case WIFI_AUTH_WPA2_ENTERPRISE:
-        return F("WPA2_ENTERPRISE");
+        return "WPA2_ENTERPRISE";
     case WIFI_AUTH_WPA3_PSK:
-        return F("WPA3_PSK");
+        return "WPA3_PSK";
     case WIFI_AUTH_WPA2_WPA3_PSK:
-        return F("WPA2_WPA3_PSK");
+        return "WPA2_WPA3_PSK";
     default:
-        return F("UNKNOWN");
+        return "UNKNOWN";
     }
 }
 
-inline void startStaMode(const String &ssid, const String &staPassPharse)
+inline void startStaMode(const std::string &ssid, const std::string &staPassPharse)
 {
     if (WiFiClass::getMode() == WIFI_AP && WiFi.begin() != WL_CONNECTED)
     {
         WiFiClass::mode(WIFI_AP_STA);
-        WiFi.softAP(ssid, staPassPharse);
+        WiFi.softAP(ssid.c_str(), staPassPharse.c_str());
     }
 }
 
@@ -82,7 +83,7 @@ inline void initWifi()
 
     if (!hasStoredCredentials())
     {
-        loggerInstance->Info(F("No WiFi credentials saved, starting in AP mode only"));
+        loggerInstance->Info("No WiFi credentials saved, starting in AP mode only");
         startStaMode(STA_SSID, STA_PASSPHRASE);
         return;
     }
@@ -92,11 +93,11 @@ inline void initWifi()
 
     if (state != WL_CONNECTED)
     {
-        loggerInstance->Error(F("Failed to connect to access point"));
+        loggerInstance->Error("Failed to connect to access point");
         startStaMode(STA_SSID, STA_PASSPHRASE);
     }
     else
     {
-        loggerInstance->Info(F("Connected to access point"));
+        loggerInstance->Info("Connected to access point");
     }
 }

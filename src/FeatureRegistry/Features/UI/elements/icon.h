@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include "container.h"
 #include "../Renderer.h"
 #include "../BuiltinIcons.h"
@@ -17,7 +18,7 @@ public:
     }
 
     void setIconName(const char *name) { _iconName = name; }
-    const String &getIconName() const { return _iconName; }
+    const std::string &getIconName() const { return _iconName; }
 
     void draw() override
     {
@@ -28,7 +29,7 @@ public:
     }
 
 private:
-    String _iconName;
+    std::string _iconName;
     int _size;
 };
 

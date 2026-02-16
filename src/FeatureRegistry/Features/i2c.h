@@ -2,12 +2,14 @@
 
 #include <Wire.h>
 #include <vector>
+#include <string>
+#include <cstring>
 #include <ArduinoJson.h>
 
 #include "../../config.h"
 #include "../Feature.h"
 
-inline String scanDevices()
+inline std::string scanDevices()
 {
     JsonDocument doc;
     JsonArray arr = doc.to<JsonArray>();
@@ -27,12 +29,12 @@ inline String scanDevices()
         }
     }
 
-    String output;
+    std::string output;
     serializeJson(doc, output);
     return output;
 }
 
-inline String readDevice(uint16_t address, uint16_t size)
+inline std::string readDevice(uint16_t address, uint16_t size)
 {
     Wire.requestFrom((uint8_t)address, (size_t)size);
 
@@ -43,23 +45,23 @@ inline String readDevice(uint16_t address, uint16_t size)
         arr.add(Wire.read());
     }
 
-    String output;
+    std::string output;
     serializeJson(doc, output);
     return output;
 }
 
-inline void writeDevice(uint16_t address, const String &data)
+inline void writeDevice(uint16_t address, const std::string &data)
 {
     Wire.beginTransmission(address);
 
     size_t strLen = data.length() + 1;
     std::vector<char> buf(strLen);
-    data.toCharArray(buf.data(), strLen);
+    strncpy(buf.data(), data.c_str(), strLen);
     char *p = buf.data();
     char *str;
     while ((str = strtok_r(p, ";", &p)) != NULL)
     {
-        if (String(str).startsWith("0x"))
+        if (strncmp(str, "0x", 2) == 0)
         {
             Wire.write(strtol(str, 0, 16));
         }

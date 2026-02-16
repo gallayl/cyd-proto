@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Arduino.h>
+#include <string>
 #include <vector>
 #include "button.h"
 #include "../Renderer.h"
@@ -101,7 +101,7 @@ public:
         for (size_t i = 0; i < lines.size(); i++)
         {
             c.setCursor(textX, textY + i * lineH);
-            c.print(lines[i]);
+            c.print(lines[i].c_str());
         }
 
         // Ok button
@@ -145,7 +145,7 @@ public:
 
 private:
     bool _visible{false};
-    String _message;
+    std::string _message;
     Button _okBtn;
     int _bounds[4]{0, 0, 0, 0};
 
@@ -154,35 +154,35 @@ private:
         return px >= _bounds[0] && px < _bounds[0] + _bounds[2] && py >= _bounds[1] && py < _bounds[1] + _bounds[3];
     }
 
-    static std::vector<String> wrapText(LGFX_Sprite &c, const String &text, int maxWidth)
+    static std::vector<std::string> wrapText(LGFX_Sprite &c, const std::string &text, int maxWidth)
     {
-        std::vector<String> lines;
+        std::vector<std::string> lines;
         int start = 0;
         int len = text.length();
 
         while (start < len)
         {
-            int nl = text.indexOf('\n', start);
-            int segEnd = (nl >= start) ? nl : len;
-            String segment = text.substring(start, segEnd);
+            size_t nl = text.find('\n', start);
+            int segEnd = (nl != std::string::npos) ? (int)nl : len;
+            std::string segment = text.substr(start, segEnd - start);
 
-            if (c.textWidth(segment) <= maxWidth)
+            if (c.textWidth(segment.c_str()) <= maxWidth)
             {
                 lines.push_back(segment);
             }
             else
             {
-                String line;
+                std::string line;
                 int i = 0;
                 while (i < (int)segment.length())
                 {
-                    int wordEnd = segment.indexOf(' ', i);
-                    if (wordEnd < 0)
+                    size_t wordEnd = segment.find(' ', i);
+                    if (wordEnd == std::string::npos)
                         wordEnd = segment.length();
-                    String word = segment.substring(i, wordEnd);
+                    std::string word = segment.substr(i, wordEnd - i);
 
-                    String candidate = line.length() > 0 ? line + " " + word : word;
-                    if (c.textWidth(candidate) > maxWidth && line.length() > 0)
+                    std::string candidate = line.length() > 0 ? line + " " + word : word;
+                    if (c.textWidth(candidate.c_str()) > maxWidth && line.length() > 0)
                     {
                         lines.push_back(line);
                         line = word;

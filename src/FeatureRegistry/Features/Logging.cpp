@@ -6,10 +6,10 @@ Logger *loggerInstance = new Logger();
 
 static FeatureAction logAction = {.name = "log",
                                   .handler =
-                                      [](const String & /*command*/)
+                                      [](const std::string & /*command*/)
                                   {
                                       const JsonDocument &entries = loggerInstance->getEntries();
-                                      String output;
+                                      std::string output;
                                       serializeJson(entries, output);
                                       return output;
                                   },

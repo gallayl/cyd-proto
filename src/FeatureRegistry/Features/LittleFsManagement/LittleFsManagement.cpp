@@ -2,28 +2,29 @@
 #include "../../../ActionRegistry/ActionRegistry.h"
 #include "../../../CommandInterpreter/CommandParser.h"
 #include "../../../fs/VirtualFS.h"
+#include <string>
 
 static FeatureAction formatAction = {.name = "format",
                                      .type = "POST",
                                      .handler =
-                                         [](const String & /*command*/)
+                                         [](const std::string & /*command*/)
                                      {
                                          LittleFS.end();
                                          LittleFS.format();
                                          if (!LittleFS.begin())
                                          {
-                                             return String("{\"error\": \"Mount after format failed\"}");
+                                             return std::string("{\"error\": \"Mount after format failed\"}");
                                          }
-                                         return String("{\"event\": \"format\"}");
+                                         return std::string("{\"event\": \"format\"}");
                                      },
                                      .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
 
 static FeatureAction listFilesAction = {.name = "list",
                                         .handler =
-                                            [](const String &command)
+                                            [](const std::string &command)
                                         {
-                                            String path = CommandParser::getCommandParameter(command, 1);
-                                            if (path.isEmpty())
+                                            std::string path = CommandParser::getCommandParameter(command, 1);
+                                            if (path.empty())
                                             {
                                                 path = "/";
                                             }
@@ -63,7 +64,7 @@ static FeatureAction listFilesAction = {.name = "list",
                                                 }
                                             }
 
-                                            String output;
+                                            std::string output;
                                             serializeJson(response, output);
                                             return output;
                                         },
@@ -76,7 +77,7 @@ Feature *LittleFsFeature = new Feature("LittleFsFeatures", []()
 
     if (!LittleFS.begin())
     {
-        loggerInstance->Error(F("LittleFS not available"));
+        loggerInstance->Error("LittleFS not available");
         return FeatureState::ERROR;
     }
 

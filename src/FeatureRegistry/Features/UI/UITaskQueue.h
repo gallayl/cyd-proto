@@ -5,7 +5,7 @@
 #if ENABLE_UI
 
 #include <functional>
-#include <Arduino.h>
+#include <string>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
@@ -21,7 +21,7 @@ void processTaskQueue();
 
 void postToUITaskSync(std::function<void()> action);
 
-String postToUITaskWithResult(std::function<String()> action);
+std::string postToUITaskWithResult(std::function<std::string()> action);
 
 } // namespace UI
 

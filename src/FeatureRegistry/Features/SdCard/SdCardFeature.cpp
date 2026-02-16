@@ -10,6 +10,7 @@
 #include <ArduinoJson.h>
 
 #include <cstddef>
+#include <string>
 
 #define SD_CS 5
 #define SD_SCK 18
@@ -39,27 +40,27 @@ static const char *cardTypeName(sdcard_type_t type)
     }
 }
 
-static String doMount()
+static std::string doMount()
 {
     if (sdMounted)
     {
-        return String("{\"error\": \"SD card already mounted\"}");
+        return "{\"error\": \"SD card already mounted\"}";
     }
 
     sdSPI.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);
 
     if (!SD.begin(SD_CS, sdSPI))
     {
-        loggerInstance->Error(F("SD card mount failed"));
-        return String("{\"error\": \"SD card mount failed\"}");
+        loggerInstance->Error("SD card mount failed");
+        return "{\"error\": \"SD card mount failed\"}";
     }
 
     sdcard_type_t cardType = SD.cardType();
     if (cardType == CARD_NONE)
     {
         SD.end();
-        loggerInstance->Error(F("No SD card detected"));
-        return String("{\"error\": \"No SD card detected\"}");
+        loggerInstance->Error("No SD card detected");
+        return "{\"error\": \"No SD card detected\"}";
     }
 
     sdMounted = true;
@@ -70,15 +71,15 @@ static String doMount()
     response["totalBytes"] = SD.totalBytes();
     response["usedBytes"] = SD.usedBytes();
 
-    String output;
+    std::string output;
     serializeJson(response, output);
 
-    loggerInstance->Info("SD card mounted (" + String(cardTypeName(cardType)) + ", " +
-                         String(SD.totalBytes() / (1024 * 1024)) + " MB)");
+    loggerInstance->Info(std::string("SD card mounted (") + cardTypeName(cardType) + ", " +
+                         std::to_string(SD.totalBytes() / (1024 * 1024)) + " MB)");
     return output;
 }
 
-static String doUnmount()
+static std::string doUnmount()
 {
     if (!sdMounted)
     {
@@ -88,15 +89,15 @@ static String doUnmount()
     SD.end();
     sdMounted = false;
 
-    loggerInstance->Info(F("SD card unmounted"));
+    loggerInstance->Info("SD card unmounted");
     return {"{\"event\": \"sd_unmounted\"}"};
 }
 
-static String doInfo()
+static std::string doInfo()
 {
     if (!sdMounted)
     {
-        return String("{\"error\": \"SD card not mounted\"}");
+        return "{\"error\": \"SD card not mounted\"}";
     }
 
     JsonDocument response;
@@ -106,14 +107,14 @@ static String doInfo()
     response["usedBytes"] = SD.usedBytes();
     response["cardSize"] = SD.cardSize();
 
-    String output;
+    std::string output;
     serializeJson(response, output);
     return output;
 }
 
-static String sdHandler(const String &command)
+static std::string sdHandler(const std::string &command)
 {
-    String operation = CommandParser::getCommandParameter(command, 1);
+    std::string operation = CommandParser::getCommandParameter(command, 1);
 
     if (operation == "mount")
     {
@@ -156,18 +157,18 @@ Feature *SdCardFeature = new Feature(
             if (cardType != CARD_NONE)
             {
                 sdMounted = true;
-                loggerInstance->Info("SD card detected (" + String(cardTypeName(cardType)) + ", " +
-                                     String(SD.totalBytes() / (static_cast<uint64_t>(1024 * 1024))) + " MB)");
+                loggerInstance->Info(std::string("SD card detected (") + cardTypeName(cardType) + ", " +
+                                     std::to_string(SD.totalBytes() / (static_cast<uint64_t>(1024 * 1024))) + " MB)");
             }
             else
             {
                 SD.end();
-                loggerInstance->Info(F("No SD card inserted"));
+                loggerInstance->Info("No SD card inserted");
             }
         }
         else
         {
-            loggerInstance->Info(F("SD card not available"));
+            loggerInstance->Info("SD card not available");
         }
 
         return FeatureState::RUNNING;
@@ -179,7 +180,7 @@ Feature *SdCardFeature = new Feature(
         {
             SD.end();
             sdMounted = false;
-            loggerInstance->Info(F("SD card unmounted"));
+            loggerInstance->Info("SD card unmounted");
         }
     });
 

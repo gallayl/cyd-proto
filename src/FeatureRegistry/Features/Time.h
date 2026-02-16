@@ -2,6 +2,7 @@
 #include <WiFiUdp.h>
 
 #include <ctime>
+#include <string>
 #include "../Feature.h"
 
 #define MY_NTP_SERVER "pool.ntp.org"
@@ -10,7 +11,7 @@
 
 // time helpers (implemented in Time.cpp)
 time_t getEpochTime();
-String getUtcTime();
+std::string getUtcTime();
 
 // Feature object is instantiated in Time.cpp
 extern Feature *timeFeature;

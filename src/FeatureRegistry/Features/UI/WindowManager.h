@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <vector>
 #include <memory>
 #include "elements/window.h"
@@ -12,14 +13,14 @@ struct OpenApp
 {
     std::unique_ptr<Window> window;
     std::unique_ptr<App> app;
-    String name;
+    std::string name;
 };
 
 struct PanelSlot
 {
     std::unique_ptr<Container> container;
     std::unique_ptr<App> app;
-    String name;
+    std::string name;
 };
 
 struct PopupSlot

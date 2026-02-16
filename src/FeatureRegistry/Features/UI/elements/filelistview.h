@@ -1,8 +1,8 @@
 #pragma once
 
 #include <functional>
+#include <string>
 #include <vector>
-#include <Arduino.h>
 #include "container.h"
 #include "../Renderer.h"
 #include "../Theme.h"
@@ -12,7 +12,7 @@ namespace UI
 
 struct FileItem
 {
-    String name;
+    std::string name;
     uint32_t size{0};
     bool isDir{false};
     time_t lastWrite{0};
@@ -251,11 +251,11 @@ private:
             drawDefaultIcon(c, iconX, iconY, _items[i].isDir);
 
             // name
-            String displayName = _items[i].name;
+            std::string displayName = _items[i].name;
             if (displayName.length() > 7)
-                displayName = displayName.substring(0, 6) + "~";
+                displayName = displayName.substr(0, 6) + "~";
 
-            int16_t tw = c.textWidth(displayName);
+            int16_t tw = c.textWidth(displayName.c_str());
             int tx = ix + (Theme::FileListIconGridW - tw) / 2;
             int ty = iconY + Theme::FileListIconSize + 2;
 
@@ -269,7 +269,7 @@ private:
                 c.setTextColor(Theme::TextColor, TFT_WHITE);
             }
             c.setCursor(tx, ty);
-            c.print(displayName);
+            c.print(displayName.c_str());
         }
     }
 
@@ -302,7 +302,7 @@ private:
             drawDefaultIcon(c, drawX() + 3, ry + 1, _items[i].isDir, iconSz);
 
             c.setCursor(drawX() + 3 + iconSz + 4, ry + (rowH - c.fontHeight()) / 2);
-            c.print(_items[i].name);
+            c.print(_items[i].name.c_str());
         }
     }
 
@@ -361,15 +361,15 @@ private:
 
             // name
             c.setCursor(drawX() + 4, textY);
-            String dispName = _items[i].isDir ? ("[" + _items[i].name + "]") : _items[i].name;
-            c.print(dispName);
+            std::string dispName = _items[i].isDir ? (std::string("[") + _items[i].name + "]") : _items[i].name;
+            c.print(dispName.c_str());
 
             // size
             c.setCursor(drawX() + 4 + nameW, textY);
             if (_items[i].isDir)
                 c.print("<DIR>");
             else
-                c.print(String(_items[i].size));
+                c.print(std::to_string(_items[i].size).c_str());
 
             // modified
             c.setCursor(drawX() + 4 + nameW + sizeW, textY);

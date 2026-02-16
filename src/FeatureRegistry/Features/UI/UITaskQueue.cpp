@@ -76,9 +76,9 @@ void postToUITaskSync(std::function<void()> action)
     xSemaphoreGive(sSyncMutex);
 }
 
-String postToUITaskWithResult(std::function<String()> action)
+std::string postToUITaskWithResult(std::function<std::string()> action)
 {
-    String result;
+    std::string result;
     postToUITaskSync([&]() { result = action(); });
     return result;
 }

@@ -4,7 +4,6 @@
 #include <cstring>
 #include <string>
 #include <vector>
-#include <Arduino.h>
 
 #define COMMAND_DELIMITER " "
 
@@ -34,15 +33,13 @@ public:
         return str != nullptr ? std::string(str) : "";
     }
 
-#ifdef ARDUINO
-    static String getCommandName(const String &command)
+    static std::string getCommandName(const std::string &command)
     {
-        return String(getCommandParameter(command.c_str(), 0).c_str());
+        return getCommandParameter(command.c_str(), 0);
     }
 
-    static String getCommandParameter(const String &command, uint8_t parameterNo)
+    static std::string getCommandParameter(const std::string &command, uint8_t parameterNo)
     {
-        return String(getCommandParameter(command.c_str(), parameterNo).c_str());
+        return getCommandParameter(command.c_str(), parameterNo);
     }
-#endif
 };

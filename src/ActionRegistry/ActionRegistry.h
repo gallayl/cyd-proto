@@ -2,9 +2,11 @@
 
 #include <Arduino.h>
 #include <mutex>
+#include <string>
 #include "../config.h"
 #include "FeatureAction.h"
 #include "../CommandInterpreter/CommandParser.h"
+#include "../utils/StringUtil.h"
 
 #define ACTIONS_SIZE 24
 
@@ -37,26 +39,26 @@ public:
         std::lock_guard<std::mutex> lock(_mutex);
         if (_registeredActionsCount >= ACTIONS_SIZE)
         {
-            Serial.println(F("Action registry full, cannot register"));
+            Serial.println("Action registry full, cannot register");
             return;
         }
         _actions[_registeredActionsCount] = action;
         _registeredActionsCount++;
     }
 
-    String execute(const String &command, Transport transport)
+    std::string execute(const std::string &command, Transport transport)
     {
         ActionHandler handler = nullptr;
         {
             std::lock_guard<std::mutex> lock(_mutex);
             for (uint8_t i = 0; i < _registeredActionsCount; i++)
             {
-                const String &name = _actions[i]->name;
-                if (command.equals(name) || command.startsWith(name + " "))
+                const std::string &name = _actions[i]->name;
+                if (command == name || StringUtil::startsWith(command, name + " "))
                 {
                     if (!isTransportEnabled(_actions[i], transport))
                     {
-                        return String("{\"error\": \"Action '" + name + "' not available on this transport\"}");
+                        return "{\"error\": \"Action '" + name + "' not available on this transport\"}";
                     }
                     handler = _actions[i]->handler;
                     break;
@@ -67,13 +69,13 @@ public:
         {
             return handler(command);
         }
-        return String("{\"message\": \"Unknown action: " + CommandParser::getCommandName(command) +
-                      ".\", \"availableActions\": \"" + getAvailableActions(transport) + "\"}");
+        return "{\"message\": \"Unknown action: " + CommandParser::getCommandName(command) +
+               ".\", \"availableActions\": \"" + getAvailableActions(transport) + "\"}";
     }
 
-    String getAvailableActions(Transport transport) const
+    std::string getAvailableActions(Transport transport) const
     {
-        String actions = "";
+        std::string actions;
         for (uint8_t i = 0; i < _registeredActionsCount; i++)
         {
             if (isTransportEnabled(_actions[i], transport))

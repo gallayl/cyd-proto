@@ -4,6 +4,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
+#include <string>
 #include <utility>
 
 enum class FeatureState : uint8_t
@@ -25,7 +26,7 @@ class Feature
 {
 public:
     Feature(
-        String name = "featureName", FeatureSetupFunction setupCallback = []() { return FeatureState::PENDING; },
+        std::string name = "featureName", FeatureSetupFunction setupCallback = []() { return FeatureState::PENDING; },
         FeatureLoopFunction loopCallback = []() {}, FeatureTeardownFunction teardownCallback = nullptr,
         bool autoStart = true)
         : _featureName(std::move(name)), _onSetup(setupCallback), _onLoop(loopCallback), _onTeardown(teardownCallback),
@@ -118,7 +119,7 @@ public:
         this->_featureState = FeatureState::STOPPED;
     }
 
-    const String &GetFeatureName() const
+    const std::string &GetFeatureName() const
     {
         return this->_featureName;
     }
@@ -144,7 +145,7 @@ public:
     }
 
 protected:
-    String _featureName;
+    std::string _featureName;
     FeatureSetupFunction _onSetup;
     FeatureLoopFunction _onLoop;
     FeatureTeardownFunction _onTeardown;

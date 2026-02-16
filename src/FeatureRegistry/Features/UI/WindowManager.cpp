@@ -16,9 +16,9 @@ WindowManager &windowManager()
 static void setupWindowCallbacks(WindowManager &wm, OpenApp &oa)
 {
     WindowManager *wmPtr = &wm;
-    oa.window->setCloseCallback([wmPtr, name = String(oa.name)]() { wmPtr->closeApp(name.c_str()); });
-    oa.window->setMinimizeCallback([wmPtr, name = String(oa.name)]() { wmPtr->minimizeApp(name.c_str()); });
-    oa.window->setStateChangeCallback([wmPtr, name = String(oa.name)](WindowState state)
+    oa.window->setCloseCallback([wmPtr, name = oa.name]() { wmPtr->closeApp(name.c_str()); });
+    oa.window->setMinimizeCallback([wmPtr, name = oa.name]() { wmPtr->minimizeApp(name.c_str()); });
+    oa.window->setStateChangeCallback([wmPtr, name = oa.name](WindowState state)
                                       { wmPtr->handleWindowStateChange(name.c_str(), state); });
 
     if (oa.app && oa.app->hasIcon())
@@ -51,7 +51,7 @@ void WindowManager::openApp(const char *appName)
     // find factory in registry
     for (auto &entry : appRegistry())
     {
-        if (String(entry.name) == appName)
+        if (std::string(entry.name) == appName)
         {
             openApp(appName, entry.factory());
             return;
@@ -294,7 +294,7 @@ void WindowManager::handleTouch(int px, int py)
             auto *focused = getFocused();
             if (&_openApps[i] != focused)
             {
-                String name = _openApps[i].name;
+                std::string name = _openApps[i].name;
                 focusApp(name.c_str());
             }
             // top non-minimized window gets the touch

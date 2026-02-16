@@ -3,6 +3,8 @@
 #include "../config.h"
 #include <FS.h>
 #include <LittleFS.h>
+#include <string>
+#include "../utils/StringUtil.h"
 
 #if ENABLE_SD_CARD
 #include <SD.h>
@@ -11,7 +13,7 @@
 struct ResolvedPath
 {
     fs::FS *fs;
-    String localPath;
+    std::string localPath;
     bool valid;
 };
 
@@ -24,12 +26,12 @@ inline bool isSdMounted()
 #endif
 }
 
-inline ResolvedPath resolveVirtualPath(const String &virtualPath)
+inline ResolvedPath resolveVirtualPath(const std::string &virtualPath)
 {
-    if (virtualPath.startsWith("/flash"))
+    if (StringUtil::startsWith(virtualPath, "/flash"))
     {
-        String local = virtualPath.substring(6); // strip "/flash"
-        if (local.isEmpty())
+        std::string local = virtualPath.substr(6); // strip "/flash"
+        if (local.empty())
         {
             local = "/";
         }
@@ -37,10 +39,10 @@ inline ResolvedPath resolveVirtualPath(const String &virtualPath)
     }
 
 #if ENABLE_SD_CARD
-    if (virtualPath.startsWith("/sd"))
+    if (StringUtil::startsWith(virtualPath, "/sd"))
     {
-        String local = virtualPath.substring(3); // strip "/sd"
-        if (local.isEmpty())
+        std::string local = virtualPath.substr(3); // strip "/sd"
+        if (local.empty())
         {
             local = "/";
         }
@@ -51,7 +53,13 @@ inline ResolvedPath resolveVirtualPath(const String &virtualPath)
     return {nullptr, "", false};
 }
 
-inline String getVirtualPrefix(fs::FS *fs)
+// Compatibility overload for code not yet migrated from Arduino String
+inline ResolvedPath resolveVirtualPath(const String &virtualPath)
+{
+    return resolveVirtualPath(std::string(virtualPath.c_str()));
+}
+
+inline std::string getVirtualPrefix(fs::FS *fs)
 {
     if (fs == &LittleFS)
     {

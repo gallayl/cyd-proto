@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <string>
 #include <vector>
 #include "container.h"
 #include "../Renderer.h"
@@ -20,11 +21,11 @@ public:
         setBounds(ix, iy, iw, ih);
     }
 
-    void setItems(const std::vector<String> &items)
+    void setItems(const std::vector<std::string> &items)
     {
         _items = items;
     }
-    void addItem(const String &item)
+    void addItem(const std::string &item)
     {
         _items.push_back(item);
     }
@@ -43,11 +44,11 @@ public:
     {
         return selectedIndex;
     }
-    String getSelectedText() const
+    std::string getSelectedText() const
     {
         if (selectedIndex >= 0 && selectedIndex < (int)_items.size())
             return _items[selectedIndex];
-        return String();
+        return std::string();
     }
 
     void setOnChange(ChangeCb cb)
@@ -99,7 +100,7 @@ public:
             int16_t th = c.fontHeight();
             c.setClipRect(drawX() + 3, drawY() + 2, width - arrowW - 4, height - 4);
             c.setCursor(drawX() + 3, drawY() + (height - th) / 2);
-            c.print(_items[selectedIndex]);
+            c.print(_items[selectedIndex].c_str());
             c.clearClipRect();
         }
 
@@ -165,7 +166,7 @@ public:
     }
 
 private:
-    std::vector<String> _items;
+    std::vector<std::string> _items;
     int selectedIndex{-1};
     bool open{false};
     bool pressing{false};
@@ -214,7 +215,7 @@ private:
             }
             int16_t th = c.fontHeight();
             c.setCursor(dropX + 4, curY + (itemH - th) / 2);
-            c.print(_items[i]);
+            c.print(_items[i].c_str());
             curY += itemH;
         }
     }

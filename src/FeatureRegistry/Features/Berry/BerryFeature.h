@@ -13,22 +13,23 @@ extern "C"
 }
 
 #include <vector>
+#include <string>
 #include <Arduino.h>
 
 struct BerryScriptInfo
 {
-    String name;
-    String path;
-    String startMenu;
-    String iconType;  // "builtin", "file", "procedural", or empty
-    String iconValue; // builtin name, file path, or empty
+    std::string name;
+    std::string path;
+    std::string startMenu;
+    std::string iconType;  // "builtin", "file", "procedural", or empty
+    std::string iconValue; // builtin name, file path, or empty
 };
 
-BerryScriptInfo parseAppMetadata(const String &path);
+BerryScriptInfo parseAppMetadata(const std::string &path);
 
 bvm *getBerryVM();
 std::vector<BerryScriptInfo> scanBerryScripts(const char *dir = "/berry/apps");
-void openBerryScript(const String &filePath);
-void openBerryPanel(const String &filePath);
+void openBerryScript(const std::string &filePath);
+void openBerryPanel(const std::string &filePath);
 
 #endif // ENABLE_BERRY

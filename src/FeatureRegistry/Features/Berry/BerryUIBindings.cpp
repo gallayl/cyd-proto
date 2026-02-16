@@ -26,7 +26,9 @@
 #include <ArduinoJson.h>
 #include <LovyanGFX.hpp>
 #include <new>
+#include <string>
 #include <Esp.h>
+#include "../../../utils/System.h"
 
 // --- Current app context ---
 
@@ -57,8 +59,8 @@ public:
         }
         else
         {
-            loggerInstance->Error("BerryCanvas: createSprite(" + String(w) + "x" + String(h) + " @" + String(depth) +
-                                  "bpp) failed — free heap: " + String(ESP.getFreeHeap()));
+            loggerInstance->Error(std::string("BerryCanvas: createSprite(") + std::to_string(w) + "x" + std::to_string(h) + " @" + std::to_string(depth) +
+                                  "bpp) failed — free heap: " + std::to_string(getFreeHeap()));
         }
     }
 
@@ -257,7 +259,7 @@ static constexpr size_t BERRY_MIN_FREE_HEAP = 4096;
 
 template <typename T, typename... Args> static std::unique_ptr<T> safeAlloc(Args &&...args)
 {
-    if (ESP.getFreeHeap() < BERRY_MIN_FREE_HEAP)
+    if (getFreeHeap() < BERRY_MIN_FREE_HEAP)
         return nullptr;
     auto *raw = new (std::nothrow) T(std::forward<Args>(args)...);
     return std::unique_ptr<T>(raw);
@@ -750,7 +752,7 @@ static int ui_filelist_set_items(bvm *vm)
     for (JsonObject obj : arr)
     {
         UI::FileItem item;
-        item.name = String(obj["name"] | "?");
+        item.name = obj["name"] | "?";
         item.size = obj["size"] | 0;
         item.isDir = obj["isDir"] | false;
         item.lastWrite = obj["lastWrite"] | 0;
@@ -830,9 +832,9 @@ static int ui_on_change(bvm *vm)
     else if (h->type == HandleType::TEXTFIELD)
     {
         static_cast<UI::TextField *>(h->ptr)->setOnChange(
-            [appPtr, cbId](const String &text)
+            [appPtr, cbId](const std::string &text)
             {
-                String t = text;
+                std::string t = text;
                 appPtr->callBerryCallbackWithArgs(cbId,
                                                   [t](bvm *v) -> int
                                                   {
@@ -1134,7 +1136,7 @@ static int ui_bounds(bvm *vm)
 
     // Create and return a list with the bounds
     // Simplest approach: evaluate Berry list literal
-    String code = "return [" + String(bx) + "," + String(by) + "," + String(bw) + "," + String(bh) + "]";
+    std::string code = std::string("return [") + std::to_string(bx) + "," + std::to_string(by) + "," + std::to_string(bw) + "," + std::to_string(bh) + "]";
     be_loadbuffer(vm, "bounds", code.c_str(), code.length());
     be_pcall(vm, 0);
     // Result is now at top of stack
@@ -1556,8 +1558,8 @@ static int ui_popup(bvm *vm)
     int w = be_toint(vm, 3);
     int h = be_toint(vm, 4);
 
-    loggerInstance->Info("ui.popup: creating at (" + String(x) + "," + String(y) + "," + String(w) + "," + String(h) +
-                         ") screen=" + String(UI::Theme::ScreenWidth()) + "x" + String(UI::Theme::ScreenHeight()));
+    loggerInstance->Info(std::string("ui.popup: creating at (") + std::to_string(x) + "," + std::to_string(y) + "," + std::to_string(w) + "," + std::to_string(h) +
+                         ") screen=" + std::to_string(UI::Theme::ScreenWidth()) + "x" + std::to_string(UI::Theme::ScreenHeight()));
     auto *popup = UI::windowManager().createPopup(x, y, w, h, app);
     if (!popup)
         be_return_nil(vm);
@@ -1573,7 +1575,7 @@ static int ui_show_popup(bvm *vm)
     auto *app = berryCurrentApp();
     if (!app || be_top(vm) < 1)
     {
-        loggerInstance->Error(F("show_popup: no app or missing arg"));
+        loggerInstance->Error("show_popup: no app or missing arg");
         be_return_nil(vm);
     }
 
@@ -1581,22 +1583,22 @@ static int ui_show_popup(bvm *vm)
     auto *entry = app->getHandle(h);
     if (!entry)
     {
-        loggerInstance->Error("show_popup: invalid handle " + String(h));
+        loggerInstance->Error(std::string("show_popup: invalid handle ") + std::to_string(h));
         be_return_nil(vm);
     }
 
     auto *popup = asPopup(entry);
     if (!popup)
     {
-        loggerInstance->Error("show_popup: handle " + String(h) + " is not a POPUP (type=" + String((int)entry->type) +
+        loggerInstance->Error(std::string("show_popup: handle ") + std::to_string(h) + " is not a POPUP (type=" + std::to_string((int)entry->type) +
                               ")");
         be_return_nil(vm);
     }
 
     int bx, by, bw, bh;
     popup->getBounds(bx, by, bw, bh);
-    loggerInstance->Info("show_popup: handle=" + String(h) + " bounds=(" + String(bx) + "," + String(by) + "," +
-                         String(bw) + "," + String(bh) + ") children=" + String(popup->getChildren().size()));
+    loggerInstance->Info(std::string("show_popup: handle=") + std::to_string(h) + " bounds=(" + std::to_string(bx) + "," + std::to_string(by) + "," +
+                         std::to_string(bw) + "," + std::to_string(bh) + ") children=" + std::to_string(popup->getChildren().size()));
     popup->show();
     UI::markDirty();
     be_return_nil(vm);
