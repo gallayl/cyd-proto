@@ -420,6 +420,6 @@ static Feature *createuiFeature()
     return f;
 }
 
-static Feature *uiFeature = createuiFeature();
+Feature *uiFeature = createuiFeature();
 
 #endif
