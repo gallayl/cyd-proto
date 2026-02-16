@@ -18,7 +18,7 @@ struct TransportConfig
     bool scripting = true;
 };
 
-typedef String (*ActionHandler)(const String &command);
+using ActionHandler = String (*)(const String &command);
 
 struct FeatureAction
 {

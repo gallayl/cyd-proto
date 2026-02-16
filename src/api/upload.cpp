@@ -1,6 +1,7 @@
 #include "upload.h"
 #include "../mime.h"
 #include "../fs/VirtualFS.h"
+#include "../FeatureRegistry/Features/Logging.h"
 #include <Arduino.h>
 
 ArRequestHandlerFunction onPostUploadFiles = ([](AsyncWebServerRequest *request) {
@@ -70,7 +71,7 @@ static bool mkdirs(fs::FS &fs, const String &filePath)
     return true;
 }
 
-ArUploadHandlerFunction uploadFiles = ([](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
+ArUploadHandlerFunction uploadFiles = ([](AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final)
                                        {
     // If there's already an error, skip further processing
     if (request->_tempObject != nullptr) {

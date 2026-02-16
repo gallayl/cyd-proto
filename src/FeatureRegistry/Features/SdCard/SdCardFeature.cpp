@@ -145,7 +145,7 @@ Feature *SdCardFeature = new Feature(
     "SdCard",
     []()
     {
-        ActionRegistryInstance->RegisterAction(&sdAction);
+        actionRegistryInstance->registerAction(&sdAction);
 
         // Attempt auto-mount at startup
         sdSPI.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);

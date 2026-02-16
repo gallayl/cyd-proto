@@ -327,9 +327,9 @@ static Feature *createUiFeature()
 
             UI::desktop().init();
 
-            ActionRegistryInstance->RegisterAction(&screenAction);
-            ActionRegistryInstance->RegisterAction(&pageAction);
-            ActionRegistryInstance->RegisterAction(&wmAction);
+            actionRegistryInstance->registerAction(&screenAction);
+            actionRegistryInstance->registerAction(&pageAction);
+            actionRegistryInstance->registerAction(&wmAction);
 
             esp_timer_create_args_t args = {};
             args.callback = [](void *)

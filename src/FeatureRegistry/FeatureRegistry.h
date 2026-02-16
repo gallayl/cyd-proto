@@ -133,7 +133,7 @@ public:
         }
 
 #if ENABLE_WEBSERVER
-        ActionRegistryInstance->WireRestEndpoints();
+        actionRegistryInstance->wireRestEndpoints();
 #endif
     }
 

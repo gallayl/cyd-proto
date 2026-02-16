@@ -32,7 +32,7 @@ private:
     }
 
 public:
-    void RegisterAction(FeatureAction *action)
+    void registerAction(FeatureAction *action)
     {
         std::lock_guard<std::mutex> lock(_mutex);
         if (_registeredActionsCount >= ACTIONS_SIZE)
@@ -44,7 +44,7 @@ public:
         _registeredActionsCount++;
     }
 
-    String Execute(const String &command, Transport transport)
+    String execute(const String &command, Transport transport)
     {
         ActionHandler handler = nullptr;
         {
@@ -63,15 +63,15 @@ public:
                 }
             }
         }
-        if (handler)
+        if (handler != nullptr)
         {
             return handler(command);
         }
         return String("{\"message\": \"Unknown action: " + CommandParser::GetCommandName(command) +
-                      ".\", \"availableActions\": \"" + GetAvailableActions(transport) + "\"}");
+                      ".\", \"availableActions\": \"" + getAvailableActions(transport) + "\"}");
     }
 
-    String GetAvailableActions(Transport transport) const
+    String getAvailableActions(Transport transport) const
     {
         String actions = "";
         for (uint8_t i = 0; i < _registeredActionsCount; i++)
@@ -85,8 +85,8 @@ public:
     }
 
 #if ENABLE_WEBSERVER
-    void WireRestEndpoints();
+    void wireRestEndpoints();
 #endif
 };
 
-extern ActionRegistry *ActionRegistryInstance;
+extern ActionRegistry *actionRegistryInstance;

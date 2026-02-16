@@ -72,7 +72,7 @@ static FeatureAction listFilesAction = {.name = "list",
 Feature *LittleFsFeature = new Feature("LittleFsFeatures", []()
                                        {
     // Register format even if setup fails, so the command is available to fix the issue
-    ActionRegistryInstance->RegisterAction(&formatAction);
+    actionRegistryInstance->registerAction(&formatAction);
 
     if (!LittleFS.begin())
     {
@@ -80,7 +80,7 @@ Feature *LittleFsFeature = new Feature("LittleFsFeatures", []()
         return FeatureState::ERROR;
     }
 
-    ActionRegistryInstance->RegisterAction(&listFilesAction);
+    actionRegistryInstance->registerAction(&listFilesAction);
     return FeatureState::RUNNING; }, []() {
 
                                        });

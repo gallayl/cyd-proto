@@ -1,6 +1,7 @@
 #include "list.h"
 #include <LittleFS.h>
 #include "../fs/VirtualFS.h"
+#include "../mime.h"
 
 JsonDocument getFileList()
 {

@@ -228,7 +228,7 @@ FeatureAction rgbLedAction = {.name = "rgbLed",
                                   {
                                       LoggerInstance->Error("Unknown rgbLed subcommand: " + sub);
                                   }
-                                  return String("{\"event\": \"rgbLedCommandExecuted\"}");
+                                  return String("{\"event\": \"rgbLedCommandexecuted\"}");
                               },
                               .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
 
@@ -282,18 +282,18 @@ Feature *SystemFeatures = new Feature(
     []()
     {
 #if ENABLE_WIFI
-        ActionRegistryInstance->RegisterAction(&wifiAction);
+        actionRegistryInstance->registerAction(&wifiAction);
 #endif
-        ActionRegistryInstance->RegisterAction(&restartAction);
-        ActionRegistryInstance->RegisterAction(&featuresAction);
-        ActionRegistryInstance->RegisterAction(&infoAction);
-        ActionRegistryInstance->RegisterAction(&memoryAction);
+        actionRegistryInstance->registerAction(&restartAction);
+        actionRegistryInstance->registerAction(&featuresAction);
+        actionRegistryInstance->registerAction(&infoAction);
+        actionRegistryInstance->registerAction(&memoryAction);
 
         initRgbLed();
         initLightSensor();
-        ActionRegistryInstance->RegisterAction(&rgbLedAction);
-        ActionRegistryInstance->RegisterAction(&lightSensorAction);
-        ActionRegistryInstance->RegisterAction(&hallSensorAction);
+        actionRegistryInstance->registerAction(&rgbLedAction);
+        actionRegistryInstance->registerAction(&lightSensorAction);
+        actionRegistryInstance->registerAction(&hallSensorAction);
 
         return FeatureState::RUNNING;
     },

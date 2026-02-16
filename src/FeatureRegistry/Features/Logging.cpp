@@ -19,7 +19,7 @@ Feature *LoggingFeature = new Feature(
     "Logging",
     []()
     {
-        ActionRegistryInstance->RegisterAction(&logAction);
+        actionRegistryInstance->registerAction(&logAction);
         return FeatureState::RUNNING;
     },
     []() {});

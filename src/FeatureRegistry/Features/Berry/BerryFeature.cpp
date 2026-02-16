@@ -168,7 +168,7 @@ static int native_action(bvm *vm)
     if (argc >= 1 && be_isstring(vm, 1))
     {
         const char *cmd = be_tostring(vm, 1);
-        String result = ActionRegistryInstance->Execute(String(cmd), Transport::SCRIPTING);
+        String result = actionRegistryInstance->execute(String(cmd), Transport::SCRIPTING);
         be_pushstring(vm, result.c_str());
         be_return(vm);
     }
@@ -438,7 +438,7 @@ Feature *BerryFeature = new Feature(
         registerBerryUIModule(berry_vm);
 #endif
 
-        ActionRegistryInstance->RegisterAction(&berryAction);
+        actionRegistryInstance->registerAction(&berryAction);
 
         if (LittleFS.exists("/berry/autoexec.be"))
         {

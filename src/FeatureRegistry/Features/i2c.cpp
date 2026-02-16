@@ -41,7 +41,7 @@ Feature *i2cFeature = new Feature(
     {
         Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
 
-        ActionRegistryInstance->RegisterAction(&i2cAction);
+        actionRegistryInstance->registerAction(&i2cAction);
 
         return FeatureState::RUNNING;
     },

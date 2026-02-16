@@ -30,7 +30,7 @@ void initWebSockets()
             {
                 String str;
                 str.concat((const char *)data, len);
-                String response = ActionRegistryInstance->Execute(str, Transport::WS);
+                String response = actionRegistryInstance->execute(str, Transport::WS);
                 client->text(response);
             }
         });

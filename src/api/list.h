@@ -3,7 +3,6 @@
 #include <ESPAsyncWebServer.h>
 #include <ArduinoJson.h>
 #include <FS.h>
-#include "../mime.h"
 
 JsonDocument getFileList();
 JsonDocument getFileList(const char *path);

@@ -14,7 +14,7 @@ Feature *SerialReadFeature = new Feature(
             buf[len] = '\0';
             String command(buf);
             command.replace("\r", "");
-            String response = ActionRegistryInstance->Execute(command, Transport::CLI);
+            String response = actionRegistryInstance->execute(command, Transport::CLI);
             Serial.println(response);
         }
     });
