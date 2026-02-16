@@ -1,5 +1,6 @@
 # app: Features
 # startMenu: /System/Features
+# icon: builtin/features
 import json
 
 class FeaturesApp

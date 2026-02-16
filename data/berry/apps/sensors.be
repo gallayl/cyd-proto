@@ -1,5 +1,6 @@
 # app: Sensors
 # startMenu: /Programs/Sensors
+# icon: builtin/sensors
 import json
 
 class SensorsApp

@@ -20,6 +20,8 @@ struct BerryScriptInfo
     String name;
     String path;
     String startMenu;
+    String iconType;  // "builtin", "file", "procedural", or empty
+    String iconValue; // builtin name, file path, or empty
 };
 
 BerryScriptInfo parseAppMetadata(const String &path);

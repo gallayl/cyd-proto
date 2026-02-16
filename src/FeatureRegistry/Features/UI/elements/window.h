@@ -56,6 +56,13 @@ public:
         maxBtn.setCallback([this]() { cycleWindowState(); });
     }
 
+    using IconDrawer = std::function<void(LGFX_Sprite &, int, int, int)>;
+
+    void setIconDrawer(IconDrawer drawer)
+    {
+        iconDrawer = std::move(drawer);
+    }
+
     void setCloseCallback(CloseCallback cb)
     {
         closeBtn.setCallback(std::move(cb));
@@ -195,8 +202,17 @@ public:
         int btnSpacing = 2;
         int btnsW = Theme::WinBtnSize * 3 + btnSpacing * 2 + 2;
 
+        // title bar icon (16x16 drawn at left of title bar)
+        int titleTextOffset = 2;
+        if (iconDrawer)
+        {
+            int iconSize = tbH - 2;
+            iconDrawer(c, drawX() + bw + 2, drawY() + bw + 1, iconSize);
+            titleTextOffset = iconSize + 4;
+        }
+
         // title text (child — absolute coords for setBounds)
-        titleLabel.setBounds(x + bw + 2, y + bw, tbW - btnsW - 4, tbH);
+        titleLabel.setBounds(x + bw + titleTextOffset, y + bw, tbW - btnsW - titleTextOffset - 2, tbH);
         titleLabel.setTextColor(tbText, tbColor);
         titleLabel.setAlign(TextAlign::LEFT);
         titleLabel.draw();
@@ -375,6 +391,7 @@ private:
 
     MinimizeCallback onMinimize;
     StateChangeCallback onStateChange;
+    IconDrawer iconDrawer;
 };
 
 } // namespace UI

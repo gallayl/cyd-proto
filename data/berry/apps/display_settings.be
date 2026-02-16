@@ -1,5 +1,6 @@
 # app: Display
 # startMenu: /Settings/Display
+# icon: builtin/display
 
 class DisplaySettingsApp
   var name

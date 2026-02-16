@@ -1,5 +1,6 @@
 # app: WiFi
 # startMenu: /Settings/WiFi
+# icon: builtin/wifi
 import json
 
 class WifiApp

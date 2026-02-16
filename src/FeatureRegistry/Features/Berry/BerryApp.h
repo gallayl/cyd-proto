@@ -12,6 +12,7 @@
 #include "BerryUIBindings.h"
 #include "../Logging.h"
 #include "../../../fs/VirtualFS.h"
+#include "../UI/BuiltinIcons.h"
 #include <vector>
 
 extern "C"
@@ -33,7 +34,8 @@ enum class HandleType : uint8_t
     GROUPBOX,
     TABS,
     FILELIST,
-    POPUP
+    POPUP,
+    ICON
 };
 
 struct HandleEntry
@@ -45,11 +47,46 @@ struct HandleEntry
 class BerryApp : public UI::App
 {
 public:
-    BerryApp(const String &scriptPath, const String &appName) : _scriptPath(scriptPath), _name(appName) {}
+    BerryApp(const String &scriptPath, const String &appName, const String &iconType = "", const String &iconValue = "",
+             const String &startMenu = "")
+        : _scriptPath(scriptPath), _name(appName), _iconType(iconType), _iconValue(iconValue), _startMenu(startMenu)
+    {
+    }
 
     const char *name() const override
     {
         return _name.c_str();
+    }
+
+    const String &getIconType() const
+    {
+        return _iconType;
+    }
+    const String &getIconValue() const
+    {
+        return _iconValue;
+    }
+
+    bool hasIcon() const override
+    {
+        return true;
+    }
+
+    void drawIcon(LGFX_Sprite &canvas, int x, int y, int size) override
+    {
+        if (_iconType == "builtin" && !_iconValue.isEmpty())
+        {
+            UI::drawBuiltinIcon(canvas, _iconValue.c_str(), x, y, size);
+        }
+        else if (_iconType.isEmpty() && !_startMenu.isEmpty())
+        {
+            const char *defaultIcon = UI::getDefaultIconForCategory(_startMenu);
+            UI::drawBuiltinIcon(canvas, defaultIcon, x, y, size);
+        }
+        else
+        {
+            UI::drawBuiltinIcon(canvas, "generic_file", x, y, size);
+        }
     }
 
     void setup(UI::Container &content, int w, int h) override
@@ -281,6 +318,9 @@ public:
 private:
     String _scriptPath;
     String _name;
+    String _iconType;
+    String _iconValue;
+    String _startMenu;
     String _instanceGlobal;
     std::vector<HandleEntry> _handles;
     std::vector<String> _callbackGlobals;

@@ -12,7 +12,7 @@ class TaskbarApp
 
   # start menu state
   var categories       # ordered list of category names
-  var cat_apps         # map: category name -> list of {label, path}
+  var cat_apps         # map: category name -> list of {label, path, iconType, iconValue}
   var menu_popup       # main menu popup handle
   var sub_popup        # submenu popup handle
   var menu_visible
@@ -75,11 +75,43 @@ class TaskbarApp
       var entry = {}
       entry['label'] = label
       entry['path'] = path
+      var it = app.find('iconType')
+      if it != nil
+        entry['iconType'] = app['iconType']
+      else
+        entry['iconType'] = ''
+      end
+      var iv = app.find('iconValue')
+      if iv != nil
+        entry['iconValue'] = app['iconValue']
+      else
+        entry['iconValue'] = ''
+      end
       cat_map[category].push(entry)
     end
 
     self.categories = cat_order
     self.cat_apps = cat_map
+  end
+
+  def get_icon_name(app)
+    var icon_type = app['iconType']
+    var icon_value = app['iconValue']
+    if icon_type == 'builtin' && icon_value != ''
+      return icon_value
+    end
+    return 'generic_file'
+  end
+
+  def get_category_icon(cat)
+    if cat == 'System'
+      return 'computer'
+    elif cat == 'Settings'
+      return 'settings'
+    elif cat == 'Programs'
+      return 'generic_file'
+    end
+    return 'folder'
   end
 
   def build_menu()
@@ -90,6 +122,8 @@ class TaskbarApp
     var sep_h = ui.MENU_SEPARATOR_HEIGHT
     var menu_w = ui.MENU_WIDTH
     var pad = 4
+    var icon_sz = 16
+    var icon_pad = icon_sz + 4
 
     # main menu height: categories + separator + Restart + padding
     var menu_h = num_cats * item_h + sep_h + item_h + pad
@@ -102,8 +136,15 @@ class TaskbarApp
     var btn_y = 2
     for i : 0 .. num_cats - 1
       var cat = self.categories[i]
-      var btn = ui.button(self.menu_popup, cat, 2, btn_y, menu_w - 4, item_h)
+
+      # category icon
+      var icon_y = btn_y + (item_h - icon_sz) / 2
+      ui.icon(self.menu_popup, self.get_category_icon(cat), 4, icon_y, icon_sz)
+
+      # category button (offset for icon)
+      var btn = ui.button(self.menu_popup, cat, icon_pad + 2, btn_y, menu_w - icon_pad - 20, item_h)
       self.style_menu_item(btn)
+
       # filled arrow on right side
       var arrow = ui.label(self.menu_popup, '\x10', menu_w - 16, btn_y, 12, item_h)
       ui.set_text_color(arrow, ui.TEXT_COLOR, ui.MENU_BG)
@@ -115,8 +156,10 @@ class TaskbarApp
     # skip separator gap
     btn_y += sep_h
 
-    # Restart button
-    var restart_btn = ui.button(self.menu_popup, 'Restart', 2, btn_y, menu_w - 4, item_h)
+    # Restart icon + button
+    var restart_icon_y = btn_y + (item_h - icon_sz) / 2
+    ui.icon(self.menu_popup, 'shutdown', 4, restart_icon_y, icon_sz)
+    var restart_btn = ui.button(self.menu_popup, 'Restart', icon_pad + 2, btn_y, menu_w - icon_pad - 6, item_h)
     self.style_menu_item(restart_btn)
     ui.on_click(restart_btn, def () action('restart') end)
 
@@ -184,6 +227,8 @@ class TaskbarApp
 
     var item_h = ui.MENU_ITEM_HEIGHT
     var pad = 4
+    var icon_sz = 16
+    var icon_pad = icon_sz + 4
     var sub_w = ui.SUB_MENU_WIDTH
     var sub_h = apps.size() * item_h + pad
 
@@ -201,7 +246,12 @@ class TaskbarApp
     var me = self
     var btn_y = 2
     for app : apps
-      var btn = ui.button(self.sub_popup, app['label'], 2, btn_y, sub_w - 4, item_h)
+      # app icon (lightweight, no sprite allocation)
+      var icon_y = btn_y + (item_h - icon_sz) / 2
+      ui.icon(self.sub_popup, self.get_icon_name(app), 4, icon_y, icon_sz)
+
+      # button with text offset for icon space
+      var btn = ui.button(self.sub_popup, app['label'], icon_pad + 2, btn_y, sub_w - icon_pad - 6, item_h)
       self.style_menu_item(btn)
       var path = app['path']
       ui.on_click(btn, def ()

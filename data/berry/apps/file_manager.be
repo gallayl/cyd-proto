@@ -1,5 +1,6 @@
 # app: File Manager
 # startMenu: /System/File Manager
+# icon: builtin/file_manager
 import json
 
 class FileManagerApp

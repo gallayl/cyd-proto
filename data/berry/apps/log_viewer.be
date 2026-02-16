@@ -1,5 +1,6 @@
 # app: Log Viewer
 # startMenu: /System/Log Viewer
+# icon: builtin/log_viewer
 import json
 
 class LogViewerApp

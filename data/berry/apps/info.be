@@ -1,5 +1,6 @@
 # app: Info
 # startMenu: /System/Info
+# icon: builtin/info
 import json
 
 class InfoApp

@@ -20,6 +20,13 @@ static void setupWindowCallbacks(WindowManager &wm, OpenApp &oa)
     oa.window->setMinimizeCallback([wmPtr, name = String(oa.name)]() { wmPtr->minimizeApp(name.c_str()); });
     oa.window->setStateChangeCallback([wmPtr, name = String(oa.name)](WindowState state)
                                       { wmPtr->handleWindowStateChange(name.c_str(), state); });
+
+    if (oa.app && oa.app->hasIcon())
+    {
+        App *appPtr = oa.app.get();
+        oa.window->setIconDrawer([appPtr](LGFX_Sprite &c, int x, int y, int sz)
+                                 { appPtr->drawIcon(c, x, y, sz); });
+    }
 }
 
 void WindowManager::openApp(const char *appName)

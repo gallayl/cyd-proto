@@ -1,5 +1,6 @@
 # app: RGB LED
 # startMenu: /Programs/RGB LED
+# icon: builtin/rgb_led
 
 class RgbLedApp
   var name

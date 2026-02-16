@@ -50,7 +50,7 @@ BerryScriptInfo parseAppMetadata(const String &path)
         return info;
     }
 
-    for (int line = 0; line < 10 && (f.available() != 0); line++)
+    for (int line = 0; line < 15 && (f.available() != 0); line++)
     {
         String l = f.readStringUntil('\n');
         l.trim();
@@ -63,6 +63,25 @@ BerryScriptInfo parseAppMetadata(const String &path)
         {
             info.startMenu = l.substring(12);
             info.startMenu.trim();
+        }
+        else if (l.startsWith("# icon:"))
+        {
+            String iconSpec = l.substring(7);
+            iconSpec.trim();
+            if (iconSpec.startsWith("builtin/"))
+            {
+                info.iconType = "builtin";
+                info.iconValue = iconSpec.substring(8);
+            }
+            else if (iconSpec == "procedural")
+            {
+                info.iconType = "procedural";
+            }
+            else if (iconSpec.startsWith("/"))
+            {
+                info.iconType = "file";
+                info.iconValue = iconSpec;
+            }
         }
         if (!info.name.isEmpty() && !info.startMenu.isEmpty())
         {
@@ -104,7 +123,7 @@ void openBerryScript(const String &filePath)
         return;
     }
 
-    auto *app = new BerryApp(path, meta.name);
+    auto *app = new BerryApp(path, meta.name, meta.iconType, meta.iconValue, meta.startMenu);
     UI::windowManager().openApp(meta.name.c_str(), app);
 }
 
@@ -122,7 +141,7 @@ void openBerryPanel(const String &filePath)
         return;
     }
 
-    auto *app = new BerryApp(path, meta.name);
+    auto *app = new BerryApp(path, meta.name, meta.iconType, meta.iconValue, meta.startMenu);
     UI::windowManager().openPanel(meta.name.c_str(), app, 0, UI::Theme::TaskbarY(), UI::Theme::ScreenWidth(),
                                   UI::Theme::TaskbarHeight);
 }
@@ -404,7 +423,8 @@ static String berryHandlerImpl(const String &command)
             }
 
             json += "{\"name\":\"" + scripts[i].name + "\",\"path\":\"" + scripts[i].path + "\",\"startMenu\":\"" + sm +
-                    "\",\"category\":\"" + category + "\",\"label\":\"" + label + "\"}";
+                    "\",\"category\":\"" + category + "\",\"label\":\"" + label +
+                    "\",\"iconType\":\"" + scripts[i].iconType + "\",\"iconValue\":\"" + scripts[i].iconValue + "\"}";
         }
         json += "]}";
         return json;
@@ -422,7 +442,8 @@ static String berryHandlerImpl(const String &command)
             path = "/" + path;
         }
         auto meta = parseAppMetadata(path);
-        return R"({"app":")" + meta.name + "\",\"startMenu\":\"" + meta.startMenu + "\"}";
+        return R"({"app":")" + meta.name + "\",\"startMenu\":\"" + meta.startMenu +
+               "\",\"iconType\":\"" + meta.iconType + "\",\"iconValue\":\"" + meta.iconValue + "\"}";
     }
 
     return String(F("{\"error\": \"Usage: berry eval <code> | berry run <path> | berry open <appname> | berry panel "

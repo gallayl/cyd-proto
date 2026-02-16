@@ -4,6 +4,8 @@
 
 #include "BerryApp.h"
 #include "../UI/elements/container.h"
+#include "../UI/elements/icon.h"
+#include "../UI/BuiltinIcons.h"
 #include "../UI/elements/label.h"
 #include "../UI/elements/button.h"
 #include "../UI/elements/scrollable.h"
@@ -71,7 +73,7 @@ public:
         if (!mounted || !_spriteOk)
             return;
         auto &c = UI::canvas();
-        sprite.pushSprite(&c, x, y);
+        sprite.pushSprite(&c, drawX(), drawY());
     }
 
     void onTouch(int px, int py) override
@@ -667,6 +669,35 @@ static int ui_filelist(bvm *vm)
         be_return_nil(vm);
 
     int handle = app->addHandle(ptr, HandleType::FILELIST);
+    be_pushint(vm, handle);
+    be_return(vm);
+}
+
+// ui.icon(parent, icon_name, x, y, size) -> handle
+static int ui_icon(bvm *vm)
+{
+    auto *app = berryCurrentApp();
+    if (!app || be_top(vm) < 5)
+        be_return_nil(vm);
+
+    int parentH = be_toint(vm, 1);
+    const char *iconName = be_tostring(vm, 2);
+    int rx = be_toint(vm, 3);
+    int ry = be_toint(vm, 4);
+    int sz = be_toint(vm, 5);
+
+    int px, py, pw, ph;
+    getParentBounds(app, parentH, px, py, pw, ph);
+
+    auto ic = safeAlloc<UI::IconElement>(iconName, px + rx, py + ry, sz);
+    if (!ic)
+        be_return_nil(vm);
+
+    UI::IconElement *ptr = ic.get();
+    if (!addChildToParent(app, parentH, std::move(ic)))
+        be_return_nil(vm);
+
+    int handle = app->addHandle(ptr, HandleType::ICON);
     be_pushint(vm, handle);
     be_return(vm);
 }
@@ -1626,6 +1657,31 @@ static int ui_mark_dirty(bvm *vm)
     be_return_nil(vm);
 }
 
+// ui.draw_icon(canvas_handle, icon_name, x, y, size)
+static int ui_draw_icon(bvm *vm)
+{
+    auto *app = berryCurrentApp();
+    if (!app || be_top(vm) < 5)
+        be_return_nil(vm);
+
+    int canvasH = be_toint(vm, 1);
+    const char *iconName = be_tostring(vm, 2);
+    int ix = be_toint(vm, 3);
+    int iy = be_toint(vm, 4);
+    int sz = be_toint(vm, 5);
+
+    auto *h = app->getHandle(canvasH);
+    if (!h || h->type != HandleType::CANVAS)
+        be_return_nil(vm);
+
+    auto *cv = static_cast<BerryCanvasElement *>(h->ptr);
+    if (!cv || !cv->_spriteOk)
+        be_return_nil(vm);
+
+    UI::drawBuiltinIcon(cv->sprite, iconName, ix, iy, sz);
+    be_return_nil(vm);
+}
+
 // =================================================================
 // Module registration
 // =================================================================
@@ -1654,6 +1710,7 @@ void registerBerryUIModule(bvm *vm)
     reg("groupbox", ui_groupbox);
     reg("tabs", ui_tabs);
     reg("filelist", ui_filelist);
+    reg("icon", ui_icon);
 
     // property setters
     reg("set_text", ui_set_text);
@@ -1711,6 +1768,9 @@ void registerBerryUIModule(bvm *vm)
     reg("canvas_read_pixel", ui_canvas_read_pixel);
     reg("canvas_flood_fill", ui_canvas_flood_fill);
     reg("canvas_set_palette", ui_canvas_set_palette);
+
+    // icon drawing
+    reg("draw_icon", ui_draw_icon);
 
     // utility
     reg("color565", ui_color565);

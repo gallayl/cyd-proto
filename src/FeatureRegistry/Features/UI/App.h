@@ -5,6 +5,7 @@
 #include <functional>
 #include <vector>
 #include <memory>
+#include <LovyanGFX.hpp>
 #include "elements/container.h"
 
 namespace UI
@@ -20,6 +21,8 @@ public:
     virtual const char *name() const = 0;
     virtual void setup(Container &content, int w, int h) = 0;
     virtual void teardown() {}
+    virtual bool hasIcon() const { return false; }
+    virtual void drawIcon(LGFX_Sprite &canvas, int x, int y, int size) { (void)canvas; (void)x; (void)y; (void)size; }
 
     void scheduleTimer(uint32_t intervalMs, std::function<void()> cb)
     {
