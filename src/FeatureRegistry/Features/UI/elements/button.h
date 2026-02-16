@@ -69,18 +69,19 @@ public:
         if (!mounted)
             return;
         auto &c = canvas();
+        int dx = drawX(), dy = drawY();
 
         uint16_t light = pressed ? borderDarkColor : borderLightColor;
         uint16_t dark = pressed ? borderLightColor : borderDarkColor;
 
-        c.fillRect(x, y, width, height, bgColor);
+        c.fillRect(dx, dy, width, height, bgColor);
 
         // top/left light edge
-        c.drawFastHLine(x, y, width, light);
-        c.drawFastVLine(x, y, height, light);
+        c.drawFastHLine(dx, dy, width, light);
+        c.drawFastVLine(dx, dy, height, light);
         // bottom/right dark edge
-        c.drawFastHLine(x, y + height - 1, width, dark);
-        c.drawFastVLine(x + width - 1, y, height, dark);
+        c.drawFastHLine(dx, dy + height - 1, width, dark);
+        c.drawFastVLine(dx + width - 1, dy, height, dark);
 
         if (pressed)
         {

@@ -51,23 +51,23 @@ namespace UI
                 return;
             auto &c = canvas();
 
-            int borderY = y + Theme::GroupBoxTopPad / 2;
+            int borderY = drawY() + Theme::GroupBoxTopPad / 2;
             int borderH = height - Theme::GroupBoxTopPad / 2;
 
             // etched border: dark outer, light inner offset by 1px
-            c.drawRect(x + 1, borderY, width - 2, borderH, Theme::ButtonShadow);
-            c.drawRect(x + 2, borderY + 1, width - 2, borderH, Theme::ButtonHighlight);
+            c.drawRect(drawX() + 1, borderY, width - 2, borderH, Theme::ButtonShadow);
+            c.drawRect(drawX() + 2, borderY + 1, width - 2, borderH, Theme::ButtonHighlight);
 
             // label background + text
             if (label.length() > 0)
             {
                 c.setTextSize(1);
                 int16_t tw = c.textWidth(label);
-                int lx = x + Theme::GroupBoxPad + 4;
+                int lx = drawX() + Theme::GroupBoxPad + 4;
 
                 c.fillRect(lx - 2, borderY - 1, tw + 4, 3, Theme::WindowBg);
                 c.setTextColor(Theme::TextColor, Theme::WindowBg);
-                c.setCursor(lx, y);
+                c.setCursor(lx, drawY());
                 c.print(label);
             }
 

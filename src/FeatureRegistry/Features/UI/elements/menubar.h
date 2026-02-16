@@ -110,11 +110,11 @@ private:
     {
         auto &c = canvas();
 
-        c.fillRect(x, y, width, Theme::MenuBarHeight, Theme::MenuBg);
-        c.drawFastHLine(x, y + Theme::MenuBarHeight - 1, width, Theme::ButtonShadow);
+        c.fillRect(drawX(), drawY(), width, Theme::MenuBarHeight, Theme::MenuBg);
+        c.drawFastHLine(drawX(), drawY() + Theme::MenuBarHeight - 1, width, Theme::ButtonShadow);
 
         c.setTextSize(1);
-        int mx = x + 4;
+        int mx = drawX() + 4;
         for (int i = 0; i < (int)_menus.size(); i++)
         {
             int16_t tw = c.textWidth(_menus[i].label);
@@ -123,7 +123,7 @@ private:
             bool active = (i == openMenuIdx);
             if (active)
             {
-                c.fillRect(mx, y, itemW, Theme::MenuBarHeight - 1, Theme::MenuHighlight);
+                c.fillRect(mx, drawY(), itemW, Theme::MenuBarHeight - 1, Theme::MenuHighlight);
                 c.setTextColor(Theme::MenuHighlightText, Theme::MenuHighlight);
             }
             else
@@ -132,7 +132,7 @@ private:
             }
 
             int16_t th = c.fontHeight();
-            c.setCursor(mx + 6, y + (Theme::MenuBarHeight - th) / 2);
+            c.setCursor(mx + 6, drawY() + (Theme::MenuBarHeight - th) / 2);
             c.print(_menus[i].label);
             mx += itemW;
         }
@@ -148,6 +148,8 @@ private:
 
         int dx, dy;
         dropdownPos(dx, dy);
+        dx = dx - x + drawX();
+        dy = dy - y + drawY();
         int dw = Theme::MenuWidth;
         int dh = dropdownHeight();
 

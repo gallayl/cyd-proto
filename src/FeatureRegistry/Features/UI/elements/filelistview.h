@@ -79,13 +79,13 @@ public:
         auto &c = canvas();
 
         // sunken border
-        c.fillRect(x, y, width, height, TFT_WHITE);
-        c.drawFastHLine(x, y, width, Theme::ButtonShadow);
-        c.drawFastVLine(x, y, height, Theme::ButtonShadow);
-        c.drawFastHLine(x, y + height - 1, width, Theme::ButtonHighlight);
-        c.drawFastVLine(x + width - 1, y, height, Theme::ButtonHighlight);
+        c.fillRect(drawX(), drawY(), width, height, TFT_WHITE);
+        c.drawFastHLine(drawX(), drawY(), width, Theme::ButtonShadow);
+        c.drawFastVLine(drawX(), drawY(), height, Theme::ButtonShadow);
+        c.drawFastHLine(drawX(), drawY() + height - 1, width, Theme::ButtonHighlight);
+        c.drawFastVLine(drawX() + width - 1, drawY(), height, Theme::ButtonHighlight);
 
-        c.setClipRect(x + 1, y + 1, width - 2, height - 2);
+        c.setClipRect(drawX() + 1, drawY() + 1, width - 2, height - 2);
 
         switch (viewMode)
         {
@@ -229,8 +229,8 @@ private:
         int cols = (width - 4) / Theme::FileListIconGridW;
         if (cols < 1)
             cols = 1;
-        int startX = x + 2;
-        int startY = y + 2 - scrollOffset;
+        int startX = drawX() + 2;
+        int startY = drawY() + 2 - scrollOffset;
 
         c.setTextSize(1);
         for (int i = 0; i < (int)_items.size(); i++)
@@ -240,7 +240,7 @@ private:
             int ix = startX + col * Theme::FileListIconGridW;
             int iy = startY + row * Theme::FileListIconGridH;
 
-            if (iy + Theme::FileListIconGridH < y || iy > y + height)
+            if (iy + Theme::FileListIconGridH < drawY() || iy > drawY() + height)
                 continue;
 
             bool sel = (i == selectedIndex);
@@ -275,21 +275,21 @@ private:
 
     void drawListView(LGFX_Sprite &c)
     {
-        int startY = y + 2 - scrollOffset;
+        int startY = drawY() + 2 - scrollOffset;
         int rowH = Theme::FileListRowHeight;
 
         c.setTextSize(1);
         for (int i = 0; i < (int)_items.size(); i++)
         {
             int ry = startY + i * rowH;
-            if (ry + rowH < y || ry > y + height)
+            if (ry + rowH < drawY() || ry > drawY() + height)
                 continue;
 
             bool sel = (i == selectedIndex);
 
             if (sel)
             {
-                c.fillRect(x + 1, ry, width - 2, rowH, Theme::MenuHighlight);
+                c.fillRect(drawX() + 1, ry, width - 2, rowH, Theme::MenuHighlight);
                 c.setTextColor(Theme::MenuHighlightText, Theme::MenuHighlight);
             }
             else
@@ -299,9 +299,9 @@ private:
 
             // small icon
             int iconSz = rowH - 2;
-            drawDefaultIcon(c, x + 3, ry + 1, _items[i].isDir, iconSz);
+            drawDefaultIcon(c, drawX() + 3, ry + 1, _items[i].isDir, iconSz);
 
-            c.setCursor(x + 3 + iconSz + 4, ry + (rowH - c.fontHeight()) / 2);
+            c.setCursor(drawX() + 3 + iconSz + 4, ry + (rowH - c.fontHeight()) / 2);
             c.print(_items[i].name);
         }
     }
@@ -310,7 +310,7 @@ private:
     {
         int headerH = Theme::FileListDetailRowHeight;
         int rowH = Theme::FileListDetailRowHeight;
-        int startY = y + 2 - scrollOffset;
+        int startY = drawY() + 2 - scrollOffset;
 
         // column widths
         int nameW = width * 50 / 100;
@@ -322,19 +322,19 @@ private:
         // header
         {
             int hy = startY;
-            c.fillRect(x + 1, hy, width - 2, headerH, Theme::ButtonFace);
-            c.drawFastHLine(x + 1, hy, width - 2, Theme::ButtonHighlight);
-            c.drawFastHLine(x + 1, hy + headerH - 1, width - 2, Theme::ButtonShadow);
+            c.fillRect(drawX() + 1, hy, width - 2, headerH, Theme::ButtonFace);
+            c.drawFastHLine(drawX() + 1, hy, width - 2, Theme::ButtonHighlight);
+            c.drawFastHLine(drawX() + 1, hy + headerH - 1, width - 2, Theme::ButtonShadow);
 
             c.setTextColor(Theme::TextColor, Theme::ButtonFace);
             int16_t th = c.fontHeight();
             int textY = hy + (headerH - th) / 2;
 
-            c.setCursor(x + 4, textY);
+            c.setCursor(drawX() + 4, textY);
             c.print("Name");
-            c.setCursor(x + 4 + nameW, textY);
+            c.setCursor(drawX() + 4 + nameW, textY);
             c.print("Size");
-            c.setCursor(x + 4 + nameW + sizeW, textY);
+            c.setCursor(drawX() + 4 + nameW + sizeW, textY);
             c.print("Modified");
         }
 
@@ -342,13 +342,13 @@ private:
         for (int i = 0; i < (int)_items.size(); i++)
         {
             int ry = startY + headerH + i * rowH;
-            if (ry + rowH < y || ry > y + height)
+            if (ry + rowH < drawY() || ry > drawY() + height)
                 continue;
 
             bool sel = (i == selectedIndex);
             if (sel)
             {
-                c.fillRect(x + 1, ry, width - 2, rowH, Theme::MenuHighlight);
+                c.fillRect(drawX() + 1, ry, width - 2, rowH, Theme::MenuHighlight);
                 c.setTextColor(Theme::MenuHighlightText, Theme::MenuHighlight);
             }
             else
@@ -360,19 +360,19 @@ private:
             int textY = ry + (rowH - th) / 2;
 
             // name
-            c.setCursor(x + 4, textY);
+            c.setCursor(drawX() + 4, textY);
             String dispName = _items[i].isDir ? ("[" + _items[i].name + "]") : _items[i].name;
             c.print(dispName);
 
             // size
-            c.setCursor(x + 4 + nameW, textY);
+            c.setCursor(drawX() + 4 + nameW, textY);
             if (_items[i].isDir)
                 c.print("<DIR>");
             else
                 c.print(String(_items[i].size));
 
             // modified
-            c.setCursor(x + 4 + nameW + sizeW, textY);
+            c.setCursor(drawX() + 4 + nameW + sizeW, textY);
             if (_items[i].lastWrite > 0)
             {
                 struct tm *t = localtime(&_items[i].lastWrite);

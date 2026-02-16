@@ -89,19 +89,19 @@ public:
         if (tabCount == 0)
             return;
 
-        int tabBarY = y;
+        int tabBarY = drawY();
         int tabH = Theme::TabBarHeight;
 
         // content area background (below tabs)
         int cY = tabBarY + tabH;
         int cH = height - tabH;
-        c.fillRect(x, cY, width, cH, Theme::WindowBg);
+        c.fillRect(drawX(), cY, width, cH, Theme::WindowBg);
 
         // content area 3D raised border
-        c.drawFastHLine(x, cY, width, Theme::ButtonHighlight);
-        c.drawFastVLine(x, cY, cH, Theme::ButtonHighlight);
-        c.drawFastHLine(x, cY + cH - 1, width, Theme::ButtonShadow);
-        c.drawFastVLine(x + width - 1, cY, cH, Theme::ButtonShadow);
+        c.drawFastHLine(drawX(), cY, width, Theme::ButtonHighlight);
+        c.drawFastVLine(drawX(), cY, cH, Theme::ButtonHighlight);
+        c.drawFastHLine(drawX(), cY + cH - 1, width, Theme::ButtonShadow);
+        c.drawFastVLine(drawX() + width - 1, cY, cH, Theme::ButtonShadow);
 
         // draw tab buttons
         int tabW = width / tabCount;
@@ -109,7 +109,7 @@ public:
 
         for (int i = 0; i < tabCount; i++)
         {
-            int tx = x + i * tabW;
+            int tx = drawX() + i * tabW;
             int tw = (i < tabCount - 1) ? tabW : (width - i * tabW);
             bool active = (i == activeTab);
 

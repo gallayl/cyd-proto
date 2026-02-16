@@ -40,6 +40,7 @@ public:
             return;
 
         auto &c = canvas();
+        int oY = UI::stripOffsetY();
 
         constexpr int dlgW = 180;
         constexpr int padX = 8;
@@ -59,10 +60,19 @@ public:
         int dlgX = (Theme::ScreenWidth() - dlgW) / 2;
         int dlgY = (Theme::ScreenHeight() - dlgH) / 2;
 
+        // store absolute coords for hit-testing
         _bounds[0] = dlgX;
         _bounds[1] = dlgY;
         _bounds[2] = dlgW;
         _bounds[3] = dlgH;
+
+        // button uses absolute coords (its own draw applies strip offset)
+        int btnX = dlgX + (dlgW - btnW) / 2;
+        int btnY = dlgY + dlgH - btnH - btnPad / 2;
+        _okBtn.setBounds(btnX, btnY, btnW, btnH);
+
+        // offset dlgY for drawing
+        dlgY -= oY;
 
         // outer border (3D raised)
         c.fillRect(dlgX, dlgY, dlgW, dlgH, Theme::WindowBg);
@@ -95,9 +105,6 @@ public:
         }
 
         // Ok button
-        int btnX = dlgX + (dlgW - btnW) / 2;
-        int btnY = dlgY + dlgH - btnH - btnPad / 2;
-        _okBtn.setBounds(btnX, btnY, btnW, btnH);
         _okBtn.setLabel("Ok");
         _okBtn.setTextSize(1);
         _okBtn.setBackgroundColor(Theme::ButtonFace);

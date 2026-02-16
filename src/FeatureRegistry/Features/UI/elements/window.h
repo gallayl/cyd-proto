@@ -178,42 +178,41 @@ public:
         int bw = Theme::WindowBorderWidth;
 
         // outer border (3D raised)
-        c.drawRect(x, y, width, height, Theme::WindowBorder);
-        c.drawFastHLine(x + 1, y + 1, width - 2, Theme::ButtonHighlight);
-        c.drawFastVLine(x + 1, y + 1, height - 2, Theme::ButtonHighlight);
-        c.drawFastHLine(x + 1, y + height - 2, width - 2, Theme::ButtonShadow);
-        c.drawFastVLine(x + width - 2, y + 1, height - 2, Theme::ButtonShadow);
+        c.drawRect(drawX(), drawY(), width, height, Theme::WindowBorder);
+        c.drawFastHLine(drawX() + 1, drawY() + 1, width - 2, Theme::ButtonHighlight);
+        c.drawFastVLine(drawX() + 1, drawY() + 1, height - 2, Theme::ButtonHighlight);
+        c.drawFastHLine(drawX() + 1, drawY() + height - 2, width - 2, Theme::ButtonShadow);
+        c.drawFastVLine(drawX() + width - 2, drawY() + 1, height - 2, Theme::ButtonShadow);
 
         // title bar background
         uint16_t tbColor = active ? Theme::TitleBarActive : Theme::TitleBarInactive;
         uint16_t tbText = active ? Theme::TitleTextActive : Theme::TitleTextInactive;
-        int tbX = x + bw;
-        int tbY = y + bw;
         int tbW = width - bw * 2;
         int tbH = Theme::TitleBarHeight;
-        c.fillRect(tbX, tbY, tbW, tbH, tbColor);
+        c.fillRect(drawX() + bw, drawY() + bw, tbW, tbH, tbColor);
 
         // buttons area width (3 buttons)
         int btnSpacing = 2;
         int btnsW = Theme::WinBtnSize * 3 + btnSpacing * 2 + 2;
 
-        // title text
-        titleLabel.setBounds(tbX + 2, tbY, tbW - btnsW - 4, tbH);
+        // title text (child — absolute coords for setBounds)
+        titleLabel.setBounds(x + bw + 2, y + bw, tbW - btnsW - 4, tbH);
         titleLabel.setTextColor(tbText, tbColor);
         titleLabel.setAlign(TextAlign::LEFT);
         titleLabel.draw();
 
         // title bar buttons (right side): minimize | maximize | close
-        int btnY = tbY + (tbH - Theme::WinBtnSize) / 2;
+        int btnY = drawY() + bw + (tbH - Theme::WinBtnSize) / 2;
+        int btnAbsY = y + bw + (tbH - Theme::WinBtnSize) / 2;
         int btnX = x + width - bw - btnsW;
 
-        minBtn.setBounds(btnX, btnY, Theme::WinBtnSize, Theme::WinBtnSize);
+        minBtn.setBounds(btnX, btnAbsY, Theme::WinBtnSize, Theme::WinBtnSize);
         minBtn.draw();
         // draw minimize icon (horizontal line at bottom)
         c.drawFastHLine(btnX + 3, btnY + Theme::WinBtnSize - 5, Theme::WinBtnSize - 6, Theme::TextColor);
 
         btnX += Theme::WinBtnSize + btnSpacing;
-        maxBtn.setBounds(btnX, btnY, Theme::WinBtnSize, Theme::WinBtnSize);
+        maxBtn.setBounds(btnX, btnAbsY, Theme::WinBtnSize, Theme::WinBtnSize);
         maxBtn.setLabel("");
         maxBtn.draw();
         // draw maximize/restore icon
@@ -237,10 +236,10 @@ public:
         }
 
         btnX += Theme::WinBtnSize + btnSpacing;
-        closeBtn.setBounds(btnX, btnY, Theme::WinBtnSize, Theme::WinBtnSize);
+        closeBtn.setBounds(btnX, btnAbsY, Theme::WinBtnSize, Theme::WinBtnSize);
         closeBtn.draw();
 
-        // menu bar
+        // menu bar (child — absolute coords for setBounds)
         if (hasMenuBar)
         {
             int mbY = y + bw + tbH;
@@ -253,9 +252,9 @@ public:
         int cY = contentY();
         int cW = contentW();
         int cH = contentH();
-        c.fillRect(cX, cY, cW, cH, Theme::WindowBg);
+        c.fillRect(cX, cY - y + drawY(), cW, cH, Theme::WindowBg);
 
-        // draw scrollable content
+        // draw scrollable content (child — absolute coords for setBounds)
         scrollableContent.setBounds(cX, cY, cW, cH);
         scrollableContent.draw();
     }

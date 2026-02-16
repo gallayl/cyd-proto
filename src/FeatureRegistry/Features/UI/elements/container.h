@@ -11,6 +11,9 @@
 namespace UI
 {
 
+// Forward declaration from Renderer.h for strip-based rendering
+int &stripOffsetY();
+
 // base type every element should inherit from. it tracks whether the
 // element is currently mounted and provides virtual hooks that can be
 // overridden by subclasses.
@@ -56,6 +59,11 @@ public:
     // drawing hook; derived elements should override and perform
     // rendering when mounted.
     virtual void draw() {}
+
+    // Strip-offset-aware coordinates for drawing.
+    // Use these instead of raw x/y in draw() methods.
+    int drawX() const { return x; }
+    int drawY() const { return y - stripOffsetY(); }
 
     // default event callbacks; containers generally forward events to
     // children but a standalone element can override these to react.

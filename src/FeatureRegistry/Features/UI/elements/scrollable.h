@@ -70,7 +70,7 @@ namespace UI
             int viewW = needsScroll ? width - sbW : width;
 
             // clip to viewport
-            c.setClipRect(x, y, viewW, height);
+            c.setClipRect(drawX(), drawY(), viewW, height);
 
             // temporarily offset children by -scrollOffset so the clip rect
             // hides elements above/below the visible area
@@ -225,8 +225,8 @@ namespace UI
         void drawThinScrollbar(LGFX_Sprite &c)
         {
             int sbW = Theme::ThinScrollbarWidth;
-            int sbX = x + width - sbW;
-            int sbY = y;
+            int sbX = drawX() + width - sbW;
+            int sbY = drawY();
             int sbH = height;
 
             // thin track
@@ -248,8 +248,8 @@ namespace UI
 
         void drawScrollbar(LGFX_Sprite &c)
         {
-            int sbX = x + width - Theme::ScrollbarWidth;
-            int sbY = y;
+            int sbX = drawX() + width - Theme::ScrollbarWidth;
+            int sbY = drawY();
             int sbW = Theme::ScrollbarWidth;
             int sbH = height;
 

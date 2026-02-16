@@ -230,7 +230,7 @@ void WindowManager::draw()
 {
     auto &c = canvas();
     // desktop background
-    c.fillRect(0, Theme::DesktopY, Theme::ScreenWidth(), Theme::DesktopHeight(), Theme::DesktopBg);
+    c.fillRect(0, Theme::DesktopY - stripOffsetY(), Theme::ScreenWidth(), Theme::DesktopHeight(), Theme::DesktopBg);
 
     // draw windows in z-order (back to front), skip minimized
     for (auto &oa : openApps)

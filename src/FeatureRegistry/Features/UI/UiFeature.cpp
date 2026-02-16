@@ -26,6 +26,17 @@ static String screenCommandHandlerImpl(const String &command)
     if (sub == "calibrate")
     {
         calibrateScreen();
+        delay(1000); // Let user see "Calibration complete!" message
+        tft.fillScreen(TFT_BLACK);
+        tft.waitDisplay(); // Wait for fillScreen to complete
+        if (!UI::reinitRenderer())
+        {
+            LoggerInstance->Error(F("Failed to reinit renderer after calibration"));
+            return String("{\"event\":\"calibrate\", \"status\":\"error\", \"message\":\"renderer_init_failed\"}");
+        }
+        UI::windowManager().relayoutAll();
+        frameReady = true; // Ensure next frame will render
+        UI::markDirty(); // Ensure UI knows it needs redraw
         LoggerInstance->Info(F("Calibrated touch screen"));
         return String("{\"event\":\"calibrate\", \"status\":\"success\"}");
     }
@@ -52,9 +63,17 @@ static String screenCommandHandlerImpl(const String &command)
             rotate = (uint16_t)strtoul(rotateParam.c_str(), NULL, 0);
         }
         tft.setRotation(rotate);
-        UI::reinitRenderer();
-        readCalibrationData();
+        tft.fillScreen(TFT_BLACK);
+        tft.waitDisplay(); // Wait for fillScreen to complete
+        if (!UI::reinitRenderer())
+        {
+            LoggerInstance->Error(F("Failed to reinit renderer after rotation"));
+            return String(String("{\"event\":\"rotate\",\"rotation\":") + rotate + String(",\"error\":\"renderer_init_failed\"}"));
+        }
+        readCalibrationData(); // Loads rotation-specific calibration
         UI::windowManager().relayoutAll();
+        frameReady = true; // Ensure next frame will render
+        UI::markDirty(); // Ensure UI knows it needs redraw
         LoggerInstance->Info("Screen rotated to " + String(rotate));
         return String(String("{\"event\":\"rotate\",\"rotation\":") + rotate + String("}"));
     }
@@ -311,8 +330,7 @@ static Feature *createUiFeature()
 
     if (!UI::initRenderer())
     {
-        LoggerInstance->Error(F("Failed to create sprite back-buffer (low memory?)"));
-        LoggerInstance->Error("Free heap: " + String(ESP.getFreeHeap()) + " bytes");
+        LoggerInstance->Error(F("Failed to initialize renderer"));
         return FeatureState::ERROR;
     }
 

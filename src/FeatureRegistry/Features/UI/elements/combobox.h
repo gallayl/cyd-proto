@@ -67,28 +67,28 @@ public:
         auto &c = canvas();
 
         // main button area
-        c.fillRect(x, y, width, height, Theme::TextFieldBg);
+        c.fillRect(drawX(), drawY(), width, height, Theme::TextFieldBg);
 
         // sunken border
-        c.drawFastHLine(x, y, width, Theme::ButtonShadow);
-        c.drawFastVLine(x, y, height, Theme::ButtonShadow);
-        c.drawFastHLine(x + 1, y + 1, width - 2, Theme::ButtonDarkShadow);
-        c.drawFastVLine(x + 1, y + 1, height - 2, Theme::ButtonDarkShadow);
-        c.drawFastHLine(x, y + height - 1, width, Theme::ButtonHighlight);
-        c.drawFastVLine(x + width - 1, y, height, Theme::ButtonHighlight);
+        c.drawFastHLine(drawX(), drawY(), width, Theme::ButtonShadow);
+        c.drawFastVLine(drawX(), drawY(), height, Theme::ButtonShadow);
+        c.drawFastHLine(drawX() + 1, drawY() + 1, width - 2, Theme::ButtonDarkShadow);
+        c.drawFastVLine(drawX() + 1, drawY() + 1, height - 2, Theme::ButtonDarkShadow);
+        c.drawFastHLine(drawX(), drawY() + height - 1, width, Theme::ButtonHighlight);
+        c.drawFastVLine(drawX() + width - 1, drawY(), height, Theme::ButtonHighlight);
 
         // dropdown arrow button
         int arrowW = height;
-        int arrowX = x + width - arrowW;
-        c.fillRect(arrowX, y + 1, arrowW - 1, height - 2, Theme::ButtonFace);
-        c.drawFastHLine(arrowX, y + 1, arrowW - 1, Theme::ButtonHighlight);
-        c.drawFastVLine(arrowX, y + 1, height - 2, Theme::ButtonHighlight);
-        c.drawFastHLine(arrowX, y + height - 2, arrowW - 1, Theme::ButtonShadow);
-        c.drawFastVLine(arrowX + arrowW - 2, y + 1, height - 2, Theme::ButtonShadow);
+        int arrowX = drawX() + width - arrowW;
+        c.fillRect(arrowX, drawY() + 1, arrowW - 1, height - 2, Theme::ButtonFace);
+        c.drawFastHLine(arrowX, drawY() + 1, arrowW - 1, Theme::ButtonHighlight);
+        c.drawFastVLine(arrowX, drawY() + 1, height - 2, Theme::ButtonHighlight);
+        c.drawFastHLine(arrowX, drawY() + height - 2, arrowW - 1, Theme::ButtonShadow);
+        c.drawFastVLine(arrowX + arrowW - 2, drawY() + 1, height - 2, Theme::ButtonShadow);
 
         // arrow triangle
         int aCx = arrowX + arrowW / 2;
-        int aCy = y + height / 2;
+        int aCy = drawY() + height / 2;
         c.fillTriangle(aCx - 3, aCy - 2, aCx + 3, aCy - 2, aCx, aCy + 2, Theme::TextColor);
 
         // selected text
@@ -97,8 +97,8 @@ public:
         {
             c.setTextColor(Theme::TextColor, Theme::TextFieldBg);
             int16_t th = c.fontHeight();
-            c.setClipRect(x + 3, y + 2, width - arrowW - 4, height - 4);
-            c.setCursor(x + 3, y + (height - th) / 2);
+            c.setClipRect(drawX() + 3, drawY() + 2, width - arrowW - 4, height - 4);
+            c.setCursor(drawX() + 3, drawY() + (height - th) / 2);
             c.print(_items[selectedIndex]);
             c.clearClipRect();
         }
@@ -183,8 +183,8 @@ private:
 
     void drawDropdown(LGFX_Sprite &c)
     {
-        int dropX = x;
-        int dropY = y + height;
+        int dropX = drawX();
+        int dropY = drawY() + height;
         int dropW = width;
         int dropH = dropdownHeight();
 

@@ -35,16 +35,14 @@ public:
             return;
 
         auto &c = canvas();
-        int bx, by, bw, bh;
-        getBounds(bx, by, bw, bh);
 
         // Win95 raised 3D menu panel
-        c.fillRect(bx, by, bw, bh, Theme::MenuBg);
-        c.drawRect(bx, by, bw, bh, Theme::WindowBorder);
-        c.drawFastHLine(bx + 1, by + 1, bw - 2, Theme::ButtonHighlight);
-        c.drawFastVLine(bx + 1, by + 1, bh - 2, Theme::ButtonHighlight);
-        c.drawFastHLine(bx + 1, by + bh - 2, bw - 2, Theme::ButtonShadow);
-        c.drawFastVLine(bx + bw - 2, by + 1, bh - 2, Theme::ButtonShadow);
+        c.fillRect(drawX(), drawY(), width, height, Theme::MenuBg);
+        c.drawRect(drawX(), drawY(), width, height, Theme::WindowBorder);
+        c.drawFastHLine(drawX() + 1, drawY() + 1, width - 2, Theme::ButtonHighlight);
+        c.drawFastVLine(drawX() + 1, drawY() + 1, height - 2, Theme::ButtonHighlight);
+        c.drawFastHLine(drawX() + 1, drawY() + height - 2, width - 2, Theme::ButtonShadow);
+        c.drawFastVLine(drawX() + width - 2, drawY() + 1, height - 2, Theme::ButtonShadow);
 
         Container::draw();
     }

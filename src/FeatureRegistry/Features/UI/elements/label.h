@@ -60,8 +60,8 @@ public:
         c.setTextColor(color, bgColor);
         c.setTextSize(textSize);
 
-        int16_t tx = x;
-        int16_t ty = y;
+        int16_t tx = drawX();
+        int16_t ty = drawY();
         if (width > 0 && height > 0)
         {
             int16_t tw = c.textWidth(text);
@@ -71,18 +71,18 @@ public:
             {
             case TextAlign::CENTER:
                 if (tw < width)
-                    tx = x + (width - tw) / 2;
+                    tx = drawX() + (width - tw) / 2;
                 break;
             case TextAlign::LEFT:
-                tx = x + 2;
+                tx = drawX() + 2;
                 break;
             case TextAlign::RIGHT:
-                tx = x + width - tw - 2;
+                tx = drawX() + width - tw - 2;
                 break;
             }
 
             if (th < height)
-                ty = y + (height - th) / 2;
+                ty = drawY() + (height - th) / 2;
         }
 
         c.setCursor(tx, ty);

@@ -48,8 +48,8 @@ public:
         auto &c = canvas();
 
         int boxSize = Theme::CheckboxSize;
-        int boxX = x + 2;
-        int boxY = y + (height - boxSize) / 2;
+        int boxX = drawX() + 2;
+        int boxY = drawY() + (height - boxSize) / 2;
 
         // sunken 3D box (dark outer top-left, light inner bottom-right)
         c.fillRect(boxX, boxY, boxSize, boxSize, Theme::CheckboxBg);
@@ -80,7 +80,7 @@ public:
             c.setTextColor(textFg, Theme::WindowBg);
             c.setTextSize(1);
             int16_t th = c.fontHeight();
-            int labelY = y + (height - th) / 2;
+            int labelY = drawY() + (height - th) / 2;
             c.setCursor(labelX, labelY);
             c.print(labelText);
         }

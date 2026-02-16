@@ -54,8 +54,8 @@ public:
 
     void draw()
     {
-        windowManager().draw();
-        flush();
+        renderStrips([this]()
+                     { windowManager().draw(); });
     }
 
     void handleTouch(int px, int py)
@@ -90,8 +90,9 @@ private:
         if (panel)
         {
             auto &c = canvas();
-            c.fillRect(0, Theme::TaskbarY(), Theme::ScreenWidth(), Theme::TaskbarHeight, Theme::TaskbarBg);
-            c.drawFastHLine(0, Theme::TaskbarY(), Theme::ScreenWidth(), Theme::ButtonHighlight);
+            int tbY = Theme::TaskbarY() - stripOffsetY();
+            c.fillRect(0, tbY, Theme::ScreenWidth(), Theme::TaskbarHeight, Theme::TaskbarBg);
+            c.drawFastHLine(0, tbY, Theme::ScreenWidth(), Theme::ButtonHighlight);
             panel->container->draw();
         }
         windowManager().drawPopups();

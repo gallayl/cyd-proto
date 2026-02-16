@@ -46,7 +46,8 @@ namespace UI
                 return;
             auto &c = canvas();
 
-            int kbY = Theme::TaskbarY() - Theme::KeyboardHeight();
+            int oY = UI::stripOffsetY();
+            int kbY = Theme::TaskbarY() - Theme::KeyboardHeight() - oY;
 
             // keyboard background
             c.fillRect(0, kbY, Theme::ScreenWidth(), Theme::KeyboardHeight(), Theme::ButtonFace);

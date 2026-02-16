@@ -75,8 +75,8 @@ public:
         auto &c = canvas();
 
         int r = Theme::RadioSize / 2;
-        int cx = x + 2 + r;
-        int cy = y + height / 2;
+        int cx = drawX() + 2 + r;
+        int cy = drawY() + height / 2;
 
         // outer circle background
         c.fillCircle(cx, cy, r, Theme::CheckboxBg);
@@ -96,11 +96,11 @@ public:
         // label text
         if (labelText.length() > 0)
         {
-            int labelX = x + 2 + Theme::RadioSize + 4;
+            int labelX = drawX() + 2 + Theme::RadioSize + 4;
             c.setTextColor(textFg, Theme::WindowBg);
             c.setTextSize(1);
             int16_t th = c.fontHeight();
-            int labelY = y + (height - th) / 2;
+            int labelY = drawY() + (height - th) / 2;
             c.setCursor(labelX, labelY);
             c.print(labelText);
         }

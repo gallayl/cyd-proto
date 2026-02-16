@@ -99,22 +99,22 @@ public:
         auto &c = canvas();
 
         // sunken 3D border
-        c.fillRect(x, y, width, height, Theme::TextFieldBg);
-        c.drawFastHLine(x, y, width, Theme::ButtonShadow);
-        c.drawFastVLine(x, y, height, Theme::ButtonShadow);
-        c.drawFastHLine(x + 1, y + 1, width - 2, Theme::ButtonDarkShadow);
-        c.drawFastVLine(x + 1, y + 1, height - 2, Theme::ButtonDarkShadow);
-        c.drawFastHLine(x, y + height - 1, width, Theme::ButtonHighlight);
-        c.drawFastVLine(x + width - 1, y, height, Theme::ButtonHighlight);
-        c.drawFastHLine(x + 1, y + height - 2, width - 2, Theme::ButtonFace);
-        c.drawFastVLine(x + width - 2, y + 1, height - 2, Theme::ButtonFace);
+        c.fillRect(drawX(), drawY(), width, height, Theme::TextFieldBg);
+        c.drawFastHLine(drawX(), drawY(), width, Theme::ButtonShadow);
+        c.drawFastVLine(drawX(), drawY(), height, Theme::ButtonShadow);
+        c.drawFastHLine(drawX() + 1, drawY() + 1, width - 2, Theme::ButtonDarkShadow);
+        c.drawFastVLine(drawX() + 1, drawY() + 1, height - 2, Theme::ButtonDarkShadow);
+        c.drawFastHLine(drawX(), drawY() + height - 1, width, Theme::ButtonHighlight);
+        c.drawFastVLine(drawX() + width - 1, drawY(), height, Theme::ButtonHighlight);
+        c.drawFastHLine(drawX() + 1, drawY() + height - 2, width - 2, Theme::ButtonFace);
+        c.drawFastVLine(drawX() + width - 2, drawY() + 1, height - 2, Theme::ButtonFace);
 
-        int innerX = x + 3;
+        int innerX = drawX() + 3;
         int innerW = width - 6;
 
         c.setTextSize(1);
         int16_t th = c.fontHeight();
-        int ty = y + (height - th) / 2;
+        int ty = drawY() + (height - th) / 2;
 
         if (text.length() == 0 && !focused && placeholder.length() > 0)
         {
@@ -132,7 +132,7 @@ public:
             if (tw > innerW)
                 offset = tw - innerW;
 
-            c.setClipRect(innerX, y + 2, innerW, height - 4);
+            c.setClipRect(innerX, drawY() + 2, innerW, height - 4);
             c.setCursor(innerX - offset, ty);
             c.print(text);
             c.clearClipRect();
@@ -144,7 +144,7 @@ public:
                 int cx = innerX + c.textWidth(beforeCursor) - offset;
                 if (cx >= innerX && cx < innerX + innerW)
                 {
-                    c.drawFastVLine(cx, y + 3, height - 6, Theme::TextColor);
+                    c.drawFastVLine(cx, drawY() + 3, height - 6, Theme::TextColor);
                 }
             }
         }
