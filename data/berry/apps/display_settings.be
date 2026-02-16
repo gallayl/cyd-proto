@@ -56,6 +56,23 @@ class DisplaySettingsApp
 
     var cal_btn = ui.button(cal_gb, 'Calibrate', 2, 14, 80, 22)
     ui.on_click(cal_btn, / -> action('screen calibrate'))
+
+    y += 54
+
+    # Rotation group box
+    var rot_gb = ui.groupbox(content, 'Screen Rotation', 2, y, w - 4, 48)
+
+    var rot0 = ui.button(rot_gb, '0°', 2, 14, 40, 22)
+    ui.on_click(rot0, / -> action('screen rotate 0'))
+
+    var rot90 = ui.button(rot_gb, '90°', 46, 14, 40, 22)
+    ui.on_click(rot90, / -> action('screen rotate 1'))
+
+    var rot180 = ui.button(rot_gb, '180°', 90, 14, 40, 22)
+    ui.on_click(rot180, / -> action('screen rotate 2'))
+
+    var rot270 = ui.button(rot_gb, '270°', 134, 14, 40, 22)
+    ui.on_click(rot270, / -> action('screen rotate 3'))
   end
 
   def apply()
