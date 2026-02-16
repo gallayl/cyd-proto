@@ -9,6 +9,8 @@
 #include <SPI.h>
 #include <ArduinoJson.h>
 
+#include <cstddef>
+
 #define SD_CS 5
 #define SD_SCK 18
 #define SD_MISO 19
@@ -40,7 +42,9 @@ static const char *cardTypeName(sdcard_type_t type)
 static String doMount()
 {
     if (sdMounted)
+    {
         return String("{\"error\": \"SD card already mounted\"}");
+    }
 
     sdSPI.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);
 
@@ -77,19 +81,23 @@ static String doMount()
 static String doUnmount()
 {
     if (!sdMounted)
-        return String("{\"error\": \"SD card not mounted\"}");
+    {
+        return {"{\"error\": \"SD card not mounted\"}"};
+    }
 
     SD.end();
     sdMounted = false;
 
     LoggerInstance->Info(F("SD card unmounted"));
-    return String("{\"event\": \"sd_unmounted\"}");
+    return {"{\"event\": \"sd_unmounted\"}"};
 }
 
 static String doInfo()
 {
     if (!sdMounted)
+    {
         return String("{\"error\": \"SD card not mounted\"}");
+    }
 
     JsonDocument response;
     response["mounted"] = true;
@@ -108,18 +116,26 @@ static String sdHandler(const String &command)
     String operation = CommandParser::GetCommandParameter(command, 1);
 
     if (operation == "mount")
+    {
         return doMount();
+    }
 
     if (operation == "unmount")
+    {
         return doUnmount();
+    }
 
     if (operation == "info")
+    {
         return doInfo();
+    }
 
     if (operation == "format")
-        return String("{\"error\": \"SD card formatting is not supported by the Arduino SD library\"}");
+    {
+        return {"{\"error\": \"SD card formatting is not supported by the Arduino SD library\"}"};
+    }
 
-    return String("{\"error\": \"Usage: sd mount | sd unmount | sd info\"}");
+    return {"{\"error\": \"Usage: sd mount | sd unmount | sd info\"}"};
 }
 
 static FeatureAction sdAction = {
@@ -141,7 +157,7 @@ Feature *SdCardFeature = new Feature(
             {
                 sdMounted = true;
                 LoggerInstance->Info("SD card detected (" + String(cardTypeName(cardType)) + ", " +
-                                     String(SD.totalBytes() / (1024 * 1024)) + " MB)");
+                                     String(SD.totalBytes() / (static_cast<uint64_t>(1024 * 1024))) + " MB)");
             }
             else
             {
