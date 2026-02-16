@@ -102,8 +102,11 @@ class TaskbarApp
     var btn_y = 2
     for i : 0 .. num_cats - 1
       var cat = self.categories[i]
-      var btn = ui.button(self.menu_popup, cat + '  >', 2, btn_y, menu_w - 4, item_h)
+      var btn = ui.button(self.menu_popup, cat, 2, btn_y, menu_w - 4, item_h)
       self.style_menu_item(btn)
+      # filled arrow on right side
+      var arrow = ui.label(self.menu_popup, '\x10', menu_w - 16, btn_y, 12, item_h)
+      ui.set_text_color(arrow, ui.TEXT_COLOR, ui.MENU_BG)
       var idx = i
       ui.on_click(btn, def () me.show_submenu(idx) end)
       btn_y += item_h
@@ -115,7 +118,7 @@ class TaskbarApp
     # Restart button
     var restart_btn = ui.button(self.menu_popup, 'Restart', 2, btn_y, menu_w - 4, item_h)
     self.style_menu_item(restart_btn)
-    ui.on_click(restart_btn, def () action('berry eval import os os.restart()') end)
+    ui.on_click(restart_btn, def () action('restart') end)
 
     # create submenu popup (reused for all categories)
     var max_items = 0
@@ -135,6 +138,7 @@ class TaskbarApp
     ui.set_bg_color(btn, ui.MENU_BG)
     ui.set_border_colors(btn, ui.MENU_BG, ui.MENU_BG)
     ui.set_text_color(btn, ui.TEXT_COLOR, ui.MENU_BG)
+    ui.set_align(btn, ui.LEFT)
   end
 
   def toggle_menu()

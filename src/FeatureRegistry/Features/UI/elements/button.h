@@ -50,6 +50,10 @@ public:
     {
         label.setTextSize(size);
     }
+    void setTextAlign(TextAlign a)
+    {
+        label.setAlign(a);
+    }
 
     bool isPressed() const
     {

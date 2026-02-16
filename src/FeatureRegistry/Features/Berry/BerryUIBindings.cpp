@@ -1018,9 +1018,16 @@ static int ui_set_align(bvm *vm)
     if (!app || be_top(vm) < 2)
         be_return_nil(vm);
 
-    auto *lbl = asLabel(app->getHandle(be_toint(vm, 1)));
+    auto *h = app->getHandle(be_toint(vm, 1));
+    auto align = static_cast<UI::TextAlign>(be_toint(vm, 2));
+
+    auto *lbl = asLabel(h);
     if (lbl)
-        lbl->setAlign(static_cast<UI::TextAlign>(be_toint(vm, 2)));
+        lbl->setAlign(align);
+
+    auto *btn = asButton(h);
+    if (btn)
+        btn->setTextAlign(align);
 
     be_return_nil(vm);
 }
@@ -1095,25 +1102,13 @@ static int ui_bounds(bvm *vm)
     int bx, by, bw, bh;
     h->ptr->getBounds(bx, by, bw, bh);
 
-    // Create a list instance (not the list class)
-    be_getbuiltin(vm, "list");
-    be_call(vm, 0);
-    be_pop(vm, 1);
+    // Create and return a list with the bounds
+    // Simplest approach: evaluate Berry list literal
+    String code = "return [" + String(bx) + "," + String(by) + "," + String(bw) + "," + String(bh) + "]";
+    be_loadbuffer(vm, "bounds", code.c_str(), code.length());
+    be_pcall(vm, 0);
+    // Result is now at top of stack
     
-    // Add elements to the list
-    be_pushint(vm, bx);
-    be_data_push(vm, -2);
-    be_pop(vm, 1);
-    be_pushint(vm, by);
-    be_data_push(vm, -2);
-    be_pop(vm, 1);
-    be_pushint(vm, bw);
-    be_data_push(vm, -2);
-    be_pop(vm, 1);
-    be_pushint(vm, bh);
-    be_data_push(vm, -2);
-    be_pop(vm, 1);
-
     be_return(vm);
 }
 
