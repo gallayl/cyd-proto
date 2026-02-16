@@ -14,6 +14,8 @@ namespace UI
 // Forward declaration from Renderer.h for strip-based rendering
 int &stripOffsetY();
 
+class Container;
+
 // base type every element should inherit from. it tracks whether the
 // element is currently mounted and provides virtual hooks that can be
 // overridden by subclasses.
@@ -69,6 +71,10 @@ public:
     // children but a standalone element can override these to react.
     virtual void onTouch(int px, int py) {}
     virtual void onTouchEnd(int px, int py) {}
+
+    // for scrollable: elements with nested content (e.g. GroupBox) override
+    // to return their inner container so descendants can be scroll-offset
+    virtual Container *getNestedContainer() { return nullptr; }
 
 protected:
     bool mounted{false};

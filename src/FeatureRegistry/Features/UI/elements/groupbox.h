@@ -20,6 +20,7 @@ namespace UI
         void setLabel(const String &lbl) { label = lbl; }
 
         Container &getContent() { return content; }
+        Container *getNestedContainer() override { return &content; }
 
         void addChild(std::unique_ptr<Element> child) { content.addChild(std::move(child)); }
 

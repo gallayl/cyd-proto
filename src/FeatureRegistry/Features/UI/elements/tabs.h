@@ -38,6 +38,10 @@ public:
             return tabs[idx].content.get();
         return nullptr;
     }
+    Container *getNestedContainer() override
+    {
+        return getTabContent(activeTab);
+    }
 
     void setActiveTab(int idx)
     {

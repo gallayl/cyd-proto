@@ -81,11 +81,37 @@ namespace UI
                 child->getBounds(cx, cy, cw, ch);
                 child->setBounds(cx, cy - scrollOffset, cw, ch);
             }
+            // also offset descendants (e.g. buttons inside GroupBox) which have
+            // fixed positions and don't inherit the parent's scroll offset
+            for (auto *child : children)
+            {
+                if (Container *nested = child->getNestedContainer())
+                {
+                    for (auto *grandchild : nested->getChildren())
+                    {
+                        int gx, gy, gw, gh;
+                        grandchild->getBounds(gx, gy, gw, gh);
+                        grandchild->setBounds(gx, gy - scrollOffset, gw, gh);
+                    }
+                }
+            }
 
             content.setBounds(x, y, viewW, contentHeight);
             content.draw();
 
             // restore original positions
+            for (auto *child : children)
+            {
+                if (Container *nested = child->getNestedContainer())
+                {
+                    for (auto *grandchild : nested->getChildren())
+                    {
+                        int gx, gy, gw, gh;
+                        grandchild->getBounds(gx, gy, gw, gh);
+                        grandchild->setBounds(gx, gy + scrollOffset, gw, gh);
+                    }
+                }
+            }
             for (auto *child : children)
             {
                 int cx, cy, cw, ch;
