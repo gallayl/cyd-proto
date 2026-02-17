@@ -2,6 +2,7 @@
 #include "../../../ActionRegistry/ActionRegistry.h"
 #include "../../../CommandInterpreter/CommandParser.h"
 #include "../../../fs/VirtualFS.h"
+#include "../../../fs/LittleFsInit.h"
 #include <string>
 
 static FeatureAction formatAction = {.name = "format",
@@ -9,9 +10,9 @@ static FeatureAction formatAction = {.name = "format",
                                      .handler =
                                          [](const std::string & /*command*/)
                                      {
-                                         LittleFS.end();
-                                         LittleFS.format();
-                                         if (!LittleFS.begin())
+                                         deinitLittleFs();
+                                         formatLittleFs();
+                                         if (!initLittleFs())
                                          {
                                              return std::string("{\"error\": \"Mount after format failed\"}");
                                          }
@@ -54,6 +55,16 @@ static FeatureAction listFilesAction = {.name = "list",
                                             else
                                             {
                                                 ResolvedPath resolved = resolveVirtualPath(path);
+#ifdef USE_ESP_IDF
+                                                if (resolved.valid)
+                                                {
+                                                    response = getFileList(resolved.realPath);
+                                                }
+                                                else
+                                                {
+                                                    response = getFileList(resolveToLittleFsPath(path));
+                                                }
+#else
                                                 if (resolved.valid && resolved.fs)
                                                 {
                                                     response = getFileList(*resolved.fs, resolved.localPath.c_str());
@@ -62,6 +73,7 @@ static FeatureAction listFilesAction = {.name = "list",
                                                 {
                                                     response = getFileList(LittleFS, path.c_str());
                                                 }
+#endif
                                             }
 
                                             std::string output;
@@ -75,7 +87,7 @@ Feature *LittleFsFeature = new Feature("LittleFsFeatures", []()
     // Register format even if setup fails, so the command is available to fix the issue
     actionRegistryInstance->registerAction(&formatAction);
 
-    if (!LittleFS.begin())
+    if (!initLittleFs())
     {
         loggerInstance->Error("LittleFS not available");
         return FeatureState::ERROR;

@@ -1,12 +1,22 @@
 #pragma once
 
 #include "../../config.h"
-#include "ESPAsyncWebServer.h"
 
 #if ENABLE_OTA
 
-#include <Update.h>
 #include "../Feature.h"
+
+#ifdef USE_ESP_IDF
+
+#define REFRESH_TIMEOUT_AFTER_UPDATE "30"
+
+// ESP-IDF OTA will be implemented in Phase 5 (esp_ota_ops)
+extern Feature *otaUpgrade;
+
+#else // Arduino
+
+#include "ESPAsyncWebServer.h"
+#include <Update.h>
 
 #define REFRESH_TIMEOUT_AFTER_UPDATE "30"
 
@@ -16,9 +26,9 @@ extern ArRequestHandlerFunction getRedirectPage;
 extern ArRequestHandlerFunction onPostUpdate;
 extern ArUploadHandlerFunction onUploadUpdate;
 
-// websocket used during OTA
-
 // feature object
 extern Feature *otaUpgrade;
 
-#endif
+#endif // USE_ESP_IDF
+
+#endif // ENABLE_OTA

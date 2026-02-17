@@ -1,8 +1,77 @@
 #include "list.h"
-#include <LittleFS.h>
 #include "../fs/VirtualFS.h"
 #include "../mime.h"
 #include <string>
+
+#ifdef USE_ESP_IDF
+
+#include <dirent.h>
+#include <sys/stat.h>
+#include <cstring>
+
+JsonDocument getFileList()
+{
+    return getFileList(resolveToLittleFsPath("/"));
+}
+
+JsonDocument getFileList(const char *path)
+{
+    return getFileList(resolveToLittleFsPath(path));
+}
+
+JsonDocument getFileList(const std::string &realPath)
+{
+    JsonDocument response;
+    JsonArray fileList = response.to<JsonArray>();
+
+    DIR *dir = opendir(realPath.c_str());
+    if (!dir)
+    {
+        return response;
+    }
+
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != nullptr)
+    {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+        {
+            continue;
+        }
+
+        std::string entryPath = realPath;
+        if (entryPath.back() != '/')
+        {
+            entryPath += '/';
+        }
+        entryPath += entry->d_name;
+
+        struct stat st;
+        bool isDir = (entry->d_type == DT_DIR);
+        size_t fileSize = 0;
+        time_t lastWrite = 0;
+
+        if (stat(entryPath.c_str(), &st) == 0)
+        {
+            isDir = S_ISDIR(st.st_mode);
+            fileSize = st.st_size;
+            lastWrite = st.st_mtime;
+        }
+
+        JsonObject o = fileList.add<JsonObject>();
+        o["name"] = entry->d_name;
+        o["size"] = fileSize;
+        o["isDir"] = isDir;
+        o["path"] = entryPath;
+        o["lastWrite"] = (long)lastWrite;
+    }
+
+    closedir(dir);
+    return response;
+}
+
+#else // Arduino
+
+#include <LittleFS.h>
 
 JsonDocument getFileList()
 {
@@ -72,3 +141,5 @@ ArRequestHandlerFunction listFiles = ([](AsyncWebServerRequest *request)
     std::string responseStr;
     serializeJson(response, responseStr);
     request->send(200, MIME_JSON, responseStr.c_str()); });
+
+#endif // USE_ESP_IDF

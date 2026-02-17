@@ -2,10 +2,14 @@
 #include <string>
 #include <LovyanGFX.hpp>
 #include "../../../hw/LovyanGFX_ILI9341_Settings.h"
-#include <LittleFS.h>
+#include "../../../fs/VirtualFS.h"
 #include "../Logging.h"
 #ifdef USE_ESP_IDF
 #include "esp_log.h"
+#include <cstdio>
+#include <sys/stat.h>
+#else
+#include <LittleFS.h>
 #endif
 
 extern LGFX tft;
@@ -23,6 +27,40 @@ inline void readCalibrationData()
     std::string rotationFile = getCalibrationFileForRotation(rotation);
     uint16_t calData[8];
 
+#ifdef USE_ESP_IDF
+    std::string fullPath = resolveToLittleFsPath(rotationFile);
+
+    // Try rotation-specific calibration first
+    if (vfsExists(fullPath))
+    {
+        FILE *f = fopen(fullPath.c_str(), "r");
+        if (f)
+        {
+            if (fread(calData, 1, 16, f) == 16)
+            {
+                tft.setTouchCalibrate(calData);
+                fclose(f);
+                loggerInstance->Info("Touch calibration loaded for rotation " + std::to_string(rotation));
+                return;
+            }
+            fclose(f);
+        }
+    }
+
+    // Fall back to legacy calibration file
+    std::string legacyPath = resolveToLittleFsPath(CALIBRATION_FILE);
+    if (vfsExists(legacyPath))
+    {
+        FILE *f = fopen(legacyPath.c_str(), "r");
+        if (f)
+        {
+            if (fread(calData, 1, 16, f) == 16)
+                tft.setTouchCalibrate(calData);
+            fclose(f);
+            loggerInstance->Info("Touch calibration data loaded from legacy file");
+        }
+    }
+#else
     // Try rotation-specific calibration first
     if (LittleFS.exists(rotationFile.c_str()))
     {
@@ -52,6 +90,7 @@ inline void readCalibrationData()
             loggerInstance->Info("Touch calibration data loaded from legacy file");
         }
     }
+#endif
 }
 
 inline void calibrateScreen()
@@ -89,6 +128,17 @@ inline void calibrateScreen()
 
     // Save to rotation-specific file
     std::string rotationFile = getCalibrationFileForRotation(rotation);
+
+#ifdef USE_ESP_IDF
+    std::string fullPath = resolveToLittleFsPath(rotationFile);
+    FILE *f = fopen(fullPath.c_str(), "w");
+    if (f)
+    {
+        fwrite(calData, 1, 16, f);
+        fclose(f);
+        loggerInstance->Info("Calibration saved for rotation " + std::to_string(rotation));
+    }
+#else
     File f = LittleFS.open(rotationFile.c_str(), "w");
     if (f)
     {
@@ -96,4 +146,5 @@ inline void calibrateScreen()
         f.close();
         loggerInstance->Info("Calibration saved for rotation " + std::to_string(rotation));
     }
+#endif
 }

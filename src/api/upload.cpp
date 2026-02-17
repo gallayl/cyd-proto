@@ -3,8 +3,11 @@
 #include "../fs/VirtualFS.h"
 #include "../FeatureRegistry/Features/Logging.h"
 #include "../utils/StringUtil.h"
-#include <Arduino.h>
 #include <string>
+
+#ifndef USE_ESP_IDF
+
+#include <Arduino.h>
 
 ArRequestHandlerFunction onPostUploadFiles = ([](AsyncWebServerRequest *request) {
     // Check if there was an error during upload (stored in _tempObject)
@@ -129,3 +132,5 @@ ArUploadHandlerFunction uploadFiles = ([](AsyncWebServerRequest *request, const 
     {
         loggerInstance->Info(std::string("Upload finished: ") + safePath);
     } });
+
+#endif // USE_ESP_IDF

@@ -3,9 +3,21 @@
 #if ENABLE_WEBSERVER
 
 #include "WebSocketServer.h"
-#include "./WebServer.h"
 #include "../FeatureRegistry/Features/Logging.h"
 #include <string>
+
+#ifdef USE_ESP_IDF
+
+// ESP-IDF WebSocket server will be implemented in Phase 5 (httpd_ws).
+void initWebSockets()
+{
+    loggerInstance->Info("WebSocket init (ESP-IDF): not yet implemented (Phase 5)");
+}
+
+#else // Arduino
+
+#include "./WebServer.h"
+#include "../ActionRegistry/ActionRegistry.h"
 
 AsyncWebSocket *webSocket = nullptr;
 
@@ -55,4 +67,6 @@ void initWebSockets()
     server.addHandler(webSocket);
 }
 
-#endif
+#endif // USE_ESP_IDF
+
+#endif // ENABLE_WEBSERVER

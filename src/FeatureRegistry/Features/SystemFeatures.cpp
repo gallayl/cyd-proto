@@ -6,9 +6,7 @@
 #include "../../hw/lightSensor.h"
 #include "../registeredFeatures.h"
 #include "../../utils/System.h"
-#ifndef USE_ESP_IDF
-#include <LittleFS.h>
-#endif
+#include "../../fs/LittleFsInit.h"
 #include <ArduinoJson.h>
 #ifdef USE_ESP_IDF
 #include "esp_system.h"
@@ -73,13 +71,9 @@ JsonDocument getInfo()
     flash["speed"] = ESP.getFlashChipSpeed();
 #endif
 
-#ifdef USE_ESP_IDF
-    // LittleFS info will be available after Phase 4 (VFS migration)
-#else
     JsonObject fs = response["fs"].to<JsonObject>();
-    fs["totalBytes"] = LittleFS.totalBytes();
-    fs["usedBytes"] = LittleFS.usedBytes();
-#endif
+    fs["totalBytes"] = getLittleFsTotalBytes();
+    fs["usedBytes"] = getLittleFsUsedBytes();
 
 #if ENABLE_SD_CARD
     JsonObject sd = response["sd"].to<JsonObject>();

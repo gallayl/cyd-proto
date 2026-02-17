@@ -3,6 +3,5 @@
 #include "../../../ActionRegistry/FeatureAction.h"
 #include "../Logging.h"
 #include "../../../api/list.h"
-#include "LittleFS.h"
 
 extern Feature *LittleFsFeature;

@@ -17,6 +17,12 @@
 #include <vector>
 #include <string>
 
+#ifdef USE_ESP_IDF
+#include <cstdio>
+#else
+#include <LittleFS.h>
+#endif
+
 extern "C"
 {
 #include "berry.h"
@@ -114,24 +120,41 @@ public:
 
         // read script (resolve virtual path prefix)
         ResolvedPath resolved = resolveVirtualPath(_scriptPath);
-        File f;
-        if (resolved.valid && resolved.fs != nullptr)
+        std::string code;
+
+#ifdef USE_ESP_IDF
+        std::string realPath = resolved.valid ? resolved.realPath : resolveToLittleFsPath(_scriptPath);
+        code = vfsReadFileAsString(realPath);
+#else
         {
-            f = resolved.fs->open(resolved.localPath.c_str(), "r");
+            File f;
+            if (resolved.valid && resolved.fs != nullptr)
+            {
+                f = resolved.fs->open(resolved.localPath.c_str(), "r");
+            }
+            else
+            {
+                f = LittleFS.open(_scriptPath.c_str(), "r");
+            }
+            if (!f)
+            {
+                loggerInstance->Error(std::string("BerryApp: cannot open ") + _scriptPath);
+                UI::errorPopup().show((std::string("Cannot open ") + _scriptPath).c_str());
+                berrySetCurrentApp(nullptr);
+                return;
+            }
+            code = f.readString().c_str();
+            f.close();
         }
-        else
-        {
-            f = LittleFS.open(_scriptPath.c_str(), "r");
-        }
-        if (!f)
+#endif
+
+        if (code.empty())
         {
             loggerInstance->Error(std::string("BerryApp: cannot open ") + _scriptPath);
             UI::errorPopup().show((std::string("Cannot open ") + _scriptPath).c_str());
             berrySetCurrentApp(nullptr);
             return;
         }
-        std::string code = f.readString().c_str();
-        f.close();
 
         // compile
         int res = be_loadbuffer(vm, _scriptPath.c_str(), code.c_str(), code.length());

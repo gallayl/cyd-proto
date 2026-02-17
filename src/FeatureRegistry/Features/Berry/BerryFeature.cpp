@@ -5,8 +5,15 @@
 #include "../../../config.h"
 #include "../../../fs/VirtualFS.h"
 #include "../../../utils/StringUtil.h"
-#include <LittleFS.h>
 #include <string>
+
+#ifdef USE_ESP_IDF
+#include <cstdio>
+#include <dirent.h>
+#include <sys/stat.h>
+#else
+#include <LittleFS.h>
+#endif
 
 extern "C"
 {
@@ -38,6 +45,21 @@ BerryScriptInfo parseAppMetadata(const std::string &path)
     info.path = path;
 
     ResolvedPath resolved = resolveVirtualPath(path);
+
+#ifdef USE_ESP_IDF
+    std::string realPath = resolved.valid ? resolved.realPath : resolveToLittleFsPath(path);
+
+    FILE *f = fopen(realPath.c_str(), "r");
+    if (!f)
+    {
+        return info;
+    }
+
+    char lineBuf[256];
+    for (int line = 0; line < 15 && fgets(lineBuf, sizeof(lineBuf), f) != nullptr; line++)
+    {
+        std::string l = StringUtil::trim(std::string(lineBuf));
+#else
     File f;
     if (resolved.valid && resolved.fs != nullptr)
     {
@@ -56,6 +78,7 @@ BerryScriptInfo parseAppMetadata(const std::string &path)
     {
         std::string l = f.readStringUntil('\n').c_str();
         l = StringUtil::trim(l);
+#endif
         if (StringUtil::startsWith(l, "# app:"))
         {
             info.name = StringUtil::trim(l.substr(6));
@@ -87,7 +110,11 @@ BerryScriptInfo parseAppMetadata(const std::string &path)
             break;
         }
     }
+#ifdef USE_ESP_IDF
+    fclose(f);
+#else
     f.close();
+#endif
 
     if (info.name.empty())
     {
@@ -146,6 +173,60 @@ void openBerryPanel(const std::string &filePath)
 }
 #endif
 
+#ifdef USE_ESP_IDF
+
+static std::vector<BerryScriptInfo> scanBerryScriptsOnFs(const std::string &realDir)
+{
+    std::vector<BerryScriptInfo> result;
+
+    DIR *d = opendir(realDir.c_str());
+    if (!d)
+    {
+        return result;
+    }
+
+    struct dirent *entry;
+    while ((entry = readdir(d)) != nullptr)
+    {
+        std::string filename = entry->d_name;
+        if (StringUtil::endsWith(filename, ".be"))
+        {
+            std::string realPath = realDir;
+            if (!StringUtil::endsWith(realPath, "/"))
+            {
+                realPath += "/";
+            }
+            realPath += filename;
+
+            std::string virtualPath = toVirtualPath(realPath);
+
+            BerryScriptInfo info = parseAppMetadata(virtualPath);
+            result.push_back(std::move(info));
+        }
+    }
+    closedir(d);
+    return result;
+}
+
+std::vector<BerryScriptInfo> scanBerryScripts(const char *dir)
+{
+    // Scan on LittleFS (flash)
+    auto result = scanBerryScriptsOnFs(resolveToLittleFsPath(dir));
+
+#if ENABLE_SD_CARD
+    // Also scan on SD card if mounted
+    if (isSdMounted())
+    {
+        auto sdResult = scanBerryScriptsOnFs(std::string(SD_MOUNT_POINT) + dir);
+        result.insert(result.end(), sdResult.begin(), sdResult.end());
+    }
+#endif
+
+    return result;
+}
+
+#else // Arduino
+
 static std::vector<BerryScriptInfo> scanBerryScriptsOnFs(fs::FS &filesystem, const char *localDir,
                                                          const std::string &virtualPrefix)
 {
@@ -201,7 +282,10 @@ std::vector<BerryScriptInfo> scanBerryScripts(const char *dir)
 
     return result;
 }
-#endif
+
+#endif // USE_ESP_IDF
+
+#endif // ENABLE_BERRY
 
 // --- Native bindings exposed to Berry scripts ---
 
@@ -312,6 +396,21 @@ static std::string berryHandlerImpl(const std::string &command)
 
         ResolvedPath resolved = resolveVirtualPath(path);
         bool fileExists = false;
+#ifdef USE_ESP_IDF
+        if (resolved.valid)
+        {
+            fileExists = vfsExists(resolved.realPath);
+        }
+        else
+        {
+            std::string lfsPath = resolveToLittleFsPath(path);
+            fileExists = vfsExists(lfsPath);
+            if (fileExists)
+            {
+                path = std::string("/flash") + path;
+            }
+        }
+#else
         if (resolved.valid && (resolved.fs != nullptr))
         {
             fileExists = resolved.fs->exists(resolved.localPath.c_str());
@@ -324,6 +423,7 @@ static std::string berryHandlerImpl(const std::string &command)
                 path = std::string("/flash") + path;
             }
         }
+#endif
 
         if (!fileExists)
         {
@@ -339,6 +439,14 @@ static std::string berryHandlerImpl(const std::string &command)
             return std::string(R"({"event":"berry", "status":"queued", "app":")") + meta.name + "\"}";
         }
 #else
+#ifdef USE_ESP_IDF
+        ResolvedPath rp = resolveVirtualPath(path);
+        std::string realPath = rp.valid ? rp.realPath : resolveToLittleFsPath(path);
+        std::string code = vfsReadFileAsString(realPath);
+        if (code.empty())
+            return std::string("{\"error\": \"File not found: ") + path + "\"}";
+        return berryEval(code);
+#else
         ResolvedPath rp = resolveVirtualPath(path);
         File f;
         if (rp.valid && rp.fs)
@@ -350,6 +458,7 @@ static std::string berryHandlerImpl(const std::string &command)
         std::string code = f.readString().c_str();
         f.close();
         return berryEval(code);
+#endif
 #endif
     }
 
@@ -496,6 +605,18 @@ Feature *BerryFeature = new Feature(
 
         actionRegistryInstance->registerAction(&berryAction);
 
+#ifdef USE_ESP_IDF
+        std::string autoexecPath = resolveToLittleFsPath("/berry/autoexec.be");
+        if (vfsExists(autoexecPath))
+        {
+            loggerInstance->Info("Running /berry/autoexec.be");
+            std::string code = vfsReadFileAsString(autoexecPath);
+            if (!code.empty())
+            {
+                berryEval(code);
+            }
+        }
+#else
         if (LittleFS.exists("/berry/autoexec.be"))
         {
             loggerInstance->Info("Running /berry/autoexec.be");
@@ -507,6 +628,7 @@ Feature *BerryFeature = new Feature(
                 berryEval(code);
             }
         }
+#endif
 
         loggerInstance->Info("Berry VM initialized");
         return FeatureState::RUNNING;

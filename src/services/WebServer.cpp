@@ -4,10 +4,22 @@
 
 #include "WebServer.h"
 #include "../mime.h"
-#include "../api/upload.h"
-#include "../api/list.h"
 #include "../utils/System.h"
 #include <string>
+
+#ifdef USE_ESP_IDF
+
+// ESP-IDF web server (esp_http_server) will be implemented in Phase 5.
+// For now, provide a stub so the project compiles.
+void initWebServer()
+{
+    loggerInstance->Info("Web server init (ESP-IDF): not yet implemented (Phase 5)");
+}
+
+#else // Arduino
+
+#include "../api/upload.h"
+#include "../api/list.h"
 
 // define the global server instance
 AsyncWebServer server(HTTP_PORT);
@@ -38,4 +50,6 @@ void initWebServer()
     loggerInstance->Info("Server setup done.");
 }
 
-#endif
+#endif // USE_ESP_IDF
+
+#endif // ENABLE_WEBSERVER
