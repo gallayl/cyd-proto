@@ -1,2 +1,6 @@
 # Enable WebSocket support in esp_http_server
 CONFIG_HTTPD_WS_SUPPORT=y
+
+# Increase main task stack size (default 3584 is too small for the deep
+# call chain during Berry autoexec: setup → berryEval → VM → action handler)
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192
