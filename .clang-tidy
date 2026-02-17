@@ -1,5 +1,5 @@
 ---
-# clang-tidy configuration for ESP32 / Arduino PlatformIO project
+# clang-tidy configuration for ESP32 / ESP-IDF PlatformIO project
 #
 # Generate compile_commands.json first:
 #   pio run -t compiledb

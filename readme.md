@@ -49,7 +49,7 @@ ESP32 firmware for a CYD (Cheap Yellow Display) device featuring a touchscreen U
 
 ```
 src/
-├── main.cpp               # Arduino entry point
+├── main.cpp               # ESP-IDF entry point (app_main)
 ├── config.h               # Feature flags
 ├── FeatureRegistry/       # Feature-based architecture
 │   └── Features/          # UI, Berry, Time, Logging, OTA, …

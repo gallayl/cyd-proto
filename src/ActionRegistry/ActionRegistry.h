@@ -1,11 +1,7 @@
 #pragma once
 
-#ifdef USE_ESP_IDF
 #include <cstdint>
 #include "esp_log.h"
-#else
-#include <Arduino.h>
-#endif
 #include <mutex>
 #include <string>
 #include "../config.h"
@@ -44,11 +40,7 @@ public:
         std::lock_guard<std::mutex> lock(_mutex);
         if (_registeredActionsCount >= ACTIONS_SIZE)
         {
-#ifdef USE_ESP_IDF
             ESP_LOGE("ActionRegistry", "Action registry full, cannot register");
-#else
-            Serial.println("Action registry full, cannot register");
-#endif
             return;
         }
         _actions[_registeredActionsCount] = action;

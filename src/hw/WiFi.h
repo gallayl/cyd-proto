@@ -1,18 +1,10 @@
 #pragma once
 
-#ifdef USE_ESP_IDF
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_netif.h"
 #include "nvs_flash.h"
 #include <cstring>
-#else
-#include <WiFi.h>
-#include <AsyncTCP.h>
-#include <WiFiClientSecure.h>
-#include <esp_wifi.h>
-#endif
-
 #include <string>
 #include "../config.h"
 #include "../FeatureRegistry/Features/Logging.h"
@@ -69,8 +61,6 @@ inline std::string getEncryptionType(wifi_auth_mode_t mode)
     }
 }
 
-#ifdef USE_ESP_IDF
-
 // --- ESP-IDF WiFi API (implemented in WiFi.cpp) ---
 
 void initWifi();
@@ -97,50 +87,3 @@ inline std::string macToString(const uint8_t mac[6])
              mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     return buf;
 }
-
-#else
-
-// --- Arduino WiFi implementation ---
-
-inline void startStaMode(const std::string &ssid, const std::string &staPassPharse)
-{
-    if (WiFiClass::getMode() == WIFI_AP && WiFi.begin() != WL_CONNECTED)
-    {
-        WiFiClass::mode(WIFI_AP_STA);
-        WiFi.softAP(ssid.c_str(), staPassPharse.c_str());
-    }
-}
-
-inline bool hasStoredCredentials()
-{
-    wifi_config_t conf;
-    esp_wifi_get_config(WIFI_IF_STA, &conf);
-    return strlen((char *)conf.sta.ssid) > 0;
-}
-
-inline void initWifi()
-{
-    WiFiClass::mode(WIFI_AP);
-
-    if (!hasStoredCredentials())
-    {
-        loggerInstance->Info("No WiFi credentials saved, starting in AP mode only");
-        startStaMode(STA_SSID, STA_PASSPHRASE);
-        return;
-    }
-
-    WiFi.begin();
-    wl_status_t state = (wl_status_t)WiFi.waitForConnectResult();
-
-    if (state != WL_CONNECTED)
-    {
-        loggerInstance->Error("Failed to connect to access point");
-        startStaMode(STA_SSID, STA_PASSPHRASE);
-    }
-    else
-    {
-        loggerInstance->Info("Connected to access point");
-    }
-}
-
-#endif

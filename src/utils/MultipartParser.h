@@ -1,7 +1,5 @@
 #pragma once
 
-#ifdef USE_ESP_IDF
-
 #include <esp_http_server.h>
 #include <string>
 #include <functional>
@@ -237,5 +235,3 @@ inline esp_err_t parseMultipartRequest(httpd_req_t *req, MultipartFieldCb onFiel
 
     return ESP_OK;
 }
-
-#endif // USE_ESP_IDF

@@ -1,7 +1,5 @@
 #pragma once
 
-#ifdef USE_ESP_IDF
-
 #include "cJSON.h"
 
 inline void merge(cJSON *dst, const cJSON *src)
@@ -34,31 +32,3 @@ inline void merge(cJSON *dst, const cJSON *src)
         }
     }
 }
-
-#else
-
-#include <ArduinoJson.h>
-
-inline void merge(JsonObject dst, JsonVariantConst src)
-{
-    if (src.is<JsonObjectConst>())
-    {
-        for (JsonPairConst kvp : src.as<JsonObjectConst>())
-        {
-            if (dst[kvp.key()].is<JsonObject>() && kvp.value().is<JsonObject>())
-            {
-                merge(dst[kvp.key()], kvp.value());
-            }
-            else
-            {
-                dst[kvp.key()] = kvp.value();
-            }
-        }
-    }
-    else
-    {
-        dst.set(src);
-    }
-}
-
-#endif

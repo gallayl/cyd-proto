@@ -7,7 +7,6 @@
 #include "../registeredFeatures.h"
 #include "../../utils/System.h"
 #include "../../fs/LittleFsInit.h"
-#ifdef USE_ESP_IDF
 #include "../../utils/CJsonHelper.h"
 #include "esp_system.h"
 #include "esp_chip_info.h"
@@ -15,31 +14,18 @@
 #include "esp_heap_caps.h"
 #include "esp_ota_ops.h"
 #include "spi_flash_mmap.h"
-#else
-#include <ArduinoJson.h>
-#include <Esp.h>
-#endif
 #include <string>
 #include <vector>
 
 #if ENABLE_SD_CARD
-#ifndef USE_ESP_IDF
-#include <SD.h>
-#endif
 #include "./SdCard/SdCardFeature.h"
 #endif
 
 #if ENABLE_WIFI
-#ifndef USE_ESP_IDF
-#include <WiFi.h>
-#include <IPAddress.h>
-#endif
 #include "../../hw/WiFi.h"
 #endif
 
 // --- Helper functions ---
-
-#ifdef USE_ESP_IDF
 
 cJSON *getInfo()
 {
@@ -79,49 +65,9 @@ cJSON *getInfo()
     return response;
 }
 
-#else // Arduino
-
-JsonDocument getInfo()
-{
-    JsonDocument response;
-    JsonObject espObj = response["esp"].to<JsonObject>();
-
-    espObj["sdkVersion"] = ESP.getSdkVersion();
-    espObj["cpuFreqMhz"] = ESP.getCpuFreqMHz();
-    espObj["freeHeap"] = getFreeHeap();
-    espObj["freeSkSpace"] = ESP.getFreeSketchSpace();
-
-    JsonObject flash = response["flash"].to<JsonObject>();
-    flash["mode"] = ESP.getFlashChipMode();
-    flash["size"] = ESP.getFlashChipSize();
-    flash["speed"] = ESP.getFlashChipSpeed();
-
-    JsonObject fs = response["fs"].to<JsonObject>();
-    fs["totalBytes"] = getLittleFsTotalBytes();
-    fs["usedBytes"] = getLittleFsUsedBytes();
-
-#if ENABLE_SD_CARD
-    JsonObject sd = response["sd"].to<JsonObject>();
-    sd["mounted"] = isSdCardMounted();
-    if (isSdCardMounted())
-    {
-        sd["cardType"] = getSdCardTypeName();
-        sd["totalBytes"] = getSdCardTotalBytes();
-        sd["usedBytes"] = getSdCardUsedBytes();
-        sd["cardSize"] = getSdCardSize();
-    }
-#endif
-
-    return response;
-}
-
-#endif // USE_ESP_IDF
-
 // --- WiFi handler ---
 
 #if ENABLE_WIFI
-
-#ifdef USE_ESP_IDF
 
 static std::string wifiHandler(const std::string &command)
 {
@@ -266,103 +212,6 @@ static std::string wifiHandler(const std::string &command)
             "<ssid> <password>, startSTA <ssid> <passphrase>, stopSTA\"}"};
 }
 
-#else
-
-static std::string wifiHandler(const std::string &command)
-{
-    std::string operation = CommandParser::getCommandParameter(command, 1);
-    if (operation == "connect")
-    {
-        std::string ssid = CommandParser::getCommandParameter(command, 2);
-        std::string password = CommandParser::getCommandParameter(command, 3);
-        if (ssid.length() < 3 || password.length() < 5)
-        {
-            return "{\"error\": \"ssid or password too short\"}";
-        }
-        WiFi.disconnect(true, false);
-        WiFi.persistent(true);
-        WiFiClass::mode(WIFI_AP);
-        WiFi.begin(ssid.c_str(), password.c_str());
-        return "{\"event\": \"connecting\"}";
-    }
-    if (operation == "list")
-    {
-        JsonDocument response;
-        JsonArray arr = response.to<JsonArray>();
-
-        int n = WiFi.scanNetworks();
-
-        for (int i = 0; i < n; ++i)
-        {
-            JsonObject element = arr.add<JsonObject>();
-            element["ssid"] = WiFi.SSID(i);
-            element["rssi"] = WiFi.RSSI(i);
-            element["rssiText"] = getSignalStrength(WiFi.RSSI(i));
-            element["encryption"] = getEncryptionType(WiFi.encryptionType(i));
-        }
-        std::string output;
-        serializeJson(response, output);
-        return output;
-    }
-    if (operation == "startSTA")
-    {
-        std::string ssid = CommandParser::getCommandParameter(command, 2);
-        std::string passphrase = CommandParser::getCommandParameter(command, 3);
-        if (ssid.length() < 3 || passphrase.length() < 5)
-        {
-            return "{\"error\": \"ssid or passphrase too short\"}";
-        }
-        startStaMode(ssid.c_str(), passphrase.c_str());
-        return "{\"event\": \"starting STA\"}";
-    }
-
-    if (operation == "stopSTA")
-    {
-        bool success = WiFi.softAPdisconnect(true);
-        WiFiClass::mode(WIFI_AP);
-        WiFi.begin();
-        return std::string("{\"event\": \"stopSTA\", \"success\": ") + std::to_string(static_cast<int>(success)) + "}";
-    }
-
-    if (operation == "info")
-    {
-        JsonDocument response;
-        if (WiFiClass::getMode() == WIFI_AP || WiFiClass::getMode() == WIFI_AP_STA)
-        {
-            JsonObject ap = response["ap"].to<JsonObject>();
-            ap["ipAddress"] = WiFi.softAPIP().toString();
-            ap["macAddress"] = WiFi.softAPmacAddress();
-        }
-
-        if (WiFiClass::getMode() == WIFI_STA || WiFiClass::getMode() == WIFI_AP_STA)
-        {
-            JsonObject sta = response["sta"].to<JsonObject>();
-            sta["ipAddress"] = WiFi.localIP().toString();
-            sta["macAddress"] = WiFi.macAddress();
-            sta["ssid"] = WiFi.SSID();
-        }
-
-        int8_t rssi = WiFi.RSSI();
-        response["wifiStrength"] = getSignalStrength(rssi);
-        response["wifiRssiDb"] = rssi;
-
-        std::string output;
-        serializeJson(response, output);
-        return output;
-    }
-
-    if (operation == "restart")
-    {
-        WiFi.disconnect(true, false);
-        WiFi.begin();
-        return {"{\"event\": \"disconnecting\"}"};
-    }
-    return {"{\"event\": \"Unknown WiFi operation command. The available commands are: info, list, connect "
-            "<ssid> <password>, startSTA <ssid> <passphrase>, stopSTA\"}"};
-}
-
-#endif // USE_ESP_IDF
-
 #endif // ENABLE_WIFI
 
 // --- Action definitions ---
@@ -382,17 +231,10 @@ static FeatureAction featuresAction = {.name = "features",
                                        .handler =
                                            [](const std::string & /*command*/)
                                        {
-#ifdef USE_ESP_IDF
                                            std::string output;
                                            withRegisteredFeatures([&output](cJSON *doc)
                                                                   { output = cJsonToString(doc); });
                                            return output;
-#else
-                                           std::string output;
-                                           withRegisteredFeatures([&output](const JsonDocument &doc)
-                                                                  { serializeJson(doc, output); });
-                                           return output;
-#endif
                                        },
                                        .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
 
@@ -400,17 +242,10 @@ static FeatureAction infoAction = {.name = "info",
                                    .handler =
                                        [](const std::string & /*command*/)
                                    {
-#ifdef USE_ESP_IDF
                                        cJSON *response = getInfo();
                                        std::string output = cJsonToString(response);
                                        cJSON_Delete(response);
                                        return output;
-#else
-                                       JsonDocument response = getInfo();
-                                       std::string output;
-                                       serializeJson(response, output);
-                                       return output;
-#endif
                                    },
                                    .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
 
@@ -456,22 +291,6 @@ static FeatureAction lightSensorAction = {.name = "getLightSensorValue",
                                           },
                                           .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
 
-#ifndef USE_ESP_IDF
-static FeatureAction hallSensorAction = {.name = "getHallSensorValue",
-                                         .handler =
-                                             [](const std::string & /*command*/)
-                                         {
-                                             uint16_t value = hallRead();
-                                             char buf[80];
-                                             snprintf(buf, sizeof(buf), "Read hall sensor value: %u", value);
-                                             loggerInstance->Info(buf);
-                                             snprintf(buf, sizeof(buf),
-                                                      "{\"event\": \"getHallSensorValue\", \"value\": %u}", value);
-                                             return std::string(buf);
-                                         },
-                                         .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
-#endif
-
 #if ENABLE_WIFI
 static FeatureAction wifiAction = {
     .name = "wifi", .handler = wifiHandler, .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
@@ -505,9 +324,6 @@ Feature *systemFeatures = new Feature(
         initLightSensor();
         actionRegistryInstance->registerAction(&rgbLedAction);
         actionRegistryInstance->registerAction(&lightSensorAction);
-#ifndef USE_ESP_IDF
-        actionRegistryInstance->registerAction(&hallSensorAction);
-#endif
 
         return FeatureState::RUNNING;
     },
@@ -519,7 +335,6 @@ Feature *systemFeatures = new Feature(
 
 static std::string memoryHandler(const std::string & /*command*/)
 {
-#ifdef USE_ESP_IDF
     cJSON *doc = cJSON_CreateObject();
     cJSON_AddNumberToObject(doc, "freeHeap", getFreeHeap());
     cJSON_AddNumberToObject(doc, "minFreeHeap", esp_get_minimum_free_heap_size());
@@ -543,28 +358,4 @@ static std::string memoryHandler(const std::string & /*command*/)
     std::string output = cJsonToString(doc);
     cJSON_Delete(doc);
     return output;
-#else
-    JsonDocument doc;
-    doc["freeHeap"] = getFreeHeap();
-    doc["minFreeHeap"] = ESP.getMinFreeHeap();
-    doc["heapSize"] = ESP.getHeapSize();
-    doc["maxAllocHeap"] = ESP.getMaxAllocHeap();
-
-    JsonArray tasks = doc["tasks"].to<JsonArray>();
-    for (uint8_t i = 0; i < featureRegistryInstance->getFeatureCount(); i++)
-    {
-        Feature *f = featureRegistryInstance->RegisteredFeatures[i];
-        if (f->isTaskBased())
-        {
-            JsonObject t = tasks.add<JsonObject>();
-            t["name"] = f->GetFeatureName();
-            t["running"] = f->isTaskRunning();
-            t["stackHighWaterMark"] = f->getTaskStackHighWaterMark();
-        }
-    }
-
-    std::string output;
-    serializeJson(doc, output);
-    return output;
-#endif
 }

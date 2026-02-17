@@ -7,13 +7,9 @@
 #include "../../../utils/StringUtil.h"
 #include <string>
 
-#ifdef USE_ESP_IDF
 #include <cstdio>
 #include <dirent.h>
 #include <sys/stat.h>
-#else
-#include <LittleFS.h>
-#endif
 
 extern "C"
 {
@@ -46,7 +42,6 @@ BerryScriptInfo parseAppMetadata(const std::string &path)
 
     ResolvedPath resolved = resolveVirtualPath(path);
 
-#ifdef USE_ESP_IDF
     std::string realPath = resolved.valid ? resolved.realPath : resolveToLittleFsPath(path);
 
     FILE *f = fopen(realPath.c_str(), "r");
@@ -59,26 +54,6 @@ BerryScriptInfo parseAppMetadata(const std::string &path)
     for (int line = 0; line < 15 && fgets(lineBuf, sizeof(lineBuf), f) != nullptr; line++)
     {
         std::string l = StringUtil::trim(std::string(lineBuf));
-#else
-    File f;
-    if (resolved.valid && resolved.fs != nullptr)
-    {
-        f = resolved.fs->open(resolved.localPath.c_str(), "r");
-    }
-    else
-    {
-        f = LittleFS.open(path.c_str(), "r");
-    }
-    if (!f)
-    {
-        return info;
-    }
-
-    for (int line = 0; line < 15 && (f.available() != 0); line++)
-    {
-        std::string l = f.readStringUntil('\n').c_str();
-        l = StringUtil::trim(l);
-#endif
         if (StringUtil::startsWith(l, "# app:"))
         {
             info.name = StringUtil::trim(l.substr(6));
@@ -110,11 +85,7 @@ BerryScriptInfo parseAppMetadata(const std::string &path)
             break;
         }
     }
-#ifdef USE_ESP_IDF
     fclose(f);
-#else
-    f.close();
-#endif
 
     if (info.name.empty())
     {
@@ -173,8 +144,6 @@ void openBerryPanel(const std::string &filePath)
 }
 #endif
 
-#ifdef USE_ESP_IDF
-
 static std::vector<BerryScriptInfo> scanBerryScriptsOnFs(const std::string &realDir)
 {
     std::vector<BerryScriptInfo> result;
@@ -224,66 +193,6 @@ std::vector<BerryScriptInfo> scanBerryScripts(const char *dir)
 
     return result;
 }
-
-#else // Arduino
-
-static std::vector<BerryScriptInfo> scanBerryScriptsOnFs(fs::FS &filesystem, const char *localDir,
-                                                         const std::string &virtualPrefix)
-{
-    std::vector<BerryScriptInfo> result;
-
-    if (!filesystem.exists(localDir))
-    {
-        return result;
-    }
-
-    File d = filesystem.open(localDir);
-    if (!d || !d.isDirectory())
-    {
-        return result;
-    }
-
-    File entry = d.openNextFile();
-    while (entry)
-    {
-        std::string filename = entry.name();
-        if (StringUtil::endsWith(filename, ".be"))
-        {
-            std::string localPath = localDir;
-            if (!StringUtil::endsWith(localPath, "/"))
-            {
-                localPath += "/";
-            }
-            localPath += filename;
-
-            std::string virtualPath = virtualPrefix + localPath;
-
-            BerryScriptInfo info = parseAppMetadata(virtualPath);
-            result.push_back(std::move(info));
-        }
-        entry = d.openNextFile();
-    }
-    return result;
-}
-
-std::vector<BerryScriptInfo> scanBerryScripts(const char *dir)
-{
-    // Scan on LittleFS (flash)
-    auto result = scanBerryScriptsOnFs(LittleFS, dir, "/flash");
-
-#if ENABLE_SD_CARD
-    // Also scan on SD card if mounted
-    if (isSdMounted())
-    {
-        auto sdResult = scanBerryScriptsOnFs(SD, dir, "/sd");
-        result.insert(result.end(), sdResult.begin(), sdResult.end());
-    }
-#endif
-
-    return result;
-}
-
-#endif // USE_ESP_IDF
 
 #endif // ENABLE_BERRY
 
@@ -396,7 +305,6 @@ static std::string berryHandlerImpl(const std::string &command)
 
         ResolvedPath resolved = resolveVirtualPath(path);
         bool fileExists = false;
-#ifdef USE_ESP_IDF
         if (resolved.valid)
         {
             fileExists = vfsExists(resolved.realPath);
@@ -410,20 +318,6 @@ static std::string berryHandlerImpl(const std::string &command)
                 path = std::string("/flash") + path;
             }
         }
-#else
-        if (resolved.valid && (resolved.fs != nullptr))
-        {
-            fileExists = resolved.fs->exists(resolved.localPath.c_str());
-        }
-        else
-        {
-            fileExists = LittleFS.exists(path.c_str());
-            if (fileExists)
-            {
-                path = std::string("/flash") + path;
-            }
-        }
-#endif
 
         if (!fileExists)
         {
@@ -439,26 +333,12 @@ static std::string berryHandlerImpl(const std::string &command)
             return std::string(R"({"event":"berry", "status":"queued", "app":")") + meta.name + "\"}";
         }
 #else
-#ifdef USE_ESP_IDF
         ResolvedPath rp = resolveVirtualPath(path);
         std::string realPath = rp.valid ? rp.realPath : resolveToLittleFsPath(path);
         std::string code = vfsReadFileAsString(realPath);
         if (code.empty())
             return std::string("{\"error\": \"File not found: ") + path + "\"}";
         return berryEval(code);
-#else
-        ResolvedPath rp = resolveVirtualPath(path);
-        File f;
-        if (rp.valid && rp.fs)
-            f = rp.fs->open(rp.localPath.c_str(), "r");
-        else
-            f = LittleFS.open(path.c_str(), "r");
-        if (!f)
-            return std::string("{\"error\": \"File not found: ") + path + "\"}";
-        std::string code = f.readString().c_str();
-        f.close();
-        return berryEval(code);
-#endif
 #endif
     }
 
@@ -605,7 +485,6 @@ Feature *BerryFeature = new Feature(
 
         actionRegistryInstance->registerAction(&berryAction);
 
-#ifdef USE_ESP_IDF
         std::string autoexecPath = resolveToLittleFsPath("/berry/autoexec.be");
         if (vfsExists(autoexecPath))
         {
@@ -616,19 +495,6 @@ Feature *BerryFeature = new Feature(
                 berryEval(code);
             }
         }
-#else
-        if (LittleFS.exists("/berry/autoexec.be"))
-        {
-            loggerInstance->Info("Running /berry/autoexec.be");
-            File f = LittleFS.open("/berry/autoexec.be", "r");
-            if (f)
-            {
-                std::string code = f.readString().c_str();
-                f.close();
-                berryEval(code);
-            }
-        }
-#endif
 
         loggerInstance->Info("Berry VM initialized");
         return FeatureState::RUNNING;

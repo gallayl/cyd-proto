@@ -1,15 +1,9 @@
 #pragma once
 
-#ifdef USE_ESP_IDF
 #include "esp_adc/adc_oneshot.h"
 #include <cstdint>
-#else
-#include <Arduino.h>
-#endif
 
 #define LIGHT_SENSOR_PIN 34
-
-#ifdef USE_ESP_IDF
 
 // GPIO 34 = ADC1_CHANNEL_6 on ESP32
 #define LIGHT_SENSOR_ADC_CHANNEL ADC_CHANNEL_6
@@ -37,17 +31,3 @@ inline uint16_t readLightSensor()
     }
     return (uint16_t)raw;
 }
-
-#else
-
-inline void initLightSensor()
-{
-    // No specific initialization needed for the light sensor
-}
-
-inline uint16_t readLightSensor()
-{
-    return analogRead(LIGHT_SENSOR_PIN);
-}
-
-#endif

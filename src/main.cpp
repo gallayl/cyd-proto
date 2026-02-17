@@ -1,10 +1,8 @@
 #include "./config.h"
 
-#ifdef USE_ESP_IDF
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#endif
 
 #if ENABLE_WEBSERVER
 #include "./services/WebServer.h"
@@ -20,8 +18,6 @@
 #endif
 
 #include "./FeatureRegistry/FeatureRegistry.h"
-
-#ifdef USE_ESP_IDF
 
 static const char *TAG = "main";
 
@@ -57,37 +53,3 @@ extern "C" void app_main(void)
 
     xTaskCreate(loopTask, "main_loop", 4096, NULL, 1, NULL);
 }
-
-#else
-
-void setup()
-{
-    Serial.begin(115200);
-
-    Serial.println("Starting up Sticky...");
-
-#if ENABLE_SCREEN
-    initScreen();
-#endif
-
-#if ENABLE_WIFI
-    initWifi();
-#endif
-
-#if ENABLE_WEBSERVER
-    initWebServer();
-    initWebSockets();
-#endif
-
-    featureRegistryInstance->init();
-    featureRegistryInstance->setupFeatures();
-    featureRegistryInstance->startFeatureTasks();
-}
-
-void loop()
-{
-    featureRegistryInstance->loopFeatures();
-    vTaskDelay(pdMS_TO_TICKS(1));
-}
-
-#endif

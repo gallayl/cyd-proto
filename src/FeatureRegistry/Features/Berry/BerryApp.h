@@ -16,12 +16,7 @@
 #include "../../../utils/StringUtil.h"
 #include <vector>
 #include <string>
-
-#ifdef USE_ESP_IDF
 #include <cstdio>
-#else
-#include <LittleFS.h>
-#endif
 
 extern "C"
 {
@@ -120,33 +115,8 @@ public:
 
         // read script (resolve virtual path prefix)
         ResolvedPath resolved = resolveVirtualPath(_scriptPath);
-        std::string code;
-
-#ifdef USE_ESP_IDF
         std::string realPath = resolved.valid ? resolved.realPath : resolveToLittleFsPath(_scriptPath);
-        code = vfsReadFileAsString(realPath);
-#else
-        {
-            File f;
-            if (resolved.valid && resolved.fs != nullptr)
-            {
-                f = resolved.fs->open(resolved.localPath.c_str(), "r");
-            }
-            else
-            {
-                f = LittleFS.open(_scriptPath.c_str(), "r");
-            }
-            if (!f)
-            {
-                loggerInstance->Error(std::string("BerryApp: cannot open ") + _scriptPath);
-                UI::errorPopup().show((std::string("Cannot open ") + _scriptPath).c_str());
-                berrySetCurrentApp(nullptr);
-                return;
-            }
-            code = f.readString().c_str();
-            f.close();
-        }
-#endif
+        std::string code = vfsReadFileAsString(realPath);
 
         if (code.empty())
         {

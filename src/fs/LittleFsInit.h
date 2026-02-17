@@ -3,7 +3,6 @@
 #include "../config.h"
 #include <cstddef>
 
-#ifdef USE_ESP_IDF
 #include "esp_littlefs.h"
 #include "esp_log.h"
 
@@ -63,34 +62,3 @@ inline size_t getLittleFsUsedBytes()
     }
     return 0;
 }
-
-#else // Arduino
-
-#include <LittleFS.h>
-
-inline bool initLittleFs()
-{
-    return LittleFS.begin();
-}
-
-inline void deinitLittleFs()
-{
-    LittleFS.end();
-}
-
-inline bool formatLittleFs()
-{
-    return LittleFS.format();
-}
-
-inline size_t getLittleFsTotalBytes()
-{
-    return LittleFS.totalBytes();
-}
-
-inline size_t getLittleFsUsedBytes()
-{
-    return LittleFS.usedBytes();
-}
-
-#endif

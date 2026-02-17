@@ -1,5 +1,5 @@
 dependencies:
-  # LittleFS filesystem component (replaces Arduino LittleFS)
+  # LittleFS filesystem component
   joltwallet/littlefs: "^1.20.4"
 
   # cJSON is built into ESP-IDF (json component) — no entry needed here.

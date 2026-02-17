@@ -23,11 +23,7 @@
 #include "../UI/Renderer.h"
 #include "../Logging.h"
 
-#ifdef USE_ESP_IDF
 #include "cJSON.h"
-#else
-#include <ArduinoJson.h>
-#endif
 #include <LovyanGFX.hpp>
 #include <new>
 #include <string>
@@ -747,7 +743,6 @@ static int ui_filelist_set_items(bvm *vm)
     const char *jsonStr = be_tostring(vm, 2);
     std::vector<UI::FileItem> items;
 
-#ifdef USE_ESP_IDF
     cJSON *root = cJSON_Parse(jsonStr);
     if (!root)
         be_return_nil(vm);
@@ -770,23 +765,6 @@ static int ui_filelist_set_items(bvm *vm)
         items.push_back(std::move(item));
     }
     cJSON_Delete(root);
-#else
-    JsonDocument doc;
-    DeserializationError err = deserializeJson(doc, jsonStr);
-    if (err)
-        be_return_nil(vm);
-
-    JsonArray arr = doc.as<JsonArray>();
-    for (JsonObject obj : arr)
-    {
-        UI::FileItem item;
-        item.name = obj["name"] | "?";
-        item.size = obj["size"] | 0;
-        item.isDir = obj["isDir"] | false;
-        item.lastWrite = obj["lastWrite"] | 0;
-        items.push_back(std::move(item));
-    }
-#endif
 
     fl->setItems(items);
     be_return_nil(vm);

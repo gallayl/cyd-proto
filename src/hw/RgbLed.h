@@ -1,17 +1,11 @@
 #pragma once
 
-#ifdef USE_ESP_IDF
 #include "driver/ledc.h"
 #include <cstdint>
-#else
-#include <Arduino.h>
-#endif
 
 #define RGB_LED_R_PIN 4
 #define RGB_LED_G_PIN 16
 #define RGB_LED_B_PIN 17
-
-#ifdef USE_ESP_IDF
 
 inline void initRgbLed()
 {
@@ -49,26 +43,3 @@ inline void setRgbLedColor(uint8_t r, uint8_t g, uint8_t b)
     ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2, 255 - b);
     ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2);
 }
-
-#else
-
-inline void setRgbLedColor(uint8_t r, uint8_t g, uint8_t b)
-{
-    analogWrite(RGB_LED_R_PIN, 255 - r); // Invert the value since the LED is active low
-    analogWrite(RGB_LED_G_PIN, 255 - g);
-    analogWrite(RGB_LED_B_PIN, 255 - b);
-}
-
-inline void initRgbLed()
-{
-    pinMode(RGB_LED_R_PIN, OUTPUT);
-    pinMode(RGB_LED_G_PIN, OUTPUT);
-    pinMode(RGB_LED_B_PIN, OUTPUT);
-
-    // turn off the LED by default (active-low: HIGH = off)
-    digitalWrite(RGB_LED_R_PIN, HIGH);
-    digitalWrite(RGB_LED_G_PIN, HIGH);
-    digitalWrite(RGB_LED_B_PIN, HIGH);
-}
-
-#endif

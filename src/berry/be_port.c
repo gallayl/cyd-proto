@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-/* Standard output - on ESP32 Arduino, stdout maps to UART0 (Serial) */
+/* Standard output - on ESP32 ESP-IDF, stdout maps to UART0 via VFS */
 
 BERRY_API void be_writebuffer(const char *buffer, size_t length)
 {

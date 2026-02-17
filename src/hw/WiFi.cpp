@@ -1,7 +1,5 @@
 #include "WiFi.h"
 
-#ifdef USE_ESP_IDF
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "esp_log.h"
@@ -150,5 +148,3 @@ void initWifi()
         loggerInstance->Error("Failed to connect to access point");
     }
 }
-
-#endif // USE_ESP_IDF

@@ -3,9 +3,7 @@
 #if ENABLE_UI
 
 #include "WindowManager.h"
-#ifdef USE_ESP_IDF
 #include "esp_log.h"
-#endif
 
 namespace UI
 {
@@ -502,13 +500,8 @@ void WindowManager::drawPopups()
                 int bw;
                 int bh;
                 s.popup->getBounds(bx, by, bw, bh);
-#ifdef USE_ESP_IDF
                 ESP_LOGI("WindowManager", "drawPopups: visible popup at (%d,%d,%d,%d) mounted=%d children=%d", bx, by,
                          bw, bh, static_cast<int>(s.popup->isMounted()), (int)s.popup->getChildren().size());
-#else
-                Serial.printf("drawPopups: visible popup at (%d,%d,%d,%d) mounted=%d children=%d\n", bx, by, bw, bh,
-                              static_cast<int>(s.popup->isMounted()), (int)s.popup->getChildren().size());
-#endif
                 logCount++;
             }
             s.popup->draw();

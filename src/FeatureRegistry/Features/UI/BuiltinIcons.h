@@ -1,10 +1,6 @@
 #pragma once
 
 #include "IconRenderer.h"
-#ifndef USE_ESP_IDF
-#include <WString.h>
-#include <pgmspace.h>
-#endif
 #include <cstring>
 
 namespace UI

@@ -5,10 +5,8 @@
 #include "../../../fs/LittleFsInit.h"
 #include <string>
 
-#ifdef USE_ESP_IDF
 #include "cJSON.h"
 #include "../../../utils/CJsonHelper.h"
-#endif
 
 static FeatureAction formatAction = {.name = "format",
                                      .type = "POST",
@@ -35,7 +33,6 @@ static FeatureAction listFilesAction = {.name = "list",
                                                 path = "/";
                                             }
 
-#ifdef USE_ESP_IDF
                                             cJSON *response = nullptr;
 
                                             if (path == "/")
@@ -77,46 +74,6 @@ static FeatureAction listFilesAction = {.name = "list",
                                             std::string output = cJsonToString(response);
                                             cJSON_Delete(response);
                                             return output;
-#else
-                                            JsonDocument response;
-                                            JsonArray fileList = response.to<JsonArray>();
-
-                                            if (path == "/")
-                                            {
-                                                JsonObject flash = fileList.add<JsonObject>();
-                                                flash["name"] = "flash";
-                                                flash["size"] = 0;
-                                                flash["isDir"] = true;
-                                                flash["lastWrite"] = 0;
-
-#if ENABLE_SD_CARD
-                                                if (isSdMounted())
-                                                {
-                                                    JsonObject sd = fileList.add<JsonObject>();
-                                                    sd["name"] = "sd";
-                                                    sd["size"] = 0;
-                                                    sd["isDir"] = true;
-                                                    sd["lastWrite"] = 0;
-                                                }
-#endif
-                                            }
-                                            else
-                                            {
-                                                ResolvedPath resolved = resolveVirtualPath(path);
-                                                if (resolved.valid && resolved.fs)
-                                                {
-                                                    response = getFileList(*resolved.fs, resolved.localPath.c_str());
-                                                }
-                                                else
-                                                {
-                                                    response = getFileList(LittleFS, path.c_str());
-                                                }
-                                            }
-
-                                            std::string output;
-                                            serializeJson(response, output);
-                                            return output;
-#endif
                                         },
                                         .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
 

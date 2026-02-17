@@ -5,12 +5,8 @@
 #include "../../../ActionRegistry/ActionRegistry.h"
 #include "../../../CommandInterpreter/CommandParser.h"
 #include "../Logging.h"
-#ifdef USE_ESP_IDF
 #include "cJSON.h"
 #include "../../../utils/CJsonHelper.h"
-#else
-#include <ArduinoJson.h>
-#endif
 
 #include <cstddef>
 #include <string>
@@ -20,7 +16,6 @@
 #define SD_MISO 19
 #define SD_MOSI 23
 
-#ifdef USE_ESP_IDF
 #include "esp_vfs_fat.h"
 #include "sdmmc_cmd.h"
 #include "driver/sdspi_host.h"
@@ -28,12 +23,6 @@
 
 static sdmmc_card_t *sdCard = nullptr;
 static bool sdSpiInitialized = false;
-#else
-#include <SD.h>
-#include <SPI.h>
-
-static SPIClass sdSPI(HSPI);
-#endif
 
 static bool sdMounted = false;
 
@@ -49,7 +38,6 @@ const char *getSdCardTypeName()
     if (!sdMounted)
         return "NONE";
 
-#ifdef USE_ESP_IDF
     if (sdCard == nullptr)
         return "UNKNOWN";
     if (sdCard->is_mmc)
@@ -57,20 +45,6 @@ const char *getSdCardTypeName()
     if (sdCard->ocr & (1 << 30))
         return "SDHC";
     return "SD";
-#else
-    sdcard_type_t cardType = SD.cardType();
-    switch (cardType)
-    {
-    case CARD_MMC:
-        return "MMC";
-    case CARD_SD:
-        return "SD";
-    case CARD_SDHC:
-        return "SDHC";
-    default:
-        return "UNKNOWN";
-    }
-#endif
 }
 
 uint64_t getSdCardTotalBytes()
@@ -78,16 +52,12 @@ uint64_t getSdCardTotalBytes()
     if (!sdMounted)
         return 0;
 
-#ifdef USE_ESP_IDF
     uint64_t totalBytes = 0, freeBytes = 0;
     if (esp_vfs_fat_info(SD_MOUNT_POINT, &totalBytes, &freeBytes) == ESP_OK)
     {
         return totalBytes;
     }
     return 0;
-#else
-    return SD.totalBytes();
-#endif
 }
 
 uint64_t getSdCardUsedBytes()
@@ -95,16 +65,12 @@ uint64_t getSdCardUsedBytes()
     if (!sdMounted)
         return 0;
 
-#ifdef USE_ESP_IDF
     uint64_t totalBytes = 0, freeBytes = 0;
     if (esp_vfs_fat_info(SD_MOUNT_POINT, &totalBytes, &freeBytes) == ESP_OK)
     {
         return totalBytes - freeBytes;
     }
     return 0;
-#else
-    return SD.usedBytes();
-#endif
 }
 
 uint64_t getSdCardSize()
@@ -112,15 +78,11 @@ uint64_t getSdCardSize()
     if (!sdMounted)
         return 0;
 
-#ifdef USE_ESP_IDF
     if (sdCard != nullptr)
     {
         return (uint64_t)sdCard->csd.capacity * sdCard->csd.sector_size;
     }
     return 0;
-#else
-    return SD.cardSize();
-#endif
 }
 
 // --- Mount / Unmount / Info ---
@@ -132,7 +94,6 @@ static std::string doMount()
         return "{\"error\": \"SD card already mounted\"}";
     }
 
-#ifdef USE_ESP_IDF
     esp_vfs_fat_sdmmc_mount_config_t mount_cfg = {};
     mount_cfg.format_if_mount_failed = false;
     mount_cfg.max_files = 5;
@@ -185,38 +146,6 @@ static std::string doMount()
     loggerInstance->Info(std::string("SD card mounted (") + getSdCardTypeName() + ", " +
                          std::to_string(getSdCardSize() / (1024 * 1024)) + " MB)");
     return output;
-#else
-    sdSPI.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);
-
-    if (!SD.begin(SD_CS, sdSPI))
-    {
-        loggerInstance->Error("SD card mount failed");
-        return "{\"error\": \"SD card mount failed\"}";
-    }
-
-    sdcard_type_t cardType = SD.cardType();
-    if (cardType == CARD_NONE)
-    {
-        SD.end();
-        loggerInstance->Error("No SD card detected");
-        return "{\"error\": \"No SD card detected\"}";
-    }
-
-    sdMounted = true;
-
-    JsonDocument response;
-    response["event"] = "sd_mounted";
-    response["cardType"] = getSdCardTypeName();
-    response["totalBytes"] = SD.totalBytes();
-    response["usedBytes"] = SD.usedBytes();
-
-    std::string output;
-    serializeJson(response, output);
-
-    loggerInstance->Info(std::string("SD card mounted (") + getSdCardTypeName() + ", " +
-                         std::to_string(SD.totalBytes() / (1024 * 1024)) + " MB)");
-    return output;
-#endif
 }
 
 static std::string doUnmount()
@@ -226,12 +155,8 @@ static std::string doUnmount()
         return {"{\"error\": \"SD card not mounted\"}"};
     }
 
-#ifdef USE_ESP_IDF
     esp_vfs_fat_sdcard_unmount(SD_MOUNT_POINT, sdCard);
     sdCard = nullptr;
-#else
-    SD.end();
-#endif
 
     sdMounted = false;
 
@@ -246,7 +171,6 @@ static std::string doInfo()
         return "{\"error\": \"SD card not mounted\"}";
     }
 
-#ifdef USE_ESP_IDF
     cJSON *response = cJSON_CreateObject();
     cJSON_AddBoolToObject(response, "mounted", true);
     cJSON_AddStringToObject(response, "cardType", getSdCardTypeName());
@@ -257,18 +181,6 @@ static std::string doInfo()
     std::string output = cJsonToString(response);
     cJSON_Delete(response);
     return output;
-#else
-    JsonDocument response;
-    response["mounted"] = true;
-    response["cardType"] = getSdCardTypeName();
-    response["totalBytes"] = getSdCardTotalBytes();
-    response["usedBytes"] = getSdCardUsedBytes();
-    response["cardSize"] = getSdCardSize();
-
-    std::string output;
-    serializeJson(response, output);
-    return output;
-#endif
 }
 
 static std::string sdHandler(const std::string &command)
@@ -307,7 +219,6 @@ Feature *SdCardFeature = new Feature(
     {
         actionRegistryInstance->registerAction(&sdAction);
 
-#ifdef USE_ESP_IDF
         esp_vfs_fat_sdmmc_mount_config_t mount_cfg = {};
         mount_cfg.format_if_mount_failed = false;
         mount_cfg.max_files = 5;
@@ -347,30 +258,6 @@ Feature *SdCardFeature = new Feature(
         {
             loggerInstance->Info("SD card not available");
         }
-#else
-        // Attempt auto-mount at startup
-        sdSPI.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);
-
-        if (SD.begin(SD_CS, sdSPI))
-        {
-            sdcard_type_t cardType = SD.cardType();
-            if (cardType != CARD_NONE)
-            {
-                sdMounted = true;
-                loggerInstance->Info(std::string("SD card detected (") + getSdCardTypeName() + ", " +
-                                     std::to_string(SD.totalBytes() / (static_cast<uint64_t>(1024 * 1024))) + " MB)");
-            }
-            else
-            {
-                SD.end();
-                loggerInstance->Info("No SD card inserted");
-            }
-        }
-        else
-        {
-            loggerInstance->Info("SD card not available");
-        }
-#endif
 
         return FeatureState::RUNNING;
     },
@@ -379,12 +266,8 @@ Feature *SdCardFeature = new Feature(
     {
         if (sdMounted)
         {
-#ifdef USE_ESP_IDF
             esp_vfs_fat_sdcard_unmount(SD_MOUNT_POINT, sdCard);
             sdCard = nullptr;
-#else
-            SD.end();
-#endif
             sdMounted = false;
             loggerInstance->Info("SD card unmounted");
         }

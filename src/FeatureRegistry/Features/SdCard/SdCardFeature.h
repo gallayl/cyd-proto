@@ -9,9 +9,7 @@
 #include "../../../ActionRegistry/FeatureAction.h"
 #include "../Logging.h"
 
-#ifdef USE_ESP_IDF
 #define SD_MOUNT_POINT "/sdcard"
-#endif
 
 extern Feature *SdCardFeature;
 

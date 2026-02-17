@@ -6,8 +6,6 @@ ActionRegistry *actionRegistryInstance = new ActionRegistry();
 
 #include "../mime.h"
 
-#ifdef USE_ESP_IDF
-
 #include "../services/WebServer.h"
 
 static esp_err_t actionRestHandler(httpd_req_t *req)
@@ -45,48 +43,5 @@ void ActionRegistry::wireRestEndpoints()
         httpd_register_uri_handler(server, &uriHandler);
     }
 }
-
-#else // Arduino
-
-#include <ESPAsyncWebServer.h>
-
-extern AsyncWebServer server;
-
-void ActionRegistry::wireRestEndpoints()
-{
-    for (uint8_t i = 0; i < _registeredActionsCount; i++)
-    {
-        FeatureAction *action = _actions[i];
-        if (!action->transports.rest)
-        {
-            continue;
-        }
-
-        std::string path = "/" + action->name;
-
-        WebRequestMethodComposite method = HTTP_GET;
-        if (action->type == "POST")
-        {
-            method = HTTP_POST;
-        }
-        else if (action->type == "PUT")
-        {
-            method = HTTP_PUT;
-        }
-        else if (action->type == "DELETE")
-        {
-            method = HTTP_DELETE;
-        }
-
-        server.on(path.c_str(), method,
-                  [action](AsyncWebServerRequest *request)
-                  {
-                      std::string result = action->handler(action->name);
-                      request->send(200, MIME_JSON, result.c_str());
-                  });
-    }
-}
-
-#endif // USE_ESP_IDF
 
 #endif // ENABLE_WEBSERVER

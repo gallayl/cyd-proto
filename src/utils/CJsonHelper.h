@@ -1,7 +1,5 @@
 #pragma once
 
-#ifdef USE_ESP_IDF
-
 #include "cJSON.h"
 #include <string>
 #include <memory>
@@ -28,5 +26,3 @@ inline std::string cJsonToString(const cJSON *json)
     cJSON_free(str);
     return result;
 }
-
-#endif // USE_ESP_IDF

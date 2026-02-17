@@ -7,9 +7,7 @@
 #define I2C_SDA_PIN 27
 #define I2C_SCL_PIN 22
 
-#ifdef USE_ESP_IDF
 i2c_master_bus_handle_t i2cBusHandle = nullptr;
-#endif
 
 static FeatureAction i2cAction = {
     .name = "i2c",
@@ -45,7 +43,6 @@ Feature *i2cFeature = new Feature(
     "i2c",
     []()
     {
-#ifdef USE_ESP_IDF
         i2c_master_bus_config_t bus_cfg = {};
         bus_cfg.i2c_port = I2C_NUM_0;
         bus_cfg.sda_io_num = (gpio_num_t)I2C_SDA_PIN;
@@ -59,9 +56,6 @@ Feature *i2cFeature = new Feature(
         {
             return FeatureState::ERROR;
         }
-#else
-        Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
-#endif
 
         actionRegistryInstance->registerAction(&i2cAction);
 
@@ -70,13 +64,9 @@ Feature *i2cFeature = new Feature(
     []() {},
     []()
     {
-#ifdef USE_ESP_IDF
         if (i2cBusHandle != nullptr)
         {
             i2c_del_master_bus(i2cBusHandle);
             i2cBusHandle = nullptr;
         }
-#else
-        Wire.end();
-#endif
     });
