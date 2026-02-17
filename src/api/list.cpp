@@ -9,25 +9,24 @@
 #include <sys/stat.h>
 #include <cstring>
 
-JsonDocument getFileList()
+cJSON *getFileList()
 {
     return getFileList(resolveToLittleFsPath("/"));
 }
 
-JsonDocument getFileList(const char *path)
+cJSON *getFileList(const char *path)
 {
     return getFileList(resolveToLittleFsPath(path));
 }
 
-JsonDocument getFileList(const std::string &realPath)
+cJSON *getFileList(const std::string &realPath)
 {
-    JsonDocument response;
-    JsonArray fileList = response.to<JsonArray>();
+    cJSON *fileList = cJSON_CreateArray();
 
     DIR *dir = opendir(realPath.c_str());
     if (!dir)
     {
-        return response;
+        return fileList;
     }
 
     struct dirent *entry;
@@ -57,21 +56,23 @@ JsonDocument getFileList(const std::string &realPath)
             lastWrite = st.st_mtime;
         }
 
-        JsonObject o = fileList.add<JsonObject>();
-        o["name"] = entry->d_name;
-        o["size"] = fileSize;
-        o["isDir"] = isDir;
-        o["path"] = entryPath;
-        o["lastWrite"] = (long)lastWrite;
+        cJSON *o = cJSON_CreateObject();
+        cJSON_AddStringToObject(o, "name", entry->d_name);
+        cJSON_AddNumberToObject(o, "size", fileSize);
+        cJSON_AddBoolToObject(o, "isDir", isDir);
+        cJSON_AddStringToObject(o, "path", entryPath.c_str());
+        cJSON_AddNumberToObject(o, "lastWrite", (double)lastWrite);
+        cJSON_AddItemToArray(fileList, o);
     }
 
     closedir(dir);
-    return response;
+    return fileList;
 }
 
 #else // Arduino
 
 #include <LittleFS.h>
+#include <ArduinoJson.h>
 
 JsonDocument getFileList()
 {

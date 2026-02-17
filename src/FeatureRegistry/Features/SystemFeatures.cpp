@@ -7,8 +7,8 @@
 #include "../registeredFeatures.h"
 #include "../../utils/System.h"
 #include "../../fs/LittleFsInit.h"
-#include <ArduinoJson.h>
 #ifdef USE_ESP_IDF
+#include "../../utils/CJsonHelper.h"
 #include "esp_system.h"
 #include "esp_chip_info.h"
 #include "esp_flash.h"
@@ -16,6 +16,7 @@
 #include "esp_ota_ops.h"
 #include "spi_flash_mmap.h"
 #else
+#include <ArduinoJson.h>
 #include <Esp.h>
 #endif
 #include <string>
@@ -38,38 +39,62 @@
 
 // --- Helper functions ---
 
+#ifdef USE_ESP_IDF
+
+cJSON *getInfo()
+{
+    cJSON *response = cJSON_CreateObject();
+
+    cJSON *espObj = cJSON_AddObjectToObject(response, "esp");
+    cJSON_AddStringToObject(espObj, "sdkVersion", esp_get_idf_version());
+    cJSON_AddNumberToObject(espObj, "cpuFreqMhz", CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ);
+    cJSON_AddNumberToObject(espObj, "freeHeap", getFreeHeap());
+    const esp_partition_t *running = esp_ota_get_running_partition();
+    if (running)
+        cJSON_AddNumberToObject(espObj, "freeSkSpace", running->size);
+    else
+        cJSON_AddNumberToObject(espObj, "freeSkSpace", 0);
+
+    cJSON *flash = cJSON_AddObjectToObject(response, "flash");
+    uint32_t flashSize = 0;
+    esp_flash_get_size(NULL, &flashSize);
+    cJSON_AddNumberToObject(flash, "size", flashSize);
+
+    cJSON *fs = cJSON_AddObjectToObject(response, "fs");
+    cJSON_AddNumberToObject(fs, "totalBytes", getLittleFsTotalBytes());
+    cJSON_AddNumberToObject(fs, "usedBytes", getLittleFsUsedBytes());
+
+#if ENABLE_SD_CARD
+    cJSON *sd = cJSON_AddObjectToObject(response, "sd");
+    cJSON_AddBoolToObject(sd, "mounted", isSdCardMounted());
+    if (isSdCardMounted())
+    {
+        cJSON_AddStringToObject(sd, "cardType", getSdCardTypeName());
+        cJSON_AddNumberToObject(sd, "totalBytes", (double)getSdCardTotalBytes());
+        cJSON_AddNumberToObject(sd, "usedBytes", (double)getSdCardUsedBytes());
+        cJSON_AddNumberToObject(sd, "cardSize", (double)getSdCardSize());
+    }
+#endif
+
+    return response;
+}
+
+#else // Arduino
+
 JsonDocument getInfo()
 {
     JsonDocument response;
     JsonObject espObj = response["esp"].to<JsonObject>();
 
-#ifdef USE_ESP_IDF
-    espObj["sdkVersion"] = esp_get_idf_version();
-    espObj["cpuFreqMhz"] = CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ;
-    espObj["freeHeap"] = getFreeHeap();
-    const esp_partition_t *running = esp_ota_get_running_partition();
-    if (running)
-        espObj["freeSkSpace"] = running->size;
-    else
-        espObj["freeSkSpace"] = 0;
-#else
     espObj["sdkVersion"] = ESP.getSdkVersion();
     espObj["cpuFreqMhz"] = ESP.getCpuFreqMHz();
     espObj["freeHeap"] = getFreeHeap();
     espObj["freeSkSpace"] = ESP.getFreeSketchSpace();
-#endif
 
     JsonObject flash = response["flash"].to<JsonObject>();
-
-#ifdef USE_ESP_IDF
-    uint32_t flashSize = 0;
-    esp_flash_get_size(NULL, &flashSize);
-    flash["size"] = flashSize;
-#else
     flash["mode"] = ESP.getFlashChipMode();
     flash["size"] = ESP.getFlashChipSize();
     flash["speed"] = ESP.getFlashChipSpeed();
-#endif
 
     JsonObject fs = response["fs"].to<JsonObject>();
     fs["totalBytes"] = getLittleFsTotalBytes();
@@ -89,6 +114,8 @@ JsonDocument getInfo()
 
     return response;
 }
+
+#endif // USE_ESP_IDF
 
 // --- WiFi handler ---
 
@@ -129,8 +156,7 @@ static std::string wifiHandler(const std::string &command)
 
     if (operation == "list")
     {
-        JsonDocument response;
-        JsonArray arr = response.to<JsonArray>();
+        cJSON *arr = cJSON_CreateArray();
 
         wifi_scan_config_t scan_cfg = {};
         scan_cfg.show_hidden = true;
@@ -146,16 +172,17 @@ static std::string wifiHandler(const std::string &command)
 
             for (uint16_t i = 0; i < ap_count; i++)
             {
-                JsonObject element = arr.add<JsonObject>();
-                element["ssid"] = (const char *)ap_records[i].ssid;
-                element["rssi"] = ap_records[i].rssi;
-                element["rssiText"] = getSignalStrength(ap_records[i].rssi);
-                element["encryption"] = getEncryptionType(ap_records[i].authmode);
+                cJSON *element = cJSON_CreateObject();
+                cJSON_AddStringToObject(element, "ssid", (const char *)ap_records[i].ssid);
+                cJSON_AddNumberToObject(element, "rssi", ap_records[i].rssi);
+                cJSON_AddStringToObject(element, "rssiText", getSignalStrength(ap_records[i].rssi).c_str());
+                cJSON_AddStringToObject(element, "encryption", getEncryptionType(ap_records[i].authmode).c_str());
+                cJSON_AddItemToArray(arr, element);
             }
         }
 
-        std::string output;
-        serializeJson(response, output);
+        std::string output = cJsonToString(arr);
+        cJSON_Delete(arr);
         return output;
     }
 
@@ -181,37 +208,37 @@ static std::string wifiHandler(const std::string &command)
 
     if (operation == "info")
     {
-        JsonDocument response;
+        cJSON *response = cJSON_CreateObject();
 
         wifi_mode_t mode;
         esp_wifi_get_mode(&mode);
 
         if (mode == WIFI_MODE_AP || mode == WIFI_MODE_APSTA)
         {
-            JsonObject ap = response["ap"].to<JsonObject>();
+            cJSON *ap = cJSON_AddObjectToObject(response, "ap");
             esp_netif_ip_info_t ap_ip = {};
             esp_netif_get_ip_info(getWifiApNetif(), &ap_ip);
-            ap["ipAddress"] = ipToString(ap_ip.ip);
+            cJSON_AddStringToObject(ap, "ipAddress", ipToString(ap_ip.ip).c_str());
 
             uint8_t ap_mac[6];
             esp_wifi_get_mac(WIFI_IF_AP, ap_mac);
-            ap["macAddress"] = macToString(ap_mac);
+            cJSON_AddStringToObject(ap, "macAddress", macToString(ap_mac).c_str());
         }
 
         if (mode == WIFI_MODE_STA || mode == WIFI_MODE_APSTA)
         {
-            JsonObject sta = response["sta"].to<JsonObject>();
+            cJSON *sta = cJSON_AddObjectToObject(response, "sta");
             esp_netif_ip_info_t sta_ip = {};
             esp_netif_get_ip_info(getWifiStaNetif(), &sta_ip);
-            sta["ipAddress"] = ipToString(sta_ip.ip);
+            cJSON_AddStringToObject(sta, "ipAddress", ipToString(sta_ip.ip).c_str());
 
             uint8_t sta_mac[6];
             esp_wifi_get_mac(WIFI_IF_STA, sta_mac);
-            sta["macAddress"] = macToString(sta_mac);
+            cJSON_AddStringToObject(sta, "macAddress", macToString(sta_mac).c_str());
 
             wifi_config_t sta_conf = {};
             esp_wifi_get_config(WIFI_IF_STA, &sta_conf);
-            sta["ssid"] = (const char *)sta_conf.sta.ssid;
+            cJSON_AddStringToObject(sta, "ssid", (const char *)sta_conf.sta.ssid);
         }
 
         wifi_ap_record_t ap_info = {};
@@ -220,11 +247,11 @@ static std::string wifiHandler(const std::string &command)
         {
             rssi = ap_info.rssi;
         }
-        response["wifiStrength"] = getSignalStrength(rssi);
-        response["wifiRssiDb"] = rssi;
+        cJSON_AddStringToObject(response, "wifiStrength", getSignalStrength(rssi).c_str());
+        cJSON_AddNumberToObject(response, "wifiRssiDb", rssi);
 
-        std::string output;
-        serializeJson(response, output);
+        std::string output = cJsonToString(response);
+        cJSON_Delete(response);
         return output;
     }
 
@@ -355,10 +382,17 @@ static FeatureAction featuresAction = {.name = "features",
                                        .handler =
                                            [](const std::string & /*command*/)
                                        {
+#ifdef USE_ESP_IDF
+                                           std::string output;
+                                           withRegisteredFeatures([&output](cJSON *doc)
+                                                                  { output = cJsonToString(doc); });
+                                           return output;
+#else
                                            std::string output;
                                            withRegisteredFeatures([&output](const JsonDocument &doc)
                                                                   { serializeJson(doc, output); });
                                            return output;
+#endif
                                        },
                                        .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
 
@@ -366,10 +400,17 @@ static FeatureAction infoAction = {.name = "info",
                                    .handler =
                                        [](const std::string & /*command*/)
                                    {
+#ifdef USE_ESP_IDF
+                                       cJSON *response = getInfo();
+                                       std::string output = cJsonToString(response);
+                                       cJSON_Delete(response);
+                                       return output;
+#else
                                        JsonDocument response = getInfo();
                                        std::string output;
                                        serializeJson(response, output);
                                        return output;
+#endif
                                    },
                                    .transports = {.cli = true, .rest = true, .ws = true, .scripting = true}};
 
@@ -478,17 +519,36 @@ Feature *systemFeatures = new Feature(
 
 static std::string memoryHandler(const std::string & /*command*/)
 {
+#ifdef USE_ESP_IDF
+    cJSON *doc = cJSON_CreateObject();
+    cJSON_AddNumberToObject(doc, "freeHeap", getFreeHeap());
+    cJSON_AddNumberToObject(doc, "minFreeHeap", esp_get_minimum_free_heap_size());
+    cJSON_AddNumberToObject(doc, "heapSize", heap_caps_get_total_size(MALLOC_CAP_DEFAULT));
+    cJSON_AddNumberToObject(doc, "maxAllocHeap", heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT));
+
+    cJSON *tasks = cJSON_AddArrayToObject(doc, "tasks");
+    for (uint8_t i = 0; i < featureRegistryInstance->getFeatureCount(); i++)
+    {
+        Feature *f = featureRegistryInstance->RegisteredFeatures[i];
+        if (f->isTaskBased())
+        {
+            cJSON *t = cJSON_CreateObject();
+            cJSON_AddStringToObject(t, "name", f->GetFeatureName().c_str());
+            cJSON_AddBoolToObject(t, "running", f->isTaskRunning());
+            cJSON_AddNumberToObject(t, "stackHighWaterMark", f->getTaskStackHighWaterMark());
+            cJSON_AddItemToArray(tasks, t);
+        }
+    }
+
+    std::string output = cJsonToString(doc);
+    cJSON_Delete(doc);
+    return output;
+#else
     JsonDocument doc;
     doc["freeHeap"] = getFreeHeap();
-#ifdef USE_ESP_IDF
-    doc["minFreeHeap"] = esp_get_minimum_free_heap_size();
-    doc["heapSize"] = heap_caps_get_total_size(MALLOC_CAP_DEFAULT);
-    doc["maxAllocHeap"] = heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT);
-#else
     doc["minFreeHeap"] = ESP.getMinFreeHeap();
     doc["heapSize"] = ESP.getHeapSize();
     doc["maxAllocHeap"] = ESP.getMaxAllocHeap();
-#endif
 
     JsonArray tasks = doc["tasks"].to<JsonArray>();
     for (uint8_t i = 0; i < featureRegistryInstance->getFeatureCount(); i++)
@@ -506,4 +566,5 @@ static std::string memoryHandler(const std::string & /*command*/)
     std::string output;
     serializeJson(doc, output);
     return output;
+#endif
 }

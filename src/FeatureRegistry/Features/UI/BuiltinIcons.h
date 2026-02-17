@@ -1,8 +1,11 @@
 #pragma once
 
 #include "IconRenderer.h"
+#ifndef USE_ESP_IDF
 #include <WString.h>
 #include <pgmspace.h>
+#endif
+#include <cstring>
 
 namespace UI
 {
@@ -1554,11 +1557,11 @@ inline void drawBuiltinIcon(LGFX_Sprite &canvas, const char *name, int x, int y,
 }
 
 // Get a default icon name for a startMenu category path
-inline const char *getDefaultIconForCategory(const String &startMenu)
+inline const char *getDefaultIconForCategory(const char *startMenu)
 {
-    if (startMenu.startsWith("/System"))
+    if (strncmp(startMenu, "/System", 7) == 0)
         return "computer";
-    if (startMenu.startsWith("/Settings"))
+    if (strncmp(startMenu, "/Settings", 9) == 0)
         return "settings";
     return "generic_file";
 }

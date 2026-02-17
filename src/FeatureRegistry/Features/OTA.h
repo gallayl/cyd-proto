@@ -6,11 +6,10 @@
 
 #include "../Feature.h"
 
-#ifdef USE_ESP_IDF
-
 #define REFRESH_TIMEOUT_AFTER_UPDATE "30"
 
-// ESP-IDF OTA will be implemented in Phase 5 (esp_ota_ops)
+#ifdef USE_ESP_IDF
+
 extern Feature *otaUpgrade;
 
 #else // Arduino
@@ -18,15 +17,11 @@ extern Feature *otaUpgrade;
 #include "ESPAsyncWebServer.h"
 #include <Update.h>
 
-#define REFRESH_TIMEOUT_AFTER_UPDATE "30"
-
-// handler variables defined in OTA.cpp
 extern ArRequestHandlerFunction getUpdateForm;
 extern ArRequestHandlerFunction getRedirectPage;
 extern ArRequestHandlerFunction onPostUpdate;
 extern ArUploadHandlerFunction onUploadUpdate;
 
-// feature object
 extern Feature *otaUpgrade;
 
 #endif // USE_ESP_IDF

@@ -5,6 +5,11 @@
 #include "../../../fs/LittleFsInit.h"
 #include <string>
 
+#ifdef USE_ESP_IDF
+#include "cJSON.h"
+#include "../../../utils/CJsonHelper.h"
+#endif
+
 static FeatureAction formatAction = {.name = "format",
                                      .type = "POST",
                                      .handler =
@@ -30,6 +35,49 @@ static FeatureAction listFilesAction = {.name = "list",
                                                 path = "/";
                                             }
 
+#ifdef USE_ESP_IDF
+                                            cJSON *response = nullptr;
+
+                                            if (path == "/")
+                                            {
+                                                response = cJSON_CreateArray();
+
+                                                cJSON *flash = cJSON_CreateObject();
+                                                cJSON_AddStringToObject(flash, "name", "flash");
+                                                cJSON_AddNumberToObject(flash, "size", 0);
+                                                cJSON_AddBoolToObject(flash, "isDir", true);
+                                                cJSON_AddNumberToObject(flash, "lastWrite", 0);
+                                                cJSON_AddItemToArray(response, flash);
+
+#if ENABLE_SD_CARD
+                                                if (isSdMounted())
+                                                {
+                                                    cJSON *sd = cJSON_CreateObject();
+                                                    cJSON_AddStringToObject(sd, "name", "sd");
+                                                    cJSON_AddNumberToObject(sd, "size", 0);
+                                                    cJSON_AddBoolToObject(sd, "isDir", true);
+                                                    cJSON_AddNumberToObject(sd, "lastWrite", 0);
+                                                    cJSON_AddItemToArray(response, sd);
+                                                }
+#endif
+                                            }
+                                            else
+                                            {
+                                                ResolvedPath resolved = resolveVirtualPath(path);
+                                                if (resolved.valid)
+                                                {
+                                                    response = getFileList(resolved.realPath);
+                                                }
+                                                else
+                                                {
+                                                    response = getFileList(resolveToLittleFsPath(path));
+                                                }
+                                            }
+
+                                            std::string output = cJsonToString(response);
+                                            cJSON_Delete(response);
+                                            return output;
+#else
                                             JsonDocument response;
                                             JsonArray fileList = response.to<JsonArray>();
 
@@ -55,16 +103,6 @@ static FeatureAction listFilesAction = {.name = "list",
                                             else
                                             {
                                                 ResolvedPath resolved = resolveVirtualPath(path);
-#ifdef USE_ESP_IDF
-                                                if (resolved.valid)
-                                                {
-                                                    response = getFileList(resolved.realPath);
-                                                }
-                                                else
-                                                {
-                                                    response = getFileList(resolveToLittleFsPath(path));
-                                                }
-#else
                                                 if (resolved.valid && resolved.fs)
                                                 {
                                                     response = getFileList(*resolved.fs, resolved.localPath.c_str());
@@ -73,12 +111,12 @@ static FeatureAction listFilesAction = {.name = "list",
                                                 {
                                                     response = getFileList(LittleFS, path.c_str());
                                                 }
-#endif
                                             }
 
                                             std::string output;
                                             serializeJson(response, output);
                                             return output;
+#endif
                                         },
                                         .transports = {.cli = true, .rest = false, .ws = true, .scripting = true}};
 

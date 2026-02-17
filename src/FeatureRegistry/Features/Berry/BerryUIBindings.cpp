@@ -23,7 +23,11 @@
 #include "../UI/Renderer.h"
 #include "../Logging.h"
 
+#ifdef USE_ESP_IDF
+#include "cJSON.h"
+#else
 #include <ArduinoJson.h>
+#endif
 #include <LovyanGFX.hpp>
 #include <new>
 #include <string>
@@ -741,14 +745,38 @@ static int ui_filelist_set_items(bvm *vm)
         be_return_nil(vm);
 
     const char *jsonStr = be_tostring(vm, 2);
+    std::vector<UI::FileItem> items;
+
+#ifdef USE_ESP_IDF
+    cJSON *root = cJSON_Parse(jsonStr);
+    if (!root)
+        be_return_nil(vm);
+
+    int count = cJSON_GetArraySize(root);
+    for (int i = 0; i < count; i++)
+    {
+        cJSON *obj = cJSON_GetArrayItem(root, i);
+        if (!obj)
+            continue;
+        UI::FileItem item;
+        cJSON *nameItem = cJSON_GetObjectItem(obj, "name");
+        item.name = (nameItem && cJSON_IsString(nameItem)) ? nameItem->valuestring : "?";
+        cJSON *sizeItem = cJSON_GetObjectItem(obj, "size");
+        item.size = (sizeItem && cJSON_IsNumber(sizeItem)) ? sizeItem->valueint : 0;
+        cJSON *isDirItem = cJSON_GetObjectItem(obj, "isDir");
+        item.isDir = (isDirItem && cJSON_IsBool(isDirItem)) ? cJSON_IsTrue(isDirItem) : false;
+        cJSON *lastWriteItem = cJSON_GetObjectItem(obj, "lastWrite");
+        item.lastWrite = (lastWriteItem && cJSON_IsNumber(lastWriteItem)) ? lastWriteItem->valueint : 0;
+        items.push_back(std::move(item));
+    }
+    cJSON_Delete(root);
+#else
     JsonDocument doc;
     DeserializationError err = deserializeJson(doc, jsonStr);
     if (err)
         be_return_nil(vm);
 
     JsonArray arr = doc.as<JsonArray>();
-    std::vector<UI::FileItem> items;
-
     for (JsonObject obj : arr)
     {
         UI::FileItem item;
@@ -758,6 +786,7 @@ static int ui_filelist_set_items(bvm *vm)
         item.lastWrite = obj["lastWrite"] | 0;
         items.push_back(std::move(item));
     }
+#endif
 
     fl->setItems(items);
     be_return_nil(vm);

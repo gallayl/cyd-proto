@@ -2,14 +2,16 @@
 
 #ifdef USE_ESP_IDF
 #include "driver/i2c_master.h"
+#include "cJSON.h"
+#include "../../utils/CJsonHelper.h"
 #else
 #include <Wire.h>
+#include <ArduinoJson.h>
 #endif
 
 #include <vector>
 #include <string>
 #include <cstring>
-#include <ArduinoJson.h>
 
 #include "../../config.h"
 #include "../Feature.h"
@@ -20,20 +22,27 @@ extern i2c_master_bus_handle_t i2cBusHandle;
 
 inline std::string scanDevices()
 {
-    JsonDocument doc;
-    JsonArray arr = doc.to<JsonArray>();
-
 #ifdef USE_ESP_IDF
+    cJSON *arr = cJSON_CreateArray();
+
     for (uint16_t address = 1; address < 127; address++)
     {
         esp_err_t err = i2c_master_probe(i2cBusHandle, address, 50);
         if (err == ESP_OK)
         {
-            JsonObject device = arr.add<JsonObject>();
-            device["address"] = address;
+            cJSON *device = cJSON_CreateObject();
+            cJSON_AddNumberToObject(device, "address", address);
+            cJSON_AddItemToArray(arr, device);
         }
     }
+
+    std::string output = cJsonToString(arr);
+    cJSON_Delete(arr);
+    return output;
 #else
+    JsonDocument doc;
+    JsonArray arr = doc.to<JsonArray>();
+
     byte error;
     byte address;
 
@@ -48,19 +57,18 @@ inline std::string scanDevices()
             device["address"] = address;
         }
     }
-#endif
 
     std::string output;
     serializeJson(doc, output);
     return output;
+#endif
 }
 
 inline std::string readDevice(uint16_t address, uint16_t size)
 {
-    JsonDocument doc;
-    JsonArray arr = doc.to<JsonArray>();
-
 #ifdef USE_ESP_IDF
+    cJSON *arr = cJSON_CreateArray();
+
     i2c_device_config_t dev_cfg = {};
     dev_cfg.dev_addr_length = I2C_ADDR_BIT_LEN_7;
     dev_cfg.device_address = address;
@@ -76,23 +84,30 @@ inline std::string readDevice(uint16_t address, uint16_t size)
         {
             for (uint16_t i = 0; i < size; i++)
             {
-                arr.add(buf[i]);
+                cJSON_AddItemToArray(arr, cJSON_CreateNumber(buf[i]));
             }
         }
         i2c_master_bus_rm_device(dev_handle);
     }
+
+    std::string output = cJsonToString(arr);
+    cJSON_Delete(arr);
+    return output;
 #else
+    JsonDocument doc;
+    JsonArray arr = doc.to<JsonArray>();
+
     Wire.requestFrom((uint8_t)address, (size_t)size);
 
     while (Wire.available() != 0)
     {
         arr.add(Wire.read());
     }
-#endif
 
     std::string output;
     serializeJson(doc, output);
     return output;
+#endif
 }
 
 inline void writeDevice(uint16_t address, const std::string &data)

@@ -1,5 +1,10 @@
 #pragma once
+
+#ifndef USE_ESP_IDF
 #include <WiFiUdp.h>
+#else
+#include "esp_sntp.h"
+#endif
 
 #include <ctime>
 #include <string>

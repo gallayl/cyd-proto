@@ -5,7 +5,12 @@
 #include "../../../ActionRegistry/ActionRegistry.h"
 #include "../../../CommandInterpreter/CommandParser.h"
 #include "../Logging.h"
+#ifdef USE_ESP_IDF
+#include "cJSON.h"
+#include "../../../utils/CJsonHelper.h"
+#else
 #include <ArduinoJson.h>
+#endif
 
 #include <cstddef>
 #include <string>
@@ -49,7 +54,7 @@ const char *getSdCardTypeName()
         return "UNKNOWN";
     if (sdCard->is_mmc)
         return "MMC";
-    if (sdCard->ocr & SD_OCR_SDHC_CAP)
+    if (sdCard->ocr & (1 << 30))
         return "SDHC";
     return "SD";
 #else
@@ -168,14 +173,14 @@ static std::string doMount()
 
     sdMounted = true;
 
-    JsonDocument response;
-    response["event"] = "sd_mounted";
-    response["cardType"] = getSdCardTypeName();
-    response["totalBytes"] = getSdCardTotalBytes();
-    response["usedBytes"] = getSdCardUsedBytes();
+    cJSON *response = cJSON_CreateObject();
+    cJSON_AddStringToObject(response, "event", "sd_mounted");
+    cJSON_AddStringToObject(response, "cardType", getSdCardTypeName());
+    cJSON_AddNumberToObject(response, "totalBytes", (double)getSdCardTotalBytes());
+    cJSON_AddNumberToObject(response, "usedBytes", (double)getSdCardUsedBytes());
 
-    std::string output;
-    serializeJson(response, output);
+    std::string output = cJsonToString(response);
+    cJSON_Delete(response);
 
     loggerInstance->Info(std::string("SD card mounted (") + getSdCardTypeName() + ", " +
                          std::to_string(getSdCardSize() / (1024 * 1024)) + " MB)");
@@ -241,6 +246,18 @@ static std::string doInfo()
         return "{\"error\": \"SD card not mounted\"}";
     }
 
+#ifdef USE_ESP_IDF
+    cJSON *response = cJSON_CreateObject();
+    cJSON_AddBoolToObject(response, "mounted", true);
+    cJSON_AddStringToObject(response, "cardType", getSdCardTypeName());
+    cJSON_AddNumberToObject(response, "totalBytes", (double)getSdCardTotalBytes());
+    cJSON_AddNumberToObject(response, "usedBytes", (double)getSdCardUsedBytes());
+    cJSON_AddNumberToObject(response, "cardSize", (double)getSdCardSize());
+
+    std::string output = cJsonToString(response);
+    cJSON_Delete(response);
+    return output;
+#else
     JsonDocument response;
     response["mounted"] = true;
     response["cardType"] = getSdCardTypeName();
@@ -251,6 +268,7 @@ static std::string doInfo()
     std::string output;
     serializeJson(response, output);
     return output;
+#endif
 }
 
 static std::string sdHandler(const std::string &command)

@@ -3,21 +3,21 @@
 #include "../config.h"
 #include <string>
 
-#ifndef USE_ESP_IDF
-#include <ESPAsyncWebServer.h>
-#endif
-
-#include <ArduinoJson.h>
-
 #ifdef USE_ESP_IDF
-JsonDocument getFileList();
-JsonDocument getFileList(const char *path);
-JsonDocument getFileList(const std::string &realPath);
+#include "cJSON.h"
+
+// Returns a cJSON array of file objects. Caller must free with cJSON_Delete().
+cJSON *getFileList();
+cJSON *getFileList(const char *path);
+cJSON *getFileList(const std::string &realPath);
 #else
+#include <ESPAsyncWebServer.h>
+#include <ArduinoJson.h>
 #include <FS.h>
+
 JsonDocument getFileList();
 JsonDocument getFileList(const char *path);
 JsonDocument getFileList(fs::FS &filesystem, const char *path);
 
-extern ArRequestHandlerFunction listFiles; // defined in list.cpp
+extern ArRequestHandlerFunction listFiles;
 #endif

@@ -1,5 +1,10 @@
 #pragma once
+#ifdef USE_ESP_IDF
+#include "cJSON.h"
+#else
 #include <ArduinoJson.h>
+#endif
+#include <cstdint>
 #include <functional>
 #include <mutex>
 #include <string>
@@ -22,6 +27,18 @@ using LogListener = void (*)(const std::string &, const std::string &);
 class Logger
 {
 public:
+#ifdef USE_ESP_IDF
+    cJSON *getEntries() const
+    {
+        return _entries;
+    }
+
+    void withEntries(std::function<void(cJSON *)> fn) const
+    {
+        std::lock_guard<std::mutex> lock(_entriesMutex);
+        fn(_entries);
+    }
+#else
     const JsonDocument &getEntries() const
     {
         return this->_entries;
@@ -32,6 +49,7 @@ public:
         std::lock_guard<std::mutex> lock(_entriesMutex);
         fn(_entries);
     }
+#endif
 
     void Info(const std::string &message)
     {
@@ -60,18 +78,34 @@ public:
 
     Logger()
     {
+#ifdef USE_ESP_IDF
+        _entries = cJSON_CreateArray();
+#else
         this->_entries.to<JsonArray>();
+#endif
         this->_listenersCount = 0;
         this->_entryCount = 0;
+    }
+
+    ~Logger()
+    {
+#ifdef USE_ESP_IDF
+        if (_entries)
+            cJSON_Delete(_entries);
+#endif
     }
 
 private:
     mutable std::mutex _entriesMutex;
     std::mutex _listenersMutex;
+#ifdef USE_ESP_IDF
+    cJSON *_entries;
+#else
     JsonDocument _entries;
+#endif
     uint16_t _entryCount;
 
-    byte _listenersCount;
+    uint8_t _listenersCount;
     LogListener _listeners[LOG_LISTENERS_COUNT];
 
     void handle(const std::string &severity, const std::string &message)
@@ -97,18 +131,19 @@ private:
 #endif
 
         LogListener listenersCopy[LOG_LISTENERS_COUNT];
-        byte count;
+        uint8_t count;
         {
             std::lock_guard<std::mutex> lock(_listenersMutex);
             count = this->_listenersCount;
             memcpy(listenersCopy, this->_listeners, sizeof(LogListener) * count);
         }
-        for (byte i = 0; i < count; i++)
+        for (uint8_t i = 0; i < count; i++)
         {
             listenersCopy[i](severity, message);
         }
     }
 
+#ifndef USE_ESP_IDF
     uint16_t _compactCounter{0};
 
     void compactEntries()
@@ -122,6 +157,7 @@ private:
         }
         this->_entries = std::move(fresh);
     }
+#endif
 
     void addEntry(const std::string &severity, const std::string &message, unsigned long epochTime,
                   const std::string &utcTime)
@@ -129,6 +165,11 @@ private:
         std::lock_guard<std::mutex> lock(_entriesMutex);
         if (this->_entryCount >= MAX_LOG_ENTRIES)
         {
+#ifdef USE_ESP_IDF
+            cJSON *first = cJSON_DetachItemFromArray(_entries, 0);
+            if (first)
+                cJSON_Delete(first);
+#else
             JsonArray arr = this->_entries.as<JsonArray>();
             arr.remove(0);
 
@@ -138,17 +179,27 @@ private:
                 _compactCounter = 0;
                 compactEntries();
             }
+#endif
         }
         else
         {
             this->_entryCount++;
         }
 
+#ifdef USE_ESP_IDF
+        cJSON *entry = cJSON_CreateObject();
+        cJSON_AddStringToObject(entry, "severity", severity.c_str());
+        cJSON_AddStringToObject(entry, "message", message.c_str());
+        cJSON_AddNumberToObject(entry, "epochTime", epochTime);
+        cJSON_AddStringToObject(entry, "isoDateTime", utcTime.c_str());
+        cJSON_AddItemToArray(_entries, entry);
+#else
         JsonObject entry = this->_entries.as<JsonArray>().add<JsonObject>();
         entry["severity"] = severity;
         entry["message"] = message;
         entry["epochTime"] = epochTime;
         entry["isoDateTime"] = utcTime;
+#endif
     }
 };
 

@@ -50,11 +50,19 @@ private:
     {
         std::lock_guard<std::mutex> lock(registeredFeaturesMutex);
         const std::string &name = feature->GetFeatureName();
+#ifdef USE_ESP_IDF
+        cJSON *entry = cJSON_GetObjectItem(registeredFeatures, name.c_str());
+        if (entry)
+        {
+            cJSON_ReplaceItemInObject(entry, "state", cJSON_CreateNumber((int)feature->GetFeatureState()));
+        }
+#else
         JsonObject entry = registeredFeatures[name];
         if (!entry.isNull())
         {
             entry["state"].set((int)feature->GetFeatureState());
         }
+#endif
     }
 
 public:
@@ -107,9 +115,16 @@ public:
         this->_registeredFeaturesCount++;
         const std::string &featureName = newFeature->GetFeatureName();
 
+#ifdef USE_ESP_IDF
+        cJSON *featureEntry = cJSON_CreateObject();
+        cJSON_AddStringToObject(featureEntry, "name", featureName.c_str());
+        cJSON_AddNumberToObject(featureEntry, "state", (int)newFeature->GetFeatureState());
+        cJSON_AddItemToObject(registeredFeatures, featureName.c_str(), featureEntry);
+#else
         JsonObject featureEntry = registeredFeatures[featureName].to<JsonObject>();
         featureEntry["name"] = featureName;
         featureEntry["state"] = (int)newFeature->GetFeatureState();
+#endif
     }
 
     void setupFeatures()

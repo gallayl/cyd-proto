@@ -4,13 +4,23 @@
 
 #if ENABLE_WEBSERVER
 
-#ifndef USE_ESP_IDF
+#ifdef USE_ESP_IDF
+
+#include <string>
+
+void initWebSockets();
+void wsBroadcast(const std::string &msg);
+void wsOnSessionClose(int sockfd);
+
+#else // Arduino
+
 #include <ESPAsyncWebServer.h>
 #include "../ActionRegistry/ActionRegistry.h"
 
 extern AsyncWebSocket *webSocket;
-#endif
 
 void initWebSockets();
+
+#endif
 
 #endif

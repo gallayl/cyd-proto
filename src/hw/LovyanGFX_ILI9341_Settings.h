@@ -13,12 +13,8 @@ public:
         {
             auto cfg = _bus_instance.config();
 
-            // Select the SPI to use ESP32-S2,C3: SPI2_HOST or SPI3_HOST / ESP32: VSPI_HOST or HSPI_HOST
-            cfg.spi_host =
-                HSPI_HOST; // 使用するSPIを選択  ESP32-S2,C3 : SPI2_HOST or SPI3_HOST / ESP32 : VSPI_HOST or HSPI_HOST
-            // cfg.spi_host = HSPI_HOST;     // 使用するSPIを選択  ESP32-S2,C3 : SPI2_HOST or SPI3_HOST / ESP32 : VSPI_HOST or HSPI_HOST
-            //  * Due to the ESP-IDF version upgrade, the VSPI_HOST and HSPI_HOST descriptions are deprecated, so if an error occurs, please use SPI2_HOST and SPI3_HOST instead.
-            //  ※ ESP-IDFバージョンアップに伴い、VSPI_HOST , HSPI_HOSTの記述は非推奨になるため、エラーが出る場合は代わりにSPI2_HOST , SPI3_HOSTを使用してください。
+            // SPI2_HOST (was HSPI_HOST) for display bus
+            cfg.spi_host = SPI2_HOST;
             cfg.spi_mode = 0; // Sets the SPI communication mode (0 to 3) SPI通信モードを設定 (0 ~ 3)
             // SPI clock during transmission (Maximum 80MHz, rounded to an integer value of 80MHz)
             // cfg.freq_write = 40000000;  // 送信時のSPIクロック (最大80MHz, 80MHzを整数で割った値に丸められます)
@@ -147,7 +143,7 @@ public:
                 0; // Adjust if display and touch direction do not match. Set a value between 0 and 7. 表示とタッチの向きのが一致しない場合の調整 0~7の値で設定 // tft_espi 1=swap xy, 2=invert x, 4=inverty
 
             // For SPI connection SPI接続の場合
-            cfg.spi_host = VSPI_HOST; // Select the SPI to use 使用するSPIを選択 (HSPI_HOST or VSPI_HOST)
+            cfg.spi_host = SPI3_HOST; // SPI3_HOST (was VSPI_HOST) for touch controller
             cfg.freq = 2500000;       // Set SPI clockSPIクロックを設定
             cfg.pin_sclk = 25;        // pin number where SCLK is connected, TP CLK
             cfg.pin_mosi = 32;        // pin number where MOSI is connected, TP DIN

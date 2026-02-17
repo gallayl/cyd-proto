@@ -1,6 +1,10 @@
 #include "registeredFeatures.h"
-#include <ArduinoJson.h>
 
-// define the shared JSON document
+#ifdef USE_ESP_IDF
+cJSON *registeredFeatures = cJSON_CreateObject();
+#else
+#include <ArduinoJson.h>
 JsonDocument registeredFeatures;
+#endif
+
 std::mutex registeredFeaturesMutex;
