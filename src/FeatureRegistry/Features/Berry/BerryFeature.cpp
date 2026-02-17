@@ -485,21 +485,27 @@ Feature *BerryFeature = new Feature(
 
         actionRegistryInstance->registerAction(&berryAction);
 
-        std::string autoexecPath = resolveToLittleFsPath("/berry/autoexec.be");
-        if (vfsExists(autoexecPath))
-        {
-            loggerInstance->Info("Running /berry/autoexec.be");
-            std::string code = vfsReadFileAsString(autoexecPath);
-            if (!code.empty())
-            {
-                berryEval(code);
-            }
-        }
-
         loggerInstance->Info("Berry VM initialized");
         return FeatureState::RUNNING;
     },
-    []() {},
+    []()
+    {
+        static bool autoexecDone = false;
+        if (!autoexecDone)
+        {
+            autoexecDone = true;
+            std::string autoexecPath = resolveToLittleFsPath("/berry/autoexec.be");
+            if (vfsExists(autoexecPath))
+            {
+                loggerInstance->Info("Running /berry/autoexec.be");
+                std::string code = vfsReadFileAsString(autoexecPath);
+                if (!code.empty())
+                {
+                    berryEval(code);
+                }
+            }
+        }
+    },
     []()
     {
         if (berry_vm)
