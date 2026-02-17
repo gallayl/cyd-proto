@@ -378,7 +378,7 @@ private:
                 struct tm *t = localtime(&_items[i].lastWrite);
                 if (t)
                 {
-                    char buf[16];
+                    char buf[32];
                     snprintf(buf, sizeof(buf), "%02d/%02d/%02d", t->tm_mon + 1, t->tm_mday, t->tm_year % 100);
                     c.print(buf);
                 }
