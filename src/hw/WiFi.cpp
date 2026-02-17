@@ -13,8 +13,7 @@ static EventGroupHandle_t s_wifi_event_group = nullptr;
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_GOT_IP_BIT BIT1
 
-static void wifi_event_handler(void *arg, esp_event_base_t event_base,
-                               int32_t event_id, void *event_data)
+static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
     if (event_base == WIFI_EVENT)
     {
@@ -114,10 +113,8 @@ void initWifi()
     // Register event handlers
     esp_event_handler_instance_t wifi_event_instance;
     esp_event_handler_instance_t ip_event_instance;
-    esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID,
-                                        &wifi_event_handler, NULL, &wifi_event_instance);
-    esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP,
-                                        &wifi_event_handler, NULL, &ip_event_instance);
+    esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL, &wifi_event_instance);
+    esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL, &ip_event_instance);
 
     // Start in AP mode with soft AP
     esp_wifi_set_mode(WIFI_MODE_AP);
@@ -136,8 +133,7 @@ void initWifi()
     esp_wifi_connect();
 
     // Wait for IP with 10-second timeout
-    EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
-                                           WIFI_GOT_IP_BIT, pdFALSE, pdTRUE, pdMS_TO_TICKS(10000));
+    EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group, WIFI_GOT_IP_BIT, pdFALSE, pdTRUE, pdMS_TO_TICKS(10000));
 
     if (bits & WIFI_GOT_IP_BIT)
     {
